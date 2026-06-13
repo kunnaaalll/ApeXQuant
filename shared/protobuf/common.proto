@@ -3,7 +3,7 @@ syntax = "proto3";
 package apex.common;
 
 option go_package = "github.com/apex/v3/common";
-option rust_package = "apex_protos::common";
+// option rust_package = "apex_protos::common";  // Disabled - tonic doesn't support custom options
 option java_package = "com.apex.v3.common";
 option java_multiple_files = true;
 
@@ -20,6 +20,12 @@ message SemanticVersion {
 // Matches RFC 3339 format
 message Timestamp {
   int64 seconds = 1;   // Unix epoch seconds
+  int32 nanos = 2;     // Sub-second nanoseconds [0, 999999999]
+}
+
+// Duration wrapper for time intervals
+message Duration {
+  int64 seconds = 1;   // Duration in seconds
   int32 nanos = 2;     // Sub-second nanoseconds [0, 999999999]
 }
 

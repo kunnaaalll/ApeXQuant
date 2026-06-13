@@ -5,7 +5,7 @@ package apex.execution;
 import "common.proto";
 
 option go_package = "github.com/apex/v3/execution";
-option rust_package = "apex_protos::execution";
+// option rust_package = "apex_protos::execution";
 option java_package = "com.apex.v3.execution";
 option java_multiple_files = true;
 
@@ -102,7 +102,7 @@ message SubmitOrderResponse {
   string request_id = 1;
   common.Result result = 2;
   string order_id = 3;
-  OrderState state = 4;
+  common.OrderState state = 4;
   common.Timestamp submitted_at = 5;
   string rejection_reason = 6;
   common.Error error_details = 7;
@@ -118,7 +118,7 @@ message CancelOrderRequest {
 message CancelOrderResponse {
   string order_id = 1;
   bool cancelled = 2;
-  OrderState new_state = 3;
+  common.OrderState new_state = 3;
   common.Timestamp cancelled_at = 4;
   common.Error error = 5;
 }
@@ -143,7 +143,7 @@ message FieldMask {
 message ModifyOrderResponse {
   string order_id = 1;
   bool modified = 2;
-  OrderState new_state = 3;
+  common.OrderState new_state = 3;
   common.Timestamp modified_at = 4;
   Order current_state = 5;
   common.Error error = 6;
@@ -187,7 +187,7 @@ message Order {
   common.Price average_fill_price = 13;
 
   // State
-  OrderState state = 14;
+  common.OrderState state = 14;
   TimeInForce time_in_force = 15;
 
   // Timing
@@ -263,8 +263,8 @@ message OrderUpdate {
 }
 
 message OrderStateChanged {
-  OrderState previous_state = 1;
-  OrderState new_state = 2;
+  common.OrderState previous_state = 1;
+  common.OrderState new_state = 2;
   string reason = 3;
 }
 

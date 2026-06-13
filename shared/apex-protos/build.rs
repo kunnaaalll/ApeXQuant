@@ -26,7 +26,7 @@ fn main() -> Result<()> {
         .protoc_arg("--experimental_allow_proto3_optional")
         .type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]")
         .out_dir("src/generated")
-        .compile(&paths, &[proto_dir.into()])?;
+        .compile(&paths, &[proto_dir])?;
 
     println!("cargo:rerun-if-changed={}", proto_dir);
 

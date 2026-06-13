@@ -5,7 +5,7 @@ package apex.analytics;
 import "common.proto";
 
 option go_package = "github.com/apex/v3/analytics";
-option rust_package = "apex_protos::analytics";
+// option rust_package = "apex_protos::analytics";
 option java_package = "com.apex.v3.analytics";
 option java_multiple_files = true;
 
@@ -400,12 +400,12 @@ message StrategyMetrics {
 
   // Drawdown adjusted
   common.Decimal calmar_ratio = 7;
-  common.Decicalmar_ratio sterling = 8;
+  common.Decimal decile_calmar_ratio = 8;
   common.Decimal burke_ratio = 9;
 
   // Tail risk
   common.Decimal tail_ratio = 10;
-  common.Decimal common.senic_ratio = 11;
+  common.Decimal sterling_ratio = 11;
   common.Decimal pain_ratio = 12;
 
   // Regime metrics

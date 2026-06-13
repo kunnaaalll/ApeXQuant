@@ -5,7 +5,7 @@ package apex.portfolio;
 import "common.proto";
 
 option go_package = "github.com/apex/v3/portfolio";
-option rust_package = "apex_protos::portfolio";
+// option rust_package = "apex_protos::portfolio";
 option java_package = "com.apex.v3.portfolio";
 option java_multiple_files = true;
 

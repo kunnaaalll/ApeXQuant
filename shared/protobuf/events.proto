@@ -5,7 +5,7 @@ package apex.events;
 import "common.proto";
 
 option go_package = "github.com/apex/v3/events";
-option rust_package = "apex_protos::events";
+// option rust_package = "apex_protos::events";
 option java_package = "com.apex.v3.events";
 option java_multiple_files = true;
 
@@ -13,7 +13,7 @@ option java_multiple_files = true;
 // Every event published to the bus is wrapped in this message
 message Event {
   // Event envelope metadata
-  UUID event_id = 1;                    // Globally unique event ID
+  common.UUID event_id = 1;                    // Globally unique event ID
   common.SemanticVersion spec_version = 2;  // Version of event schema
   common.Timestamp occurred_at = 3;     // UTC timestamp of event occurrence
   common.Timestamp published_at = 4;    // UTC timestamp of publication to bus

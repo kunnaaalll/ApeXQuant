@@ -38,7 +38,7 @@ bollard = "0.16"
 tokio-test.workspace = true
 mockall.workspace = true
 wiremock.workspace = true
-testcontainers.workspace = true
+# testcontainers.workspace = true  # Disabled due to version conflict
 
 [[bin]]
 name = "execution-engine"

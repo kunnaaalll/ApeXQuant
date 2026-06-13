@@ -44,8 +44,8 @@ bincode = "1.3"
 [dev-dependencies]
 tokio-test.workspace = true
 mockall.workspace = true
-testcontainers.workspace = true
-testcontainers-modules.workspace = true
+# testcontainers.workspace = true  # Disabled due to version conflict
+# testcontainers-modules.workspace = true
 fake.workspace = true
 
 [[bin]]

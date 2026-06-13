@@ -5,7 +5,7 @@ package apex.position;
 import "common.proto";
 
 option go_package = "github.com/apex/v3/position";
-option rust_package = "apex_protos::position";
+// option rust_package = "apex_protos::position";
 option java_package = "com.apex.v3.position";
 option java_multiple_files = true;
 

@@ -5,7 +5,7 @@ package apex.signal;
 import "common.proto";
 
 option go_package = "github.com/apex/v3/signal";
-option rust_package = "apex_protos::signal";
+// option rust_package = "apex_protos::signal";
 option java_package = "com.apex.v3.signal";
 option java_multiple_files = true;
 
@@ -62,7 +62,7 @@ message DetectRequest {
 // Strategy to use for detection
 message DetectionStrategy {
   string strategy_id = 1;
-  common Metadata parameters = 2;
+  common.Metadata parameters = 2;
   double weight = 3;                   // Weight in ensemble (0.0 - 1.0)
 }
 

@@ -1,0 +1,31 @@
+{
+  "name": "APEX V3 Golden Dataset",
+  "version": "1.0.0",
+  "created_at": "2026-06-14T00:00:00Z",
+  "description": "Institutional-grade validation dataset for Signal Engine V1",
+  "total_scenarios": 0,
+  "categories": [],
+  "symbols": [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCHF"
+  ],
+  "timeframes": [
+    "M15",
+    "H1",
+    "H4",
+    "D1"
+  ],
+  "total_candles": 0,
+  "total_expected_signals": 0,
+  "go_live_criteria": {
+    "direction_agreement_pct_min": 95.0,
+    "confidence_drift_pct_max": 10.0,
+    "pattern_agreement_pct_min": 90.0,
+    "regime_agreement_pct_min": 90.0,
+    "max_panics": 0,
+    "avg_latency_ms_max": 10.0,
+    "p99_latency_ms_max": 25.0
+  }
+}
