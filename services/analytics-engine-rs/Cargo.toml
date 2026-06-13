@@ -1,0 +1,49 @@
+[package]
+name = "analytics-engine-rs"
+version = "3.0.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "APEX V3 Analytics Engine - Performance metrics and statistical analysis"
+
+[dependencies]
+# Workspace dependencies
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+redis.workspace = true
+tonic.workspace = true
+tonic-health.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+time.workspace = true
+rust_decimal.workspace = true
+statrs.workspace = true
+rayon.workspace = true
+dashmap.workspace = true
+metrics.workspace = true
+
+# Local dependencies
+apex-protos = { path = "../../shared/apex-protos" }
+
+# Service-specific
+polars = { version = "0.40", features = ["performant"] }
+
+[dev-dependencies]
+tokio-test.workspace = true
+mockall.workspace = true
+proptest.workspace = true
+
+[[bin]]
+name = "analytics-engine"
+path = "src/main.rs"
+
+[lib]
+name = "analytics_engine"
+path = "src/lib.rs"

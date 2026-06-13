@@ -1,0 +1,94 @@
+# ============================================
+# APEX V3 Rust Service Dockerfile
+# ============================================
+# Multi-stage build for optimized production image
+
+ARG RUST_VERSION=1.78
+ARG SERVICE
+
+# ---------------- Builder Stage ----------------
+FROM rust:${RUST_VERSION}-slim-bookworm AS builder
+
+ARG SERVICE
+ENV SERVICE=${SERVICE}
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    protobuf-compiler \
+    libprotobuf-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install cargo-chef for dependency caching
+RUN cargo install cargo-chef && rm -rf /usr/local/cargo/registry
+
+WORKDIR /app
+
+# Create recipe for dependencies
+COPY Cargo.toml Cargo.lock ./
+COPY services/${SERVICE}/Cargo.toml ./services/${SERVICE}/
+COPY shared/apex-protos/Cargo.toml ./shared/apex-protos/
+
+# Prepare cargo-chef recipe
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Build dependencies (cached layer)
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Copy source code
+COPY shared/apex-protos ./shared/apex-protos
+COPY services/${SERVICE}/src ./services/${SERVICE}/src
+COPY services/${SERVICE}/build.rs ./services/${SERVICE}/
+COPY shared/protobuf ./shared/protobuf
+
+# Build the service
+WORKDIR /app/services/${SERVICE}
+RUN cargo build --release
+
+# Strip binary for smaller size
+RUN strip /app/target/release/service-binary || \
+    strip /app/target/release/${SERVICE}
+
+# ---------------- Runtime Stage ----------------
+FROM debian:bookworm-slim AS production
+
+ARG SERVICE
+ENV SERVICE=${SERVICE}
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create non-root user
+RUN groupadd -r apex && useradd -r -g apex -s /sbin/nologin -M apex
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder \
+    /app/target/release/service-binary \
+    /app/target/release/${SERVICE} \
+    /app/service
+
+# Copy protos if needed at runtime
+COPY --from=builder /app/shared/protobuf ./shared/protobuf
+
+# Set ownership
+RUN chown -R apex:apex /app && chmod +x /app/service
+
+USER apex
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:${SERVICE_PORT:-8080}/health || exit 1
+
+# Expose port (configurable)
+ENV SERVICE_PORT=8080
+EXPOSE ${SERVICE_PORT}
+
+CMD ["/app/service"]

@@ -1,0 +1,128 @@
+groups:
+  - name: apex-trading
+    rules:
+      # Critical alerts
+      - alert: APEXServiceDown
+        expr: up{job=~"apex-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "APEX service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 1 minute"
+
+      - alert: APEXHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job=~"apex-.*",code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job=~"apex-.*"}[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is above 5% for {{ $labels.job }}"
+
+      # Trading alerts
+      - alert: APEXDrawdownLimit
+        expr: apex_risk_drawdown_percent > 10
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Drawdown limit exceeded"
+          description: "Current drawdown is {{ $value }}%"
+
+      - alert: APEXDailyLossLimit
+        expr: apex_risk_daily_loss > 500
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Daily loss limit approaching"
+          description: "Daily loss is ${{ $value }}"
+
+      - alert: APEXNoTrades
+        expr: |
+          (
+            sum(rate(apex_trades_executed_total[1h])) == 0
+            and
+            hour() >= 8 and hour() <= 17
+          )
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No trades executed recently"
+          description: "No trades in the last 30 minutes during trading hours"
+
+      # Performance alerts
+      - alert: APEXSLOWLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(apex_signal_detection_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High signal detection latency"
+          description: "95th percentile latency is {{ $value }}s"
+
+      - alert: APEXQueueBacklog
+        expr: apex_event_queue_depth > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event queue backlog"
+          description: "Queue depth is {{ $value }} events"
+
+      # Infrastructure alerts
+      - alert: APEXHighMemoryUsage
+        expr: (container_memory_usage_bytes{container=~"apex-.*"} / container_spec_memory_limit_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.container }}"
+          description: "Memory usage is above 85%"
+
+      - alert: APEXRedisConnectionLost
+        expr: apex_redis_connected == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis connection lost"
+          description: "Service cannot connect to Redis"
+
+      - alert: APEXPostgresConnectionLost
+        expr: apex_postgres_connected == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL connection lost"
+          description: "Service cannot connect to database"
+
+      # AI Council alerts
+      - alert: APEXAIRateLimit
+        expr: rate(apex_ai_rate_limit_hits_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI provider rate limiting"
+          description: "Rate limit hits detected"
+
+      - alert: APEXAILatencyHigh
+        expr: histogram_quantile(0.99, sum(rate(apex_ai_request_duration_seconds_bucket[5m])) by (le)) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI request latency high"
+          description: "99th percentile AI latency is {{ $value }}s"

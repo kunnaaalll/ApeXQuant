@@ -1,0 +1,47 @@
+{
+  "name": "@apex-v3/root",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 - Autonomous Trading System",
+  "author": "APEX Team",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "test": "turbo test",
+    "test:ci": "turbo test:ci",
+    "lint": "turbo lint",
+    "format": "turbo format",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean && rm -rf node_modules",
+    "proto:generate": "pnpm --filter @apex-v3/protobuf generate",
+    "proto:watch": "pnpm --filter @apex-v3/protobuf watch",
+    "docker:up": "docker-compose -f infrastructure/docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f infrastructure/docker/docker-compose.yml down",
+    "docker:build": "docker-compose -f infrastructure/docker/docker-compose.yml build",
+    "db:migrate": "pnpm --filter @apex-v3/storage migrate",
+    "db:reset": "pnpm --filter @apex-v3/storage reset",
+    "rust:build": "cargo build --workspace",
+    "rust:test": "cargo test --workspace",
+    "rust:clippy": "cargo clippy --workspace -- -D warnings",
+    "rust:fmt": "cargo fmt --workspace"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "@turbo/gen": "^1.13.0",
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.0",
+    "eslint": "^8.57.0",
+    "@types/node": "^20.12.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "shared/*",
+    "storage/*"
+  ]
+}

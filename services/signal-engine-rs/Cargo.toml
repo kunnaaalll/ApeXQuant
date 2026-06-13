@@ -1,0 +1,55 @@
+[package]
+name = "signal-engine-rs"
+version = "3.0.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "APEX V3 Signal Engine - Market pattern detection and SMC analysis"
+
+[dependencies]
+# Workspace dependencies
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+redis.workspace = true
+tonic.workspace = true
+tonic-health.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+time.workspace = true
+rust_decimal.workspace = true
+statrs.workspace = true
+rayon.workspace = true
+dashmap.workspace = true
+metrics.workspace = true
+
+# Local dependencies
+apex-protos = { path = "../../shared/apex-protos" }
+
+# Service-specific
+polars = { version = "0.40", features = ["performant", "dtype-datetime", "timezones"] }
+crossbeam-channel = "0.5"
+
+[dev-dependencies]
+tokio-test.workspace = true
+mockall.workspace = true
+criterion.workspace = true
+proptest.workspace = true
+fake.workspace = true
+
+[[bin]]
+name = "signal-engine"
+path = "src/main.rs"
+
+[lib]
+name = "signal_engine"
+path = "src/lib.rs"
+
+[[bench]]
+name = "pattern_matching"
+harness = false

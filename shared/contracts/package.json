@@ -1,0 +1,30 @@
+{
+  "name": "@apex-v3/contracts",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 TypeScript Contracts - Generated protobuf types for services",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "generate": "buf generate",
+    "watch": "buf generate --watch",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist generated"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.9.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-node": "^1.4.0"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.32.0",
+    "@bufbuild/protoc-gen-connect-es": "^1.4.0",
+    "@bufbuild/protoc-gen-es": "^1.9.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

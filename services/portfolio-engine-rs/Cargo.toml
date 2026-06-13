@@ -1,0 +1,47 @@
+[package]
+name = "portfolio-engine-rs"
+version = "3.0.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "APEX V3 Portfolio Engine - Multi-asset portfolio optimization and allocation"
+
+[dependencies]
+# Workspace dependencies
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+redis.workspace = true
+tonic.workspace = true
+tonic-health.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+time.workspace = true
+rust_decimal.workspace = true
+rust_decimal.maths = true
+nalgebra.workspace = true
+rayon.workspace = true
+dashmap.workspace = true
+metrics.workspace = true
+
+# Local dependencies
+apex-protos = { path = "../../shared/apex-protos" }
+
+[dev-dependencies]
+tokio-test.workspace = true
+mockall.workspace = true
+proptest.workspace = true
+
+[[bin]]
+name = "portfolio-engine"
+path = "src/main.rs"
+
+[lib]
+name = "portfolio_engine"
+path = "src/lib.rs"

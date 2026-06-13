@@ -1,0 +1,20 @@
+[package]
+name = "apex-protos"
+version = "3.0.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "APEX V3 Protocol Buffers - Generated gRPC clients and servers"
+
+[dependencies]
+tonic.workspace = true
+prost.workspace = true
+prost-types.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[build-dependencies]
+tonic-build.workspace = true
+prost-build.workspace = true

@@ -1,0 +1,25 @@
+{
+  "name": "@apex-v3/events",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 Event System - Type-safe event definitions and streaming",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "ioredis": "^5.4.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

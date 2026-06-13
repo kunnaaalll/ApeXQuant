@@ -1,0 +1,346 @@
+syntax = "proto3";
+
+package apex.execution;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/execution";
+option rust_package = "apex_protos::execution";
+option java_package = "com.apex.v3.execution";
+option java_multiple_files = true;
+
+// Execution Engine Service
+service ExecutionEngine {
+  // Submit an order for execution
+  rpc SubmitOrder(SubmitOrderRequest) returns (SubmitOrderResponse);
+
+  // Cancel a pending order
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+
+  // Modify an existing order
+  rpc ModifyOrder(ModifyOrderRequest) returns (ModifyOrderResponse);
+
+  // Get order status
+  rpc GetOrderStatus(OrderQuery) returns (OrderStatus);
+
+  // List orders with filtering
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+
+  // Stream order updates
+  rpc StreamOrderUpdates(OrderFilter) returns (stream OrderUpdate);
+
+  // Get execution report
+  rpc GetExecutionReport(ExecutionQuery) returns (ExecutionReport);
+
+  // Health check
+  rpc Health(common.Empty) returns (ExecutionHealthStatus);
+}
+
+// Order submission
+message SubmitOrderRequest {
+  string request_id = 1;
+  NewOrder order = 2;
+  ExecutionPreferences preferences = 3;
+  uint32 priority = 4;                 // Higher = earlier execution
+}
+
+message NewOrder {
+  string client_order_id = 1;          // Client-generated ID
+  common.Symbol symbol = 2;
+  common.OrderType order_type = 3;
+  common.TradeSide side = 4;
+  common.Volume volume = 5;
+
+  // Price fields
+  common.Price limit_price = 6;        // For limit orders
+  common.Price stop_price = 7;         // For stop orders
+  common.Price stop_loss = 8;
+  common.Price take_profit = 9;
+
+  // Time-based conditions
+  common.Timestamp valid_until = 10;   // GTD - good till date
+  TimeInForce time_in_force = 11;
+
+  // Metadata
+  string signal_id = 12;
+  string strategy_id = 13;
+  string correlation_id = 14;
+}
+
+enum TimeInForce {
+  TIME_IN_FORCE_UNSPECIFIED = 0;
+  TIME_IN_FORCE_GTC = 1;               // Good till cancelled
+  TIME_IN_FORCE_IOC = 2;               // Immediate or cancel
+  TIME_IN_FORCE_FOK = 3;               // Fill or kill
+  TIME_IN_FORCE_GTD = 4;               // Good till date
+  TIME_IN_FORCE_DAY = 5;               // Day only
+}
+
+message ExecutionPreferences {
+  ExecutionMode mode = 1;
+  string preferred_broker = 2;
+  bool use_smart_routing = 3;
+  SlippageTolerance slippage = 4;
+  bool require_post_trade_confirmation = 5;
+}
+
+enum ExecutionMode {
+  EXECUTION_MODE_UNSPECIFIED = 0;
+  EXECUTION_MODE_MARKET = 1;           // Immediate execution
+  EXECUTION_MODE_PASSIVE = 2;          // Try for price improvement
+  EXECUTION_MODE_AGGRESSIVE = 3;       // Fast fill, accept slippage
+  EXECUTION_MODE_TWAP = 4;             // Time-weighted average price
+  EXECUTION_MODE_VWAP = 5;             // Volume-weighted average price
+}
+
+message SlippageTolerance {
+  common.Decimal max_slippage_pips = 1;
+  bool reject_on_excessive_slippage = 2;
+}
+
+message SubmitOrderResponse {
+  string request_id = 1;
+  common.Result result = 2;
+  string order_id = 3;
+  OrderState state = 4;
+  common.Timestamp submitted_at = 5;
+  string rejection_reason = 6;
+  common.Error error_details = 7;
+}
+
+// Cancel order
+message CancelOrderRequest {
+  string order_id = 1;
+  string reason = 2;
+  bool force = 3;                      // Cancel even if partially filled
+}
+
+message CancelOrderResponse {
+  string order_id = 1;
+  bool cancelled = 2;
+  OrderState new_state = 3;
+  common.Timestamp cancelled_at = 4;
+  common.Error error = 5;
+}
+
+// Modify order
+message ModifyOrderRequest {
+  string order_id = 1;
+  FieldMask fields_to_modify = 2;
+  common.Volume new_volume = 3;
+  common.Price new_limit_price = 4;
+  common.Price new_stop_price = 5;
+  common.Price new_stop_loss = 6;
+  common.Price new_take_profit = 7;
+  string reason = 8;
+}
+
+// Field selection for partial updates
+message FieldMask {
+  repeated string paths = 1;
+}
+
+message ModifyOrderResponse {
+  string order_id = 1;
+  bool modified = 2;
+  OrderState new_state = 3;
+  common.Timestamp modified_at = 4;
+  Order current_state = 5;
+  common.Error error = 6;
+}
+
+// Order status query
+message OrderQuery {
+  string order_id = 1;
+  string client_order_id = 2;          // Alternative lookup
+}
+
+message OrderStatus {
+  Order order = 1;
+  repeated ExecutionFill fills = 2;
+  common.Volume remaining_volume = 3;
+  common.Money average_fill_price = 4;
+  uint32 fill_count = 5;
+}
+
+// Complete order representation
+message Order {
+  // Identifiers
+  string order_id = 1;
+  string client_order_id = 2;
+
+  // Basic info
+  common.Symbol symbol = 3;
+  common.OrderType order_type = 4;
+  common.TradeSide side = 5;
+
+  // Volume tracking
+  common.Volume requested_volume = 6;
+  common.Volume filled_volume = 7;
+  common.Volume remaining_volume = 8;
+
+  // Prices
+  common.Price limit_price = 9;
+  common.Price stop_price = 10;
+  common.Price stop_loss = 11;
+  common.Price take_profit = 12;
+  common.Price average_fill_price = 13;
+
+  // State
+  OrderState state = 14;
+  TimeInForce time_in_force = 15;
+
+  // Timing
+  common.Timestamp created_at = 16;
+  common.Timestamp submitted_at = 17;
+  common.Timestamp last_updated_at = 18;
+  common.Timestamp expires_at = 19;
+
+  // Context
+  string broker_order_id = 20;
+  string signal_id = 21;
+  string strategy_id = 22;
+  string correlation_id = 23;
+
+  // Routing
+  string broker = 24;
+  string execution_venue = 25;
+}
+
+// Individual fill/execution
+message ExecutionFill {
+  string fill_id = 1;
+  string order_id = 2;
+  common.Timestamp filled_at = 3;
+  common.Volume filled_volume = 4;
+  common.Price fill_price = 5;
+  common.Money commission = 6;
+  string execution_id = 7;             // Broker's execution ID
+  common.Money slippage = 8;           // Difference from expected price
+}
+
+// List orders
+message ListOrdersRequest {
+  common.Symbol symbol = 1;
+  OrderStateFilter state_filter = 2;
+  common.Timestamp from = 3;
+  common.Timestamp to = 4;
+  common.Pagination pagination = 5;
+}
+
+enum OrderStateFilter {
+  ORDER_STATE_FILTER_UNSPECIFIED = 0;
+  ORDER_STATE_FILTER_ALL = 1;
+  ORDER_STATE_FILTER_OPEN = 2;
+  ORDER_STATE_FILTER_PENDING = 3;
+  ORDER_STATE_FILTER_FILLED = 4;
+  ORDER_STATE_FILTER_CANCELLED = 5;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  common.PageInfo page_info = 2;
+}
+
+// Stream updates
+message OrderFilter {
+  repeated string order_ids = 1;
+  common.Symbol symbol = 2;
+  bool fill_updates = 3;
+  bool state_updates = 4;
+}
+
+message OrderUpdate {
+  string order_id = 1;
+  common.Timestamp updated_at = 2;
+
+  oneof update {
+    OrderStateChanged state_change = 3;
+    FillOccurred fill = 4;
+    OrderModified modification = 5;
+    ErrorOccurred error = 6;
+  }
+}
+
+message OrderStateChanged {
+  OrderState previous_state = 1;
+  OrderState new_state = 2;
+  string reason = 3;
+}
+
+message FillOccurred {
+  ExecutionFill fill = 1;
+  common.Volume remaining = 2;
+  bool complete = 3;
+}
+
+message OrderModified {
+  string field = 1;
+  string old_value = 2;
+  string new_value = 3;
+}
+
+message ErrorOccurred {
+  common.Error error = 1;
+  bool terminal = 2;
+}
+
+// Execution reports
+message ExecutionQuery {
+  string order_id = 1;
+  string position_id = 2;
+  ExecutionReportType report_type = 3;
+}
+
+enum ExecutionReportType {
+  REPORT_TYPE_UNSPECIFIED = 0;
+  REPORT_TYPE_FULL = 1;
+  REPORT_TYPE_SUMMARY = 2;
+  REPORT_TYPE_ANALYTICS = 3;
+}
+
+message ExecutionReport {
+  string order_id = 1;
+  Order order = 2;
+  repeated ExecutionFill fills = 3;
+
+  // Timings
+  common.Duration time_to_accept = 4;
+  common.Duration time_to_first_fill = 5;
+  common.Duration total_execution_time = 6;
+
+  // Quality metrics
+  common.Money expected_price = 7;
+  common.Money vwape = 8;              // VWAP of executions
+  common.Money slippage_cost = 9;
+  common.Percentage fill_rate = 10;
+
+  // Cost breakdown
+  ExecutionCost costs = 11;
+}
+
+message ExecutionCost {
+  common.Money commission = 1;
+  common.Money spread_paid = 2;
+  common.Money slippage = 3;
+  common.Money financing = 4;          // Overnight fees
+  common.Money total = 5;
+}
+
+// Health status
+message ExecutionHealthStatus {
+  bool healthy = 1;
+  string broker_connection = 2;
+  repeated BrokerStatus brokers = 3;
+  uint32 pending_orders = 4;
+  uint32 orders_last_minute = 5;
+  common.Duration average_latency = 6;
+}
+
+message BrokerStatus {
+  string name = 1;
+  bool connected = 2;
+  int32 health_score = 3;              // 0-100
+  string last_error = 4;
+  common.Timestamp last_trade_at = 5;
+}

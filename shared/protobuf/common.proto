@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package apex.common;
+
+option go_package = "github.com/apex/v3/common";
+option rust_package = "apex_protos::common";
+option java_package = "com.apex.v3.common";
+option java_multiple_files = true;
+
+// Semantic versioning for all versioned entities
+message SemanticVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+  uint32 patch = 3;
+  string pre_release = 4;  // e.g., "alpha", "beta.1"
+  string build = 5;        // e.g., "exp.sha.5114f85"
+}
+
+// Timestamp wrapper with nanosecond precision
+// Matches RFC 3339 format
+message Timestamp {
+  int64 seconds = 1;   // Unix epoch seconds
+  int32 nanos = 2;     // Sub-second nanoseconds [0, 999999999]
+}
+
+// UUID wrapper type to ensure correct serialization
+message UUID {
+  bytes value = 1;  // 16 bytes in network byte order
+}
+
+// Currency pair/symbol with standardization
+// Examples: "EURUSD", "XAUUSD", "US30"
+message Symbol {
+  string code = 1;            // Base code
+  string exchange = 2;        // Exchange if applicable
+  AssetClass asset_class = 3; // Type of instrument
+  string description = 4;     // Human-readable description
+}
+
+// Asset classification for proper risk grouping
+enum AssetClass {
+  ASSET_CLASS_UNSPECIFIED = 0;
+  ASSET_CLASS_FOREX = 1;
+  ASSET_CLASS_CRYPTO = 2;
+  ASSET_CLASS_INDEX = 3;
+  ASSET_CLASS_COMMODITY = 4;
+  ASSET_CLASS_BOND = 5;
+  ASSET_CLASS_STOCK = 6;
+  ASSET_CLASS_ETF = 7;
+}
+
+// Timeframe for candlestick data
+message Timeframe {
+  uint32 value = 1;  // Numeric value
+  TimeUnit unit = 2; // Unit of measurement
+}
+
+enum TimeUnit {
+  TIME_UNIT_UNSPECIFIED = 0;
+  TIME_UNIT_MINUTE = 1;
+  TIME_UNIT_HOUR = 2;
+  TIME_UNIT_DAY = 3;
+  TIME_UNIT_WEEK = 4;
+  TIME_UNIT_MONTH = 5;
+}
+
+// Price with precision handling for forex/crypto
+message Price {
+  string value = 1;     // Decimal as string to avoid float errors
+  uint32 digits = 2;    // Number of significant digits
+  string currency = 3;  // Quote currency
+}
+
+// Money representation for precise calculations
+message Money {
+  string amount = 1;    // Amount in smallest currency unit (e.g., cents)
+  string currency = 2;  // ISO 4217 currency code
+  int32 exponent = 3;   // Number of decimal places (2 for USD, 5 for JPY)
+}
+
+// Volume with precision
+message Volume {
+  string units = 1;     // Decimal volume units
+  string lot_size = 2;  // Standard lot size for this symbol
+  bool fractional = 3;  // Whether fractional lots allowed
+}
+
+// Decimal wrapper type for precise arithmetic
+message Decimal {
+  string value = 1;     // String representation
+}
+
+// Percentage value (0-100 or raw decimal depending on context)
+message Percentage {
+  string value = 1;     // String decimal, typically 0.0 to 1.0
+  bool is_basis_points = 2; // If true, value is in basis points (0-10000)
+}
+
+// Side of trade
+enum TradeSide {
+  TRADE_SIDE_UNSPECIFIED = 0;
+  TRADE_SIDE_BUY = 1;   // Long position
+  TRADE_SIDE_SELL = 2;  // Short position
+}
+
+// Order types
+enum OrderType {
+  ORDER_TYPE_UNSPECIFIED = 0;
+  ORDER_TYPE_MARKET = 1;
+  ORDER_TYPE_LIMIT = 2;
+  ORDER_TYPE_STOP = 3;
+  ORDER_TYPE_STOP_LIMIT = 4;
+  ORDER_TYPE_TRAILING_STOP = 5;
+}
+
+// Order state lifecycle
+enum OrderState {
+  ORDER_STATE_UNSPECIFIED = 0;
+  ORDER_STATE_DRAFT = 1;        // Created but not submitted
+  ORDER_STATE_PENDING = 2;      // Submitted, awaiting acceptance
+  ORDER_STATE_ACCEPTED = 3;     // Accepted by broker
+  ORDER_STATE_PARTIALLY_FILLED = 4;
+  ORDER_STATE_FILLED = 5;
+  ORDER_STATE_CANCELLED = 6;
+  ORDER_STATE_REJECTED = 7;
+  ORDER_STATE_EXPIRED = 8;
+}
+
+// Position state
+enum PositionState {
+  POSITION_STATE_UNSPECIFIED = 0;
+  POSITION_STATE_OPEN = 1;
+  POSITION_STATE_CLOSING = 2;
+  POSITION_STATE_CLOSED = 3;
+  POSITION_STATE_HEDGED = 4;
+}
+
+// Trading session state
+enum TradingMode {
+  TRADING_MODE_UNSPECIFIED = 0;
+  TRADING_MODE_BACKTEST = 1;
+  TRADING_MODE_PAPER = 2;
+  TRADING_MODE_LIVE = 3;
+  TRADING_MODE_SHADOW = 4;  // Live analysis, no execution
+}
+
+// Correlation context for distributed tracing
+message CorrelationContext {
+  UUID trace_id = 1;      // Root request ID
+  UUID span_id = 2;       // Current operation ID
+  bool sampled = 3;       // Whether to sample this trace
+  map<string, string> baggage = 4;  // Cross-service context
+}
+
+// Generic metadata for extensibility
+message Metadata {
+  map<string, string> string_values = 1;
+  map<string, bytes> binary_values = 2;
+  map<string, int64> numeric_values = 3;
+}
+
+// Empty message for void responses
+message Empty {}
+
+// Pagination parameters for list operations
+message Pagination {
+  uint32 page_size = 1;
+  string page_token = 2;  // Opaque cursor
+}
+
+// Pagination response info
+message PageInfo {
+  uint32 total_count = 1;
+  string next_page_token = 2;
+  string previous_page_token = 3;
+  bool has_more = 4;
+}
+
+// Result wrapper for fallible operations
+// Success: ok = true, error empty
+// Failure: ok = false, error populated
+message Result {
+  bool ok = 1;
+  Error error = 2;
+}
+
+// Structured error information
+message Error {
+  string code = 1;           // Machine-readable error code
+  string message = 2;        // Human-readable description
+  ErrorSeverity severity = 3;
+  map<string, string> details = 4;
+  repeated Error causes = 5; // Nested error chain
+}
+
+enum ErrorSeverity {
+  ERROR_SEVERITY_UNSPECIFIED = 0;
+  ERROR_SEVERITY_DEBUG = 1;
+  ERROR_SEVERITY_INFO = 2;
+  ERROR_SEVERITY_WARNING = 3;
+  ERROR_SEVERITY_ERROR = 4;
+  ERROR_SEVERITY_FATAL = 5;
+}
+
+// Validation result for input checking
+message ValidationResult {
+  bool valid = 1;
+  repeated ValidationError errors = 2;
+}
+
+message ValidationError {
+  string field = 1;
+  string message = 2;
+  string code = 3;
+}
+
+// Geographic/legal jurisdiction for compliance
+message Jurisdiction {
+  string country_code = 1;   // ISO 3166-1 alpha-2
+  string region = 2;         // State/province code
+  string regulatory_body = 3; // e.g., "SEC", "FCA", "ASIC"
+}

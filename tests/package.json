@@ -1,0 +1,26 @@
+{
+  "name": "@apex-v3/tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "@apex-v3/events": "workspace:*",
+    "@testcontainers/postgresql": "^10.9.0",
+    "@testcontainers/redis": "^10.9.0",
+    "testcontainers": "^10.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

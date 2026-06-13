@@ -1,0 +1,509 @@
+syntax = "proto3";
+
+package apex.analytics;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/analytics";
+option rust_package = "apex_protos::analytics";
+option java_package = "com.apex.v3.analytics";
+option java_multiple_files = true;
+
+// Analytics Engine Service
+service AnalyticsEngine {
+  // Get performance report
+  rpc GetPerformanceReport(PerformanceQuery) returns (PerformanceReport);
+
+  // Get trade statistics
+  rpc GetTradeStatistics(TradeStatsQuery) returns (TradeStatistics);
+
+  // Get drawdown analysis
+  rpc GetDrawdownAnalysis(DrawdownQuery) returns (DrawdownAnalysis);
+
+  // Get equity curve
+  rpc GetEquityCurve(EquityCurveQuery) returns (EquityCurve);
+
+  // Calculate strategy metrics
+  rpc CalculateMetrics(MetricsQuery) returns (StrategyMetrics);
+
+  // Generate monthly returns
+  rpc GetMonthlyReturns(MonthlyReturnsQuery) returns (MonthlyReturns);
+
+  // Monte Carlo simulation
+  rpc RunMonteCarlo(MonteCarloRequest) returns (MonteCarloResults);
+
+  // Health check
+  rpc Health(common.Empty) returns (common.Result);
+}
+
+// Performance reporting
+message PerformanceQuery {
+  string strategy_id = 1;
+  common.Timestamp from = 2;
+  common.Timestamp to = 3;
+  string benchmark_symbol = 4;
+  bool include_trades = 5;
+}
+
+message PerformanceReport {
+  string report_id = 1;
+  string strategy_id = 2;
+  ReportPeriod period = 3;
+
+  // Return metrics
+  ReturnMetrics returns = 4;
+
+  // Risk metrics
+  RiskMetrics risk = 5;
+
+  // Trade metrics
+  TradeMetrics trades = 6;
+
+  // Time metrics
+  TimeAnalytics time = 7;
+
+  // Benchmark comparison
+  BenchmarkComparison benchmark = 8;
+
+  // Distribution metrics
+  DistributionMetrics distribution = 9;
+
+  // Period breakdown
+  repeated PeriodPerformance periods = 10;
+}
+
+message ReportPeriod {
+  common.Timestamp start = 1;
+  common.Timestamp end = 2;
+  uint32 trading_days = 3;
+  uint32 calendar_days = 4;
+}
+
+message ReturnMetrics {
+  common.Decimal total_return = 1;
+  common.Decimal annualized_return = 2;
+  common.Decimal cagr = 3;             // Compound annual growth rate
+  common.Decimal daily_average_return = 4;
+  common.Decimal weekly_average_return = 5;
+  common.Decimal monthly_average_return = 6;
+  common.Decimal return_volatility = 7;
+  common.Decimal annualized_volatility = 8;
+}
+
+message RiskMetrics {
+  common.Decimal max_drawdown = 1;
+  common.Decimal max_drawdown_duration_days = 2;
+  common.Decimal average_drawdown = 3;
+  common.Decimal recovery_factor = 4;
+  common.Decimal volatility = 5;
+  common.Decimal downside_deviation = 6;
+  ValueAtRisk var = 7;
+  common.Decimal expected_shortfall = 8;
+  common.Decimal calmar_ratio = 9;
+  common.Decimal sterling_ratio = 10;
+  common.Decimal ulcer_index = 11;
+  uint32 ulcer_performance_index = 12;
+}
+
+message ValueAtRisk {
+  common.Decimal var_95 = 1;
+  common.Decimal var_99 = 2;
+  string method = 3;                   // "historical", "parametric", "monte_carlo"
+}
+
+message TradeMetrics {
+  uint32 total_trades = 1;
+  uint32 winning_trades = 2;
+  uint32 losing_trades = 3;
+  uint32 break_even_trades = 4;
+  common.Decimal win_rate = 5;
+  common.Decimal loss_rate = 6;
+  common.Decimal profit_factor = 7;
+  common.Decimal payback_ratio = 8;
+  common.Decimal expectancy = 9;       // Expected value per trade
+  common.Decimal sqn = 10;             // System Quality Number (Van Tharp)
+
+  // Average metrics
+  common.Money average_trade = 11;
+  common.Money average_winner = 12;
+  common.Money average_loser = 13;
+  common.Decimal average_win_loss_ratio = 14;
+  common.Decimal largest_winner = 15;
+  common.Decimal largest_loser = 16;
+
+  // Streak analysis
+  StreakAnalysis streaks = 17;
+  ConsecutiveAnalysis consecutive = 18;
+}
+
+message StreakAnalysis {
+  uint32 max_consecutive_wins = 1;
+  uint32 max_consecutive_losses = 2;
+  common.Decimal win_streak_average = 3;
+  common.Decimal loss_streak_average = 4;
+}
+
+message ConsecutiveAnalysis {
+  common.Decimal prob_consecutive_3_losses = 1;
+  common.Decimal prob_consecutive_5_losses = 2;
+  common.Decimal prob_consecutive_10_losses = 3;
+}
+
+message TimeAnalytics {
+  common.Duration average_trade_duration = 1;
+  common.Duration median_trade_duration = 2;
+  common.Duration longest_trade_duration = 3;
+  common.Duration shortest_trade_duration = 4;
+
+  // By session
+  SessionPerformance session_performance = 5;
+
+  // By day of week
+  repeated DayOfWeekPerformance day_performance = 6;
+}
+
+message SessionPerformance {
+  string best_session = 1;
+  common.Decimal asian_session_return = 2;
+  common.Decimal london_session_return = 3;
+  common.Decimal new_york_session_return = 4;
+  common.Decimal overlap_session_return = 5;
+}
+
+message DayOfWeekPerformance {
+  string day = 1;
+  common.Decimal return_percent = 2;
+  uint32 trade_count = 3;
+  common.Decimal win_rate = 4;
+}
+
+message BenchmarkComparison {
+  string benchmark_symbol = 1;
+  common.Decimal benchmark_return = 2;
+  common.Decimal excess_return = 3;    // Alpha
+  common.Decimal beta = 4;
+  common.Decimal alpha_annualized = 5;
+  InformationRatio ir = 6;
+  TrackingError tracking_error = 7;
+  common.Decimal up_capture = 8;
+  common.Decimal down_capture = 9;
+  common.Decimal correlation = 10;
+  common.Decimal r_squared = 11;
+  common.Decimal treynor_ratio = 12;
+  common.Decimal appraisal_ratio = 13;
+}
+
+message InformationRatio {
+  common.Decimal value = 1;
+  common.Decimal tracking_error = 2;
+  common.Decimal annualized = 3;
+}
+
+message TrackingError {
+  common.Decimal value = 1;
+  common.Decimal annualized = 2;
+}
+
+message DistributionMetrics {
+  // Return distribution
+  Skewness skewness = 1;
+  Kurtosis kurtosis = 2;
+
+  // Percentiles
+  Percentiles returns = 3;
+
+  // Histogram buckets
+  repeated HistogramBucket histogram = 4;
+}
+
+message Skewness {
+  common.Decimal value = 1;
+  string interpretation = 2;
+}
+
+message Kurtosis {
+  common.Decimal value = 1;
+  common.Decimal excess = 2;
+  string interpretation = 3;
+}
+
+message Percentiles {
+  common.Decimal p1 = 1;
+  common.Decimal p5 = 2;
+  common.Decimal p10 = 3;
+  common.Decimal p25 = 4;
+  common.Decimal p50 = 5;              // Median
+  common.Decimal p75 = 6;
+  common.Decimal p90 = 7;
+  common.Decimal p95 = 8;
+  common.Decimal p99 = 9;
+}
+
+message HistogramBucket {
+  common.Decimal lower_bound = 1;
+  common.Decimal upper_bound = 2;
+  uint32 count = 3;
+  common.Decimal frequency = 4;
+}
+
+message PeriodPerformance {
+  string period = 1;                   // "2024-01", "2024-W01", etc.
+  common.Decimal return = 2;
+  uint32 trades = 3;
+  common.Decimal win_rate = 4;
+  common.Money pnl = 5;
+  common.Decimal max_drawdown = 6;
+}
+
+// Trade statistics query
+message TradeStatsQuery {
+  string strategy_id = 1;
+  string symbol = 2;
+  common.Timeframe timeframe = 3;
+  common.Timestamp from = 4;
+  common.Timestamp to = 5;
+  string group_by = 6;                 // "symbol", "month", "setup", etc.
+}
+
+message TradeStatistics {
+  string strategy_id = 1;
+  uint32 total_trades = 2;
+  repeated TradeGroup groups = 3;
+  SymbolStats best_symbol = 4;
+  SymbolStats worst_symbol = 5;
+}
+
+message TradeGroup {
+  string group_key = 1;                // e.g., symbol code, month, etc.
+  uint32 trade_count = 2;
+  uint32 wins = 3;
+  uint32 losses = 4;
+  common.Decimal win_rate = 5;
+  common.Money gross_profit = 6;
+  common.Money gross_loss = 7;
+  common.Money net_pnl = 8;
+  common.Decimal profit_factor = 9;
+  common.Decimal average_pnl = 10;
+  common.Decimal return_percent = 11;
+  common.Decimal max_drawdown = 12;
+}
+
+message SymbolStats {
+  common.Symbol symbol = 1;
+  uint32 trades = 2;
+  common.Decimal win_rate = 3;
+  common.Money net_pnl = 4;
+}
+
+// Drawdown analysis
+message DrawdownQuery {
+  string strategy_id = 1;
+  common.Timestamp from = 2;
+  common.Timestamp to = 3;
+  bool include_recovery = 4;
+}
+
+message DrawdownAnalysis {
+  string strategy_id = 1;
+  DrawdownSummary summary = 2;
+  repeated DrawdownPeriod periods = 3;
+  RecoveryAnalysis recovery = 4;
+}
+
+message DrawdownSummary {
+  common.Decimal absolute_max_drawdown = 1;
+  common.Timestamp max_drawdown_date = 2;
+  common.Decimal time_weighted_max_drawdown = 3;
+  common.Decimal average_drawdown = 4;
+  common.Decimal average_drawdown_duration = 5;
+  common.Decimal max_consecutive_losing_months = 6;
+}
+
+message DrawdownPeriod {
+  string drawdown_id = 1;
+  common.Timestamp start_date = 2;
+  common.Timestamp trough_date = 3;
+  common.Timestamp end_date = 4;
+  common.Decimal max_drawdown = 5;
+  common.Timestamp recovery_date = 6;
+  uint32 duration_days = 7;
+  uint32 recovery_days = 8;
+  common.Money peak_equity = 9;
+  common.Money trough_equity = 10;
+  common.Money recovery_equity = 11;
+}
+
+message RecoveryAnalysis {
+  common.Decimal average_recovery_days = 1;
+  common.Decimal max_recovery_days = 2;
+  common.Decimal median_recovery_days = 3;
+  common.Decimal recovery_rate = 4;
+}
+
+// Equity curve
+message EquityCurveQuery {
+  string strategy_id = 1;
+  common.Timestamp from = 2;
+  common.Timestamp to = 3;
+  TimeAggregation aggregation = 4;
+}
+
+enum TimeAggregation {
+  AGGREGATION_UNSPECIFIED = 0;
+  AGGREGATION_TICK = 1;
+  AGGREGATION_TRADE = 2;
+  AGGREGATION_HOUR = 3;
+  AGGREGATION_DAY = 4;
+  AGGREGATION_WEEK = 5;
+  AGGREGATION_MONTH = 6;
+}
+
+message EquityCurve {
+  string strategy_id = 1;
+  common.Decimal starting_equity = 2;
+  common.Decimal ending_equity = 3;
+  repeated EquityPoint points = 4;
+}
+
+message EquityPoint {
+  common.Timestamp timestamp = 1;
+  common.Decimal equity = 2;
+  common.Decimal drawdown = 3;
+  common.Decimal total_return = 4;
+  bool is_trade_point = 5;
+  string trade_id = 6;
+}
+
+// Strategy metrics
+message MetricsQuery {
+  string strategy_id = 1;
+  MetricSet requested_metrics = 2;
+}
+
+message MetricSet {
+  bool return_based = 1;
+  bool risk_based = 2;
+  bool trade_based = 3;
+  bool time_based = 4;
+  bool benchmark = 5;
+}
+
+message StrategyMetrics {
+  string strategy_id = 1;
+  common.Timestamp calculated_at = 2;
+
+  // Risk-adjusted returns
+  common.Decimal sharpe_ratio = 3;
+  common.Decimal sortino_ratio = 4;
+  common.Decimal omega_ratio = 5;
+  common.Decimal kappa_ratio = 6;
+
+  // Drawdown adjusted
+  common.Decimal calmar_ratio = 7;
+  common.Decicalmar_ratio sterling = 8;
+  common.Decimal burke_ratio = 9;
+
+  // Tail risk
+  common.Decimal tail_ratio = 10;
+  common.Decimal common.senic_ratio = 11;
+  common.Decimal pain_ratio = 12;
+
+  // Regime metrics
+  common.Decimal up_capture_ratio = 13;
+  common.Decimal down_capture_ratio = 14;
+  common.Decimal up_number_ratio = 15;
+  common.Decimal down_number_ratio = 16;
+}
+
+// Monthly returns
+message MonthlyReturnsQuery {
+  string strategy_id = 1;
+  int32 year = 2;
+  bool include_ytd = 3;
+}
+
+message MonthlyReturns {
+  string strategy_id = 1;
+  int32 year = 2;
+  repeated MonthlyReturn months = 3;
+  MonthlyReturn ytd = 4;
+  MonthlyReturnStatistics stats = 5;
+}
+
+message MonthlyReturn {
+  string month = 1;
+  common.Decimal return_percent = 2;
+  common.Decimal cumulative_return = 3;
+  uint32 trade_count = 4;
+  bool positive = 5;
+}
+
+message MonthlyReturnStatistics {
+  common.Decimal best_month = 1;
+  common.Decimal worst_month = 2;
+  common.Decimal average_month = 3;
+  common.Decimal monthly_volatility = 4;
+  common.Decimal profitable_months_percent = 5;
+  common.Decimal average_positive_month = 6;
+  common.Decimal average_negative_month = 7;
+}
+
+// Monte Carlo simulation
+message MonteCarloRequest {
+  string strategy_id = 1;
+  int32 simulations = 2;
+  int32 trades_per_simulation = 3;
+  common.Decimal initial_capital = 4;
+  MonteCarloMethod method = 5;
+  bool use_bootstrap = 6;
+  int32 bootstrap_sample_size = 7;
+}
+
+enum MonteCarloMethod {
+  METHOD_UNSPECIFIED = 0;
+  METHOD_RANDOMIZE = 1;                // Randomize trade sequence
+  METHOD_BOOTSTRAP = 2;                // Bootstrap resampling
+  METHOD_BLOCK_BOOTSTRAP = 3;          // Block bootstrap (preserve autocorrelation)
+  METHOD_PERMUTATION = 4;              // Permutation test
+}
+
+message MonteCarloResults {
+  string strategy_id = 1;
+  int32 simulations_run = 2;
+  MonteCarloDistribution terminal_equity = 3;
+  MonteCarloDistribution max_drawdown = 4;
+  MonteCarloDistribution profit = 5;
+  RiskOfRuin risk_of_ruin = 6;
+  ConfidenceIntervals confidence = 7;
+  repeated MonteCarloScenario scenarios = 8;
+}
+
+message MonteCarloDistribution {
+  common.Decimal mean = 1;
+  common.Decimal median = 2;
+  common.Decimal std_dev = 3;
+  common.Decimal skewness = 4;
+  common.Decimal kurtosis = 5;
+  Percentiles percentiles = 6;
+}
+
+message RiskOfRuin {
+  common.Decimal probability = 1;      // Probability of drawdown exceeding threshold
+  common.Decimal ruin_threshold = 2;   // e.g., 50% drawdown
+  int32 median_time_to_ruin = 3;
+}
+
+message ConfidenceIntervals {
+  common.Decimal ci_95_low = 1;
+  common.Decimal ci_95_high = 2;
+  common.Decimal ci_99_low = 3;
+  common.Decimal ci_99_high = 4;
+}
+
+message MonteCarloScenario {
+  string scenario_id = 1;
+  common.Decimal terminal_equity = 2;
+  common.Decimal max_drawdown = 3;
+  common.Decimal total_return = 4;
+  int32 percentile = 5;
+}

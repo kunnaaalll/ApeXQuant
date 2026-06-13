@@ -1,0 +1,401 @@
+syntax = "proto3";
+
+package apex.learning;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/learning";
+option rust_package = "apex_protos::learning";
+option java_package = "com.apex.v3.learning";
+option java_multiple_files = true;
+
+// Learning Engine Service
+service LearningEngine {
+  // Record a lesson from trade outcome
+  rpc RecordLesson(Lesson) returns (RecordLessonResponse);
+
+  // Get lessons for analysis
+  rpc GetLessons(LessonQuery) returns (LessonCollection);
+
+  // Update model weights
+  rpc UpdateWeights(WeightUpdateRequest) returns (WeightUpdateResponse);
+
+  // Get current model weights
+  rpc GetWeights(WeightsQuery) returns (ModelWeights);
+
+  // Start training run
+  rpc StartTraining(TrainingRequest) returns (TrainingRun);
+
+  // Get training status
+  rpc GetTrainingStatus(TrainingQuery) returns (TrainingStatus);
+
+  // Get model performance
+  rpc GetModelPerformance(PerformanceQuery) returns (ModelPerformance);
+
+  // Health check
+  rpc Health(common.Empty) returns (common.Result);
+}
+
+// Lesson recording
+message Lesson {
+  string lesson_id = 1;
+  string position_id = 2;
+  string signal_id = 3;
+
+  // Classification
+  LessonType type = 4;
+  LessonCategory category = 5;
+  double severity = 6;                 // 0.0 to 1.0
+
+  // Market context
+  common.Symbol symbol = 7;
+  common.Timeframe timeframe = 8;
+  string market_regime = 9;
+
+  // Entry context
+  EntryContext entry = 10;
+
+  // Outcome
+  TradeOutcome outcome = 11;
+
+  // Analysis
+  PostTradeAnalysis analysis = 12;
+
+  // Features at time of trade
+  FeatureVector features = 13;
+
+  // Future owner annotations
+  repeated string tags = 14;
+  string notes = 15;
+
+  // Metadata
+  common.Timestamp created_at = 16;
+  string created_by = 17;
+  common.CorrelationContext correlation = 18;
+}
+
+enum LessonType {
+  LESSON_TYPE_UNSPECIFIED = 0;
+  LESSON_TYPE_SUCCESS = 1;
+  LESSON_TYPE_FAILURE = 2;
+  LESSON_TYPE_ANOMALY = 3;
+  LESSON_TYPE_NEAR_MISS = 4;
+}
+
+enum LessonCategory {
+  LESSON_CATEGORY_UNSPECIFIED = 0;
+  LESSON_CATEGORY_ENTRY_TIMING = 1;
+  LESSON_CATEGORY_STOP_PLACEMENT = 2;
+  LESSON_CATEGORY_RISK_MANAGEMENT = 3;
+  LESSON_CATEGORY_POSITION_SIZING = 4;
+  LESSON_CATEGORY_TRADE_MANAGEMENT = 5;
+  LESSON_CATEGORY_MARKET_CONDITIONS = 6;
+  LESSON_CATEGORY_SIGNAL_QUALITY = 7;
+  LESSON_CATEGORY_EXECUTION = 8;
+  LESSON_CATEGORY_PSYCHOLOGY = 9;
+}
+
+message EntryContext {
+  common.Price entry_price = 1;
+  common.Price stop_loss = 2;
+  common.Price take_profit = 3;
+  common.Volume position_size = 4;
+  common.Money risk_amount = 5;
+  common.Decimal risk_reward_ratio = 6;
+  double signal_score = 7;
+  repeated string confluence_factors = 8;
+  string setup_type = 9;
+}
+
+message TradeOutcome {
+  common.Price exit_price = 1;
+  common.Timestamp exit_time = 2;
+  common.Duration holding_duration = 3;
+  common.Money gross_pnl = 4;
+  common.Money net_pnl = 5;
+  common.Percentage return_percent = 6;
+  string exit_reason = 7;
+  common.Decimal max_adverse_excursion = 8;
+  common.Decimal max_favorable_excursion = 9;
+  bool hit_take_profit = 10;
+  bool hit_stop_loss = 11;
+}
+
+message PostTradeAnalysis {
+  common.Decimal entry_efficiency = 1;   // How close to optimal
+  common.Decimal exit_efficiency = 2;
+  string recommended_improvement = 3;
+  bool was_predictable = 4;
+  repeated string missed_signals = 5;
+  double hindsight_confidence = 6;
+}
+
+message FeatureVector {
+  map<string, double> numeric_features = 1;
+  map<string, string> categorical_features = 2;
+  map<string, bool> boolean_features = 3;
+
+  // Pre-computed derived features
+  common.Decimal trend_strength = 4;
+  common.Decimal volatility_regime = 5;
+  common.Decimal session_quality = 6;
+  common.Decimal structural_context = 7;
+}
+
+message RecordLessonResponse {
+  bool success = 1;
+  string lesson_id = 2;
+  double predicted_value = 3;          // Model prediction vs actual
+  common.Error error = 4;
+}
+
+// Lesson queries
+message LessonQuery {
+  string strategy_id = 1;
+  repeated LessonType types = 2;
+  repeated LessonCategory categories = 3;
+  common.Symbol symbol = 4;
+  common.Timeframe timeframe = 5;
+  common.Timestamp from = 6;
+  common.Timestamp to = 7;
+  repeated string tags = 8;
+  double min_severity = 9;
+  common.Pagination pagination = 10;
+}
+
+message LessonCollection {
+  repeated Lesson lessons = 1;
+  LessonStatistics stats = 2;
+  common.PageInfo page_info = 3;
+}
+
+message LessonStatistics {
+  uint32 total = 1;
+  uint32 successes = 2;
+  uint32 failures = 3;
+  uint32 anomalies = 4;
+  double average_severity = 5;
+  map<string, uint32> by_category = 6;
+  map<string, uint32> by_symbol = 7;
+}
+
+// Model weights
+message WeightUpdateRequest {
+  string model_id = 1;
+  repeated WeightFactor updates = 2;
+  string update_reason = 3;
+  common.Timestamp effective_at = 4;
+}
+
+message WeightFactor {
+  string factor_name = 1;
+  double previous_value = 2;
+  double new_value = 3;
+  common.Decimal confidence = 4;
+  string reasoning = 5;
+}
+
+message WeightUpdateResponse {
+  bool accepted = 1;
+  string model_id = 2;
+  uint32 version = 3;
+  ModelValidationResult validation = 4;
+  common.Error error = 5;
+}
+
+message ModelValidationResult {
+  bool passed = 1;
+  double out_of_sample_score = 2;
+  double in_sample_score = 3;
+  double backtest_improvement = 4;
+  common.Decimal max_drawdown_impact = 5;
+  repeated string warnings = 6;
+}
+
+message WeightsQuery {
+  string model_id = 1;
+  string version = 2;                    // "latest", "stable", specific version
+}
+
+message ModelWeights {
+  string model_id = 1;
+  string version = 2;
+  common.Timestamp created_at = 3;
+  string derived_from = 4;               // Parent version
+  repeated WeightFactor weights = 5;
+  ModelMetadata metadata = 6;
+}
+
+message ModelMetadata {
+  string training_run_id = 1;
+  common.Timestamp trained_at = 2;
+  uint64 training_samples = 3;
+  double accuracy = 4;
+  double f1_score = 5;
+  double auc_roc = 6;
+  common.Decimal validation_return = 7;
+  common.Decimal validation_drawdown = 8;
+}
+
+// Training
+message TrainingRequest {
+  string model_id = 1;
+  string base_version = 2;               // Start from this version
+  TrainingConfiguration config = 3;
+  DatasetSpec dataset = 4;
+}
+
+message TrainingConfiguration {
+  string algorithm = 1;                  // "gradient_boosting", "neural_network", etc.
+  map<string, string> hyperparameters = 2;
+  uint32 max_epochs = 3;
+  common.Decimal early_stopping_tolerance = 4;
+  ValidationSpec validation = 5;
+}
+
+message ValidationSpec {
+  string method = 1;                     // "time_series_split", "walk_forward"
+  uint32 folds = 2;
+  common.Decimal test_size = 3;
+  bool purge_length = 4;                 // Remove overlap between train/test
+}
+
+message DatasetSpec {
+  common.Timestamp from = 1;
+  common.Timestamp to = 2;
+  repeated string symbols = 3;
+  repeated string strategies = 4;
+  double min_signal_confidence = 5;
+  bool balance_classes = 6;
+}
+
+message TrainingRun {
+  string run_id = 1;
+  string model_id = 2;
+  TrainingState state = 3;
+  common.Timestamp started_at = 4;
+  string estimated_duration = 5;
+  TrainingProgress initial_progress = 6;
+}
+
+enum TrainingState {
+  STATE_UNSPECIFIED = 0;
+  STATE_QUEUED = 1;
+  STATE_RUNNING = 2;
+  STATE_VALIDATING = 3;
+  STATE_COMPLETED = 4;
+  STATE_FAILED = 5;
+  STATE_CANCELLED = 6;
+}
+
+message TrainingProgress {
+  uint32 completed_epochs = 1;
+  uint32 total_epochs = 2;
+  double loss = 3;
+  double validation_accuracy = 4;
+  double best_validation_score = 5;
+  common.Timestamp updated_at = 6;
+  string status_message = 7;
+}
+
+message TrainingQuery {
+  string run_id = 1;
+}
+
+message TrainingStatus {
+  string run_id = 1;
+  string model_id = 2;
+  TrainingState state = 3;
+  TrainingProgress progress = 4;
+  common.Timestamp started_at = 5;
+  common.Timestamp completed_at = 6;
+  TrainingResults results = 7;
+  common.Error error = 8;
+}
+
+message TrainingResults {
+  double final_accuracy = 1;
+  double final_loss = 2;
+  double test_accuracy = 3;
+  ConfusionMatrix confusion_matrix = 4;
+  repeated FeatureImportance feature_importance = 5;
+  ROCMetrics roc_metrics = 6;
+}
+
+message ConfusionMatrix {
+  uint32 true_positives = 1;
+  uint32 false_positives = 2;
+  uint32 true_negatives = 3;
+  uint32 false_negatives = 4;
+  double precision = 5;
+  double recall = 6;
+  double f1_score = 7;
+}
+
+message FeatureImportance {
+  string feature_name = 1;
+  double importance = 2;
+  double std_dev = 3;
+}
+
+message ROCMetrics {
+  double auc = 1;
+  double optimal_threshold = 2;
+  double sensitivity_at_threshold = 3;
+  double specificity_at_threshold = 4;
+}
+
+// Performance query
+message PerformanceQuery {
+  string model_id = 1;
+  string version = 2;
+  common.Timestamp from = 3;
+  common.Timestamp to = 4;
+}
+
+message ModelPerformance {
+  string model_id = 1;
+  string version = 2;
+  PerformanceSummary overall = 3;
+  repeated RegimePerformance by_regime = 4;
+  repeated TimeframePerformance by_timeframe = 5;
+  DecayAnalysis decay = 6;
+}
+
+message PerformanceSummary {
+  uint32 predictions_made = 1;
+  uint32 correct_predictions = 2;
+  common.Decimal accuracy = 3;
+  common.Decimal precision = 4;
+  common.Decimal recall = 5;
+  common.Decimal f1_score = 6;
+  common.Decimal log_loss = 7;
+
+  // Calibration
+  CalibrationMetrics calibration = 8;
+}
+
+message CalibrationMetrics {
+  common.Decimal expected_calibration_error = 1;
+  common.Decimal maximum_calibration_error = 2;
+  bool well_calibrated = 3;
+}
+
+message RegimePerformance {
+  string regime = 1;
+  uint32 samples = 2;
+  common.Decimal accuracy = 3;
+  common.Decimal expected_return = 4;
+}
+
+message TimeframePerformance {
+  string timeframe = 1;
+  uint32 samples = 2;
+  common.Decimal accuracy = 3;
+}
+
+message DecayAnalysis {
+  common.Decimal half_life_days = 1;
+  bool requires_retraining = 2;
+  string recommended_action = 3;
+}

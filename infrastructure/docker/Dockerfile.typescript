@@ -1,0 +1,124 @@
+# ============================================
+# APEX V3 TypeScript Application Dockerfile
+# ============================================
+# Multi-stage build for optimized production image
+
+ARG NODE_VERSION=20
+ARG APP
+
+# ---------------- Dependencies Stage ----------------
+FROM node:${NODE_VERSION}-alpine AS deps
+
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml turbo.json tsconfig.json ./
+COPY apps/${APP}/package.json ./apps/${APP}/
+COPY shared/contracts/package.json ./shared/contracts/
+COPY shared/events/package.json ./shared/events/
+COPY storage/postgres/package.json ./storage/postgres/
+COPY storage/redis/package.json ./storage/redis/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --filter=@apex-v3/${APP} --filter=@apex-v3/contracts --filter=@apex-v3/events
+
+# ---------------- Builder Stage ----------------
+FROM node:${NODE_VERSION}-alpine AS builder
+
+ARG APP
+ENV APP=${APP}
+
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/${APP}/node_modules ./apps/${APP}/node_modules
+
+# Copy workspace
+COPY package.json pnpm-workspace.yaml turbo.json tsconfig.json ./
+COPY apps/${APP} ./apps/${APP}
+COPY shared ./shared
+COPY storage ./storage
+
+# Build the application
+RUN pnpm turbo build --filter=@apex-v3/${APP}
+
+# Prune dev dependencies for production
+RUN pnpm prune --prod
+
+# ---------------- Production Stage ----------------
+FROM node:${NODE_VERSION}-alpine AS production
+
+ARG APP
+ENV APP=${APP}
+ENV NODE_ENV=production
+ENV PORT=3000
+
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Install only production dependencies
+RUN apk add --no-cache --virtual .build-deps \
+    python3 \
+    make \
+    g++ \
+    && true
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml ./
+COPY apps/${APP}/package.json ./apps/${APP}/
+COPY shared/contracts/package.json ./shared/contracts/
+COPY shared/events/package.json ./shared/events/
+
+# Install production dependencies
+RUN pnpm install --prod --ignore-scripts
+
+# Remove build dependencies
+RUN apk del .build-deps
+
+# Copy built application
+COPY --from=builder /app/apps/${APP}/dist ./apps/${APP}/dist
+COPY --from=builder /app/shared/contracts/dist ./shared/contracts/dist
+COPY --from=builder /app/shared/events/dist ./shared/events/dist
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
+
+# Expose port
+EXPOSE ${PORT}
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
+
+# Start application
+CMD ["node", "apps/${APP}/dist/index.js"]
+
+# ---------------- Development Stage (optional) ----------------
+FROM node:${NODE_VERSION}-alpine AS development
+
+ARG APP
+ENV APP=${APP}
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY . .
+
+RUN pnpm install
+
+CMD ["pnpm", "dev", "--filter=@apex-v3/${APP}"]

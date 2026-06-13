@@ -1,0 +1,415 @@
+syntax = "proto3";
+
+package apex.position;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/position";
+option rust_package = "apex_protos::position";
+option java_package = "com.apex.v3.position";
+option java_multiple_files = true;
+
+// Position Engine Service
+service PositionEngine {
+  // Open a new position
+  rpc OpenPosition(OpenPositionRequest) returns (OpenPositionResponse);
+
+  // Close a position (fully or partially)
+  rpc ClosePosition(ClosePositionRequest) returns (ClosePositionResponse);
+
+  // Modify SL/TP on a position
+  rpc ModifyStops(ModifyStopsRequest) returns (ModifyStopsResponse);
+
+  // Get position details
+  rpc GetPosition(PositionQuery) returns (Position);
+
+  // List positions
+  rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse);
+
+  // Stream position updates
+  rpc SubscribePositionUpdates(PositionFilter) returns (stream PositionUpdate);
+
+  // Set breakeven
+  rpc SetBreakeven(BreakevenRequest) returns (PositionActionResponse);
+
+  // Enable trailing stop
+  rpc EnableTrailingStop(TrailingStopRequest) returns (PositionActionResponse);
+
+  // Partial close position
+  rpc PartialClose(PartialCloseRequest) returns (ClosePositionResponse);
+
+  // Health check
+  rpc Health(common.Empty) returns (common.Result);
+}
+
+// Open position request
+message OpenPositionRequest {
+  string request_id = 1;
+  common.Symbol symbol = 2;
+  common.TradeSide side = 3;
+  common.Volume volume = 4;
+
+  // Entry configuration
+  common.Price entry_price = 5;        // For pending orders, 0 for market
+  common.OrderType entry_order_type = 6;
+
+  // Stop configuration
+  common.Price stop_loss = 7;
+  common.Price take_profit = 8;
+
+  // Risk/Context
+  string signal_id = 9;
+  string strategy_id = 10;
+  string execution_order_id = 11;
+  common.Timeframe timeframe = 12;
+
+  // Active management preferences
+  PositionManagementPreferences management = 13;
+}
+
+message PositionManagementPreferences {
+  bool auto_breakeven = 1;
+  common.Decimal breakeven_trigger_atr = 2;  // Move to BE after this many ATRs profit
+  bool enable_trailing_stop = 3;
+  TrailingStopType trailing_type = 4;
+  common.Decimal trailing_distance_atr = 5;
+  repeated PartialCloseLevel partial_closes = 6;
+}
+
+enum TrailingStopType {
+  TRAILING_STOP_UNSPECIFIED = 0;
+  TRAILING_STOP_FIXED_ATR = 1;
+  TRAILING_STOP_PERCENTAGE = 2;
+  TRAILING_STOP_PRICE_BASED = 3;
+  TRAILING_STOP_PARABOLIC_SAR = 4;
+  TRAILING_STOP_CHANDELIER = 5;
+}
+
+message PartialCloseLevel {
+  common.Decimal trigger_atr_multiple = 1;   // Trigger at this ATR profit
+  common.Percentage close_percent = 2;       // Close this % of position
+  bool move_stop_to_breakeven = 3;
+  common.Decimal new_stop_atr_offset = 4;    // New SL offset from entry
+}
+
+message OpenPositionResponse {
+  string request_id = 1;
+  bool success = 2;
+  Position position = 3;
+  string execution_order_id = 4;
+  common.Timestamp opened_at = 5;
+  common.Error error = 6;
+}
+
+// Close position
+message ClosePositionRequest {
+  string position_id = 1;
+  CloseReason reason = 2;
+  string reason_detail = 3;
+  common.Price requested_exit_price = 4;  // 0 for market close
+}
+
+enum CloseReason {
+  CLOSE_REASON_UNSPECIFIED = 0;
+  CLOSE_REASON_TAKE_PROFIT = 1;
+  CLOSE_REASON_STOP_LOSS = 2;
+  CLOSE_REASON_TRAILING_STOP = 3;
+  CLOSE_REASON_MANUAL = 4;
+  CLOSE_REASON_SIGNAL_REVERSE = 5;
+  CLOSE_REASON_RISK_LIMIT = 6;
+  CLOSE_REASON_STRATEGY_EXIT = 7;
+  CLOSE_REASON_EXPIRED = 8;
+  CLOSE_REASON_HEDGE_CLOSE = 9;
+}
+
+message ClosePositionResponse {
+  bool success = 1;
+  Position position = 2;
+  PositionCloseResult result = 3;
+  common.Timestamp closed_at = 4;
+  common.Error error = 5;
+}
+
+// Position representation
+message Position {
+  // Identification
+  string position_id = 1;
+  string parent_position_id = 2;       // For partial closes, points to original
+
+  // Market info
+  common.Symbol symbol = 3;
+  common.TradeSide side = 4;
+
+  // Volume tracking
+  common.Volume initial_volume = 5;
+  common.Volume current_volume = 6;
+  common.Volume closed_volume = 7;
+
+  // Pricing
+  common.Price entry_price = 8;
+  common.Price current_price = 9;
+  common.Price exit_price = 10;
+  common.Price average_close_price = 11;
+
+  // SL/TP
+  common.Price stop_loss = 12;
+  common.Price take_profit = 13;
+  common.Price breakeven_price = 14;
+  common.Price trailing_stop_price = 15;
+
+  // P&L
+  common.Money unrealized_pnl = 16;
+  common.Money realized_pnl = 17;
+  common.Money commission_paid = 18;
+  common.Money swap_paid = 19;
+  common.Percentage return_percent = 20;
+
+  // Distance metrics
+  common.Decimal pips_from_entry = 21;
+  common.Decimal stop_distance_pips = 22;
+  common.Decimal tp_distance_pips = 23;
+  common.Decimal risk_reward_ratio = 24;
+
+  // State
+  PositionState state = 25;
+  bool is_breakeven = 26;
+  bool has_trailing_stop = 27;
+
+  // Timestamps
+  common.Timestamp opened_at = 28;
+  common.Timestamp last_modified_at = 29;
+  common.Timestamp closed_at = 30;
+
+  // Context
+  string signal_id = 31;
+  string strategy_id = 32;
+  string execution_order_id = 33;
+  common.Timeframe timeframe = 34;
+  string broker_position_id = 35;
+
+  // Current management status
+  ActiveManagementStatus management = 36;
+
+  // History
+  repeated PositionModification history = 37;
+}
+
+enum PositionState {
+  POSITION_STATE_UNSPECIFIED = 0;
+  POSITION_STATE_OPENING = 1;          // Order submitted, not filled
+  POSITION_STATE_OPEN = 2;             // Fully filled, active
+  POSITION_STATE_CLOSING = 3;          // Close order submitted
+  POSITION_STATE_PARTIAL_CLOSE = 4;    // Partially closed
+  POSITION_STATE_CLOSED = 5;
+  POSITION_STATE_CANCELLED = 6;        // Open cancelled before fill
+  POSITION_STATE_ERROR = 7;
+}
+
+message ActiveManagementStatus {
+  bool breakeven_triggered = 1;
+  common.Decimal atr_at_breakeven = 2;
+  repeated PartialCloseStatus partials_taken = 3;
+  common.Decimal trailing_stop_distance = 4;
+  common.Timestamp last_trailing_update = 5;
+}
+
+message PartialCloseStatus {
+  common.Timestamp executed_at = 1;
+  common.Volume volume_closed = 2;
+  common.Price close_price = 3;
+  common.Money realized_pnl = 4;
+}
+
+message PositionModification {
+  common.Timestamp modified_at = 1;
+  string modification_type = 2;
+  string field_changed = 3;
+  string old_value = 4;
+  string new_value = 5;
+  string reason = 6;
+}
+
+// Position close result
+message PositionCloseResult {
+  common.Timestamp opened_at = 1;
+  common.Timestamp closed_at = 2;
+  common.Duration holding_duration = 3;
+
+  common.Volume initial_volume = 4;
+  common.Volume closed_volume = 5;
+
+  common.Money gross_pnl = 6;
+  common.Money total_commission = 7;
+  common.Money total_swap = 8;
+  common.Money net_pnl = 9;
+  common.Percentage return_percent = 10;
+
+  // Performance metrics
+  common.Decimal max_adverse_excursion_pips = 11;
+  common.Decimal max_favorable_excursion_pips = 12;
+  common.Decimal stop_distance_at_entry = 13;
+  common.Decimal pnl_per_pip = 14;
+
+  // Quality metrics
+  common.Decimal entry_efficiency = 15;    // 1.0 = perfect entry
+  common.Decimal exit_efficiency = 16;     // 1.0 = perfect exit
+  common.Decimal trade_efficiency = 17;    // Overall score
+}
+
+// Modify stops
+message ModifyStopsRequest {
+  string position_id = 1;
+  optional common.Price new_stop_loss = 2;
+  optional common.Price new_take_profit = 3;
+  string reason = 4;
+  bool update_broker = 5;              // Sync to broker immediately
+}
+
+message ModifyStopsResponse {
+  bool success = 1;
+  Position position = 2;
+  StopModificationResult result = 3;
+  common.Error error = 4;
+}
+
+message StopModificationResult {
+  bool broker_updated = 1;
+  common.Timestamp broker_confirmed_at = 2;
+  common.Decimal risk_amount_changed = 3;
+  common.Decimal new_risk_reward = 4;
+}
+
+// Position query
+message PositionQuery {
+  string position_id = 1;
+  string broker_position_id = 2;
+}
+
+// List positions
+message ListPositionsRequest {
+  PositionStatusFilter status = 1;
+  common.Symbol symbol = 2;
+  common.Timeframe timeframe = 3;
+  string strategy_id = 4;
+  common.Timestamp from = 5;
+  common.Timestamp to = 6;
+  common.Pagination pagination = 7;
+}
+
+enum PositionStatusFilter {
+  STATUS_FILTER_UNSPECIFIED = 0;
+  STATUS_FILTER_ALL = 1;
+  STATUS_FILTER_OPEN = 2;
+  STATUS_FILTER_CLOSED = 3;
+  STATUS_FILTER_CLOSING = 4;
+}
+
+message ListPositionsResponse {
+  repeated Position positions = 1;
+  PositionSummary summary = 2;
+  common.PageInfo page_info = 3;
+}
+
+message PositionSummary {
+  uint32 total_positions = 1;
+  uint32 open_positions = 2;
+  common.Money total_unrealized_pnl = 3;
+  common.Money total_realized_pnl_today = 4;
+  common.Money total_exposure = 5;
+}
+
+// Stream filters
+message PositionFilter {
+  repeated string position_ids = 1;
+  common.Symbol symbol = 2;
+  PositionState state = 3;
+  bool price_updates = 4;              // P&L updates on price changes
+  bool state_updates = 5;              // Open/Close/Modify events
+}
+
+message PositionUpdate {
+  string position_id = 1;
+  common.Timestamp updated_at = 2;
+
+  oneof update {
+    PriceUpdate price = 3;
+    StateChange state = 4;
+    StopModified stops = 5;
+    PartialCloseUpdate partial = 6;
+    BreakevenTriggered be_triggered = 7;
+    TrailingStopAdjusted trailing = 8;
+  }
+}
+
+message PriceUpdate {
+  common.Price current_price = 1;
+  common.Money unrealized_pnl = 2;
+  common.Decimal pips_from_entry = 3;
+  common.Decimal return_percent = 4;
+}
+
+message StateChange {
+  PositionState old_state = 1;
+  PositionState new_state = 2;
+  string reason = 3;
+}
+
+message StopModified {
+  optional common.Price new_stop_loss = 1;
+  optional common.Price new_take_profit = 2;
+  string reason = 3;
+}
+
+message PartialCloseUpdate {
+  common.Volume volume_closed = 1;
+  common.Price close_price = 2;
+  common.Money realized_pnl = 3;
+  common.Volume remaining_volume = 4;
+}
+
+message BreakevenTriggered {
+  common.Timestamp triggered_at = 1;
+  common.Decimal profit_atr = 2;
+  common.Price new_stop = 3;
+}
+
+message TrailingStopAdjusted {
+  common.Price new_trailing_stop = 1;
+  common.Decimal trailing_distance = 2;
+  string trigger = 3;
+}
+
+// Breakeven request
+message BreakevenRequest {
+  string position_id = 1;
+  bool immediate = 2;                  // Move now vs at trigger
+  common.Decimal offset_pips = 3;      // Offset from entry (positive = profit)
+}
+
+// Trailing stop request
+message TrailingStopRequest {
+  string position_id = 1;
+  TrailingStopType type = 2;
+  common.Decimal distance = 3;         // Pips or percentage depending on type
+  common.Decimal step_size = 4;        // Minimum movement before adjustment
+}
+
+message PositionActionResponse {
+  bool success = 1;
+  Position position = 2;
+  string message = 3;
+  common.Error error = 4;
+}
+
+// Partial close
+message PartialCloseRequest {
+  string position_id = 1;
+  oneof close_amount {
+    common.Volume volume = 2;
+    common.Percentage percent = 3;
+  }
+  common.Price desired_price = 4;
+  string reason = 5;
+  bool modify_remaining_stops = 6;
+  common.Price new_stop_for_remaining = 7;
+}

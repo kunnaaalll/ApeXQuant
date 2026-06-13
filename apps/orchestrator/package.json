@@ -1,0 +1,38 @@
+{
+  "name": "@apex-v3/orchestrator",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 Orchestrator - Service coordination and workflow management",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "@apex-v3/events": "workspace:*",
+    "@grpc/grpc-js": "^1.10.0",
+    "@opentelemetry/api": "^1.8.0",
+    "dotenv": "^16.4.0",
+    "graphql": "^16.8.0",
+    "graphql-yoga": "^5.3.0",
+    "graphql-redis-subscriptions": "^2.6.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.0.0",
+    "prom-client": "^15.1.0",
+    "temporalio": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "tsx": "^4.10.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

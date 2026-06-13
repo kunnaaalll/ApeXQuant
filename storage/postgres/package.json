@@ -1,0 +1,29 @@
+{
+  "name": "@apex-v3/storage",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 PostgreSQL Storage - Migrations and ORM",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "migrate": "node dist/migrate.js",
+    "reset": "node dist/reset.js",
+    "seed": "node dist/seed.js",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "drizzle-orm": "^0.30.0",
+    "pg": "^8.11.0",
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.21.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

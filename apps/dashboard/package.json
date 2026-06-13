@@ -1,0 +1,40 @@
+{
+  "name": "@apex-v3/dashboard",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 Trading Dashboard - Real-time WebSocket UI",
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "@apex-v3/events": "workspace:*",
+    "@grpc/grpc-js": "^1.10.0",
+    "@opentelemetry/api": "^1.8.0",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "lightweight-charts": "^4.1.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "recharts": "^2.12.0",
+    "socket.io-client": "^4.7.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.4.0"
+  }
+}

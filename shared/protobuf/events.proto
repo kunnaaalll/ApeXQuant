@@ -1,0 +1,530 @@
+syntax = "proto3";
+
+package apex.events;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/events";
+option rust_package = "apex_protos::events";
+option java_package = "com.apex.v3.events";
+option java_multiple_files = true;
+
+// Event envelope - the universal container for all system events
+// Every event published to the bus is wrapped in this message
+message Event {
+  // Event envelope metadata
+  UUID event_id = 1;                    // Globally unique event ID
+  common.SemanticVersion spec_version = 2;  // Version of event schema
+  common.Timestamp occurred_at = 3;     // UTC timestamp of event occurrence
+  common.Timestamp published_at = 4;    // UTC timestamp of publication to bus
+
+  // Event type information
+  string event_type = 5;                // Fully qualified event type name
+  string source_service = 6;            // Service that emitted the event
+  string topic = 7;                     // Event bus topic/destination
+
+  // Tracing context
+  common.CorrelationContext correlation = 8;
+  string causation_id = 9;              // ID of event that caused this one
+
+  // Identifier for deduplication
+  string deduplication_key = 10;
+
+  // The actual event payload
+  oneof payload {
+    // Domain events - trade execution
+    ExecutionEvent execution = 100;
+    ExecutionOrderSubmittedEvent order_submitted = 101;
+    ExecutionOrderFilledEvent order_filled = 102;
+    ExecutionOrderRejectedEvent order_rejected = 103;
+    ExecutionOrderCancelledEvent order_cancelled = 104;
+
+    // Domain events - position management
+    PositionOpenedEvent position_opened = 200;
+    PositionModifiedEvent position_modified = 201;
+    PositionPartiallyClosedEvent position_partially_closed = 202;
+    PositionClosedEvent position_closed = 203;
+    PositionStopLossModifiedEvent position_sl_modified = 204;
+    PositionTakeProfitModifiedEvent position_tp_modified = 205;
+
+    // Domain events - risk management
+    RiskLimitBreachedEvent risk_limit_breached = 300;
+    RiskCheckPassedEvent risk_check_passed = 301;
+    RiskCheckFailedEvent risk_check_failed = 302;
+    DrawdownLimitReachedEvent drawdown_limit_reached = 303;
+
+    // Domain events - signals
+    SignalDetectedEvent signal_detected = 400;
+    SignalValidatedEvent signal_validated = 401;
+    SignalRejectedEvent signal_rejected = 402;
+    SignalExpiredEvent signal_expired = 403;
+
+    // Domain events - market data
+    MarketDataReceivedEvent market_data = 500;
+    CandleClosedEvent candle_closed = 501;
+    TickReceivedEvent tick_received = 502;
+
+    // Domain events - portfolio
+    PortfolioRebalancedEvent portfolio_rebalanced = 600;
+    AllocationUpdatedEvent allocation_updated = 601;
+
+    // System events
+    ServiceStartedEvent service_started = 1000;
+    ServiceStoppedEvent service_stopped = 1001;
+    ServiceHealthCheckEvent health_check = 1002;
+    ConfigurationChangedEvent config_changed = 1003;
+    SystemAlarmTriggeredEvent alarm_triggered = 1004;
+
+    // Learning events
+    ModelUpdatedEvent model_updated = 1100;
+    TrainingCompletedEvent training_completed = 1101;
+    LessonRecordedEvent lesson_recorded = 1102;
+  }
+
+  // Schema hash for integrity verification
+  bytes payload_hash = 999;
+}
+
+// Event stream subscription request
+message SubscribeRequest {
+  string consumer_group = 1;           // Consumer group for load balancing
+  string consumer_id = 2;              // Unique consumer instance ID
+  repeated string topics = 3;          // Topics to subscribe to (wildcards allowed)
+  StreamPosition start_from = 4;       // Where to start in stream
+  uint32 max_batch_size = 5;           // Max events per batch
+  common.Duration max_wait_ms = 6;     // Max time to wait before empty response
+
+  // Filter criteria
+  FilterExpression filter = 7;
+}
+
+// Starting position for stream consumption
+message StreamPosition {
+  oneof position {
+    string stream_id = 1;              // Resume from specific stream position
+    StartPosition from = 2;            // Named starting point
+  }
+}
+
+enum StartPosition {
+  START_POSITION_UNSPECIFIED = 0;
+  START_POSITION_EARLIEST = 1;         // Beginning of stream
+  START_POSITION_LATEST = 2;           // Only new events
+  START_POSITION_NOW_MINUS_HOUR = 3;
+  START_POSITION_NOW_MINUS_DAY = 4;
+  START_POSITION_NOW_MINUS_WEEK = 5;
+}
+
+// Filter expression for event selection
+message FilterExpression {
+  oneof expr {
+    string topic_pattern = 1;          // e.g., "market.data.*"
+    EventTypeFilter type_filter = 2;   // Match specific event types
+    TimeRangeFilter time_filter = 3;   // Match time range
+    SourceFilter source_filter = 4;    // Match emitting service
+    CompositeFilter composite = 5;     // Logical combinations
+  }
+}
+
+message EventTypeFilter {
+  repeated string include_types = 1;
+  bool match_prefix = 2;               // Match "execution.*" patterns
+}
+
+message TimeRangeFilter {
+  common.Timestamp from = 1;
+  common.Timestamp until = 2;
+}
+
+message SourceFilter {
+  repeated string services = 1;
+  repeated string exclude_services = 2;
+}
+
+message CompositeFilter {
+  FilterOperator operator = 1;
+  repeated FilterExpression operands = 2;
+}
+
+enum FilterOperator {
+  FILTER_OPERATOR_UNSPECIFIED = 0;
+  FILTER_OPERATOR_AND = 1;
+  FILTER_OPERATOR_OR = 2;
+  FILTER_OPERATOR_NOT = 3;
+}
+
+// Event batch response
+message EventBatch {
+  repeated Event events = 1;
+  string next_position = 2;            // Position for next batch
+  bool has_more = 3;
+  uint64 total_available = 4;
+}
+
+// Acknowledge event processing
+message AckRequest {
+  string consumer_group = 1;
+  string consumer_id = 2;
+  repeated string event_ids = 3;       // IDs of successfully processed events
+  repeated DeadLetterEntry failed = 4; // Failed events with reason
+}
+
+message DeadLetterEntry {
+  string event_id = 1;
+  string reason = 2;
+  common.Error error = 3;
+  common.Timestamp failed_at = 4;
+  uint32 retry_count = 5;
+}
+
+// Ack response
+message AckResponse {
+  common.Result result = 1;
+  uint32 acknowledged = 2;
+  uint32 failed = 3;
+  uint32 moved_to_dlq = 4;
+}
+
+// Event publishing request
+message PublishRequest {
+  repeated Event events = 1;
+  bool async = 2;                      // Return immediately without confirmation
+  DurabilityLevel durability = 3;      // Durability guarantees
+}
+
+enum DurabilityLevel {
+  DURABILITY_UNSPECIFIED = 0;
+  DURABILITY_MEMORY_ONLY = 1;          // Fast, volatile
+  DURABILITY_REPLICATED = 2;           // Replicated to followers
+  DURABILITY_DISK = 3;                 // Flushed to disk
+  DURABILITY_SYNC_REPLICA = 4;         // Synchronous replication
+}
+
+message PublishResponse {
+  common.Result result = 1;
+  repeated string published_ids = 2;
+}
+
+// Stream statistics
+message StreamStats {
+  string topic = 1;
+  uint64 total_events = 2;
+  uint64 byte_size = 3;
+  common.Timestamp oldest_event = 4;
+  common.Timestamp newest_event = 5;
+  repeated ConsumerGroupInfo consumers = 6;
+}
+
+message ConsumerGroupInfo {
+  string group_name = 1;
+  uint32 member_count = 2;
+  string position = 3;
+  uint64 pending_count = 4;
+  uint64 delayed_count = 5;
+}
+
+// ============== CONCRETE EVENT PAYLOADS ==============
+
+// Market Data Events
+message ExecutionEvent {
+  string execution_id = 1;
+  string order_id = 2;
+  string symbol = 3;
+}
+
+message ExecutionOrderSubmittedEvent {
+  string order_id = 1;
+  string symbol = 2;
+  common.OrderType order_type = 3;
+  common.TradeSide side = 4;
+  common.Price price = 5;
+  common.Volume volume = 6;
+  string requester_service = 7;
+}
+
+message ExecutionOrderFilledEvent {
+  string order_id = 1;
+  string execution_id = 2;
+  string position_id = 3;
+  common.Price fill_price = 4;
+  common.Volume fill_volume = 5;
+  string broker_execution_id = 6;
+  common.Timestamp fill_time = 7;
+}
+
+message ExecutionOrderRejectedEvent {
+  string order_id = 1;
+  common.Error reason = 2;
+  bool retryable = 3;
+}
+
+message ExecutionOrderCancelledEvent {
+  string order_id = 1;
+  string reason = 2;
+  bool by_user = 3;
+  common.Money refunded_margin = 4;
+}
+
+// Position Events
+message PositionOpenedEvent {
+  string position_id = 1;
+  string symbol = 2;
+  common.TradeSide side = 3;
+  common.Price entry_price = 4;
+  common.Volume initial_volume = 5;
+  common.Timeframe signal_timeframe = 6;
+  string signal_id = 7;
+  string strategy_id = 8;
+}
+
+message PositionModifiedEvent {
+  string position_id = 1;
+  string modification_type = 2;
+  string previous_value = 3;
+  string new_value = 4;
+  string reason = 5;
+}
+
+message PositionPartiallyClosedEvent {
+  string position_id = 1;
+  string closing_position_id = 2;
+  common.Volume closed_volume = 3;
+  common.Price close_price = 4;
+  common.Money realized_pnl = 5;
+  string reason = 6;
+}
+
+message PositionClosedEvent {
+  string position_id = 1;
+  common.Price exit_price = 2;
+  common.Volume closed_volume = 3;
+  common.Money gross_pnl = 4;
+  common.Money commission = 5;
+  common.Money swap = 6;
+  common.Money net_pnl = 7;
+  string close_reason = 8;            // "tp", "sl", "manual", "signal", etc.
+  common.Duration holding_duration = 9;
+}
+
+message PositionStopLossModifiedEvent {
+  string position_id = 1;
+  common.Price previous_sl = 2;
+  common.Price new_sl = 3;
+  string trigger_type = 4;            // "breakeven", "trailing", "manual"
+}
+
+message PositionTakeProfitModifiedEvent {
+  string position_id = 1;
+  common.Price previous_tp = 2;
+  common.Price new_tp = 3;
+}
+
+// Risk Events
+message RiskLimitBreachedEvent {
+  string limit_type = 1;              // "daily_loss", "drawdown", "exposure"
+  string limit_id = 2;
+  common.Money current_value = 3;
+  common.Money limit_value = 4;
+  common.Money breach_amount = 5;
+  bool automatic_action_taken = 6;
+  string action_taken = 7;
+}
+
+message RiskCheckPassedEvent {
+  string check_id = 1;
+  string order_id = 2;
+  repeated string passed_checks = 3;
+}
+
+message RiskCheckFailedEvent {
+  string check_id = 1;
+  string order_id = 2;
+  repeated RiskFailure failures = 3;
+  bool hard_block = 4;
+}
+
+message RiskFailure {
+  string check_name = 1;
+  string reason = 2;
+  common.Money current_value = 3;
+  common.Money limit_value = 4;
+}
+
+message DrawdownLimitReachedEvent {
+  common.Percentage current_drawdown = 1;
+  common.Percentage max_allowed_drawdown = 2;
+  common.Timestamp peak_equity_time = 3;
+  common.Money peak_equity = 4;
+  common.Money current_equity = 5;
+  bool trading_paused = 6;
+}
+
+// Signal Events
+message SignalDetectedEvent {
+  string signal_id = 1;
+  string symbol = 2;
+  common.Timeframe timeframe = 3;
+  string strategy_id = 4;
+  string pattern_type = 5;            // "fvg", "ob", "bos", "choch", etc.
+  common.TradeSide suggested_side = 6;
+  common.Price entry_zone_low = 7;
+  common.Price entry_zone_high = 8;
+  double confluence_score = 9;        // 0.0 - 10.0
+  repeated string confluence_factors = 10;
+  common.Timestamp valid_until = 11;
+  map<string, string> raw_detections = 12;
+}
+
+message SignalValidatedEvent {
+  string signal_id = 1;
+  string validation_source = 2;       // "ai", "rules", "hybrid"
+  double validation_score = 3;        // Confidence level
+  bool proceed_to_execution = 4;
+  string reasoning = 5;
+}
+
+message SignalRejectedEvent {
+  string signal_id = 1;
+  string rejection_reason = 2;
+  string rejected_by = 3;
+  double original_score = 4;
+}
+
+message SignalExpiredEvent {
+  string signal_id = 1;
+  common.Timestamp expired_at = 2;
+  string reason = 3;                  // "timeout", "price_moved", "new_signal", etc.
+}
+
+// Market Data Events
+message MarketDataReceivedEvent {
+  string symbol = 1;
+  common.Timeframe timeframe = 2;
+  uint32 bars_count = 3;
+  common.Timestamp range_start = 4;
+  common.Timestamp range_end = 5;
+  string source = 6;                  // "mt5", "polygon", "ib", etc.
+}
+
+message CandleClosedEvent {
+  string symbol = 1;
+  common.Timeframe timeframe = 2;
+  common.Timestamp close_time = 3;
+  common.Price open = 4;
+  common.Price high = 5;
+  common.Price low = 6;
+  common.Price close = 7;
+  common.Volume volume = 8;
+  uint64 tick_count = 9;
+}
+
+message TickReceivedEvent {
+  string symbol = 1;
+  common.Timestamp timestamp = 2;
+  common.Price bid = 3;
+  common.Price ask = 4;
+  string bid_provider = 5;
+  string ask_provider = 6;
+}
+
+// Portfolio Events
+message PortfolioRebalancedEvent {
+  string portfolio_id = 1;
+  common.Timestamp rebalance_time = 2;
+  repeated PositionAllocation allocations = 3;
+  common.Money total_value = 4;
+}
+
+message PositionAllocation {
+  string symbol = 1;
+  common.Percentage target_weight = 2;
+  common.Percentage actual_weight = 3;
+  common.Money target_notional = 4;
+  common.Money actual_notional = 5;
+}
+
+message AllocationUpdatedEvent {
+  string portfolio_id = 1;
+  string symbol = 2;
+  common.Percentage previous_weight = 3;
+  common.Percentage new_weight = 4;
+  string reason = 5;
+}
+
+// System Events
+message ServiceStartedEvent {
+  string service_name = 1;
+  string instance_id = 2;
+  string version = 3;
+  common.Timestamp started_at = 4;
+  map<string, string> configuration = 5;
+}
+
+message ServiceStoppedEvent {
+  string service_name = 1;
+  string instance_id = 2;
+  common.Timestamp stopped_at = 3;
+  string reason = 4;
+  bool graceful = 5;
+}
+
+message ServiceHealthCheckEvent {
+  string service_name = 1;
+  string instance_id = 2;
+  common.Timestamp checked_at = 3;
+  bool healthy = 4;
+  repeated HealthCheckComponent components = 5;
+  uint64 event_lag_ms = 6;
+}
+
+message HealthCheckComponent {
+  string name = 1;
+  bool healthy = 2;
+  string message = 3;
+  uint64 latency_ms = 4;
+}
+
+message ConfigurationChangedEvent {
+  string config_key = 1;
+  string previous_hash = 2;
+  string new_hash = 3;
+  string changed_by = 4;
+  bool requires_restart = 5;
+}
+
+message SystemAlarmTriggeredEvent {
+  string alarm_id = 1;
+  string severity = 2;                // "warning", "critical", "emergency"
+  string message = 3;
+  map<string, string> context = 4;
+  repeated string notification_channels = 5;
+}
+
+// Learning Events
+message ModelUpdatedEvent {
+  string model_id = 1;
+  string model_type = 2;
+  string version = 3;
+  common.Timestamp trained_at = 4;
+  common.Percentage accuracy = 5;
+  uint64 training_samples = 6;
+  string deployed_by = 7;
+}
+
+message TrainingCompletedEvent {
+  string training_run_id = 1;
+  string model_id = 2;
+  common.Duration duration = 3;
+  common.Percentage final_loss = 4;
+  common.Percentage validation_accuracy = 5;
+  bool improved = 6;
+}
+
+message LessonRecordedEvent {
+  string lesson_id = 1;
+  string lesson_type = 2;             // "success", "failure", "anomaly"
+  string position_id = 3;
+  string description = 4;
+  repeated string tags = 5;
+  map<string, double> features = 6;
+}

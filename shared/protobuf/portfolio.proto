@@ -1,0 +1,443 @@
+syntax = "proto3";
+
+package apex.portfolio;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/portfolio";
+option rust_package = "apex_protos::portfolio";
+option java_package = "com.apex.v3.portfolio";
+option java_multiple_files = true;
+
+// Portfolio Engine Service
+service PortfolioEngine {
+  // Get portfolio snapshot
+  rpc GetPortfolio(PortfolioQuery) returns (PortfolioSnapshot);
+
+  // Get historical portfolio values
+  rpc GetPortfolioHistory(HistoryQuery) returns (PortfolioHistory);
+
+  // Get current allocation
+  rpc GetAllocation(AllocationQuery) returns (Allocation);
+
+  // Request rebalancing
+  rpc Rebalance(RebalanceRequest) returns (RebalanceResponse);
+
+  // Calculate optimal allocation
+  rpc OptimizeAllocation(OptimizeRequest) returns (OptimizeResponse);
+
+  // Get performance attribution
+  rpc GetAttribution(AttributionQuery) returns (AttributionReport);
+
+  // Subscribe to portfolio updates
+  rpc SubscribeUpdates(SubscriptionFilter) returns (stream PortfolioUpdate);
+
+  // Health check
+  rpc Health(common.Empty) returns (common.Result);
+}
+
+// Portfolio snapshot
+message PortfolioSnapshot {
+  string portfolio_id = 1;
+  string account_id = 2;
+  common.Timestamp snapshot_time = 3;
+
+  // Core metrics
+  common.Money equity = 4;
+  common.Money balance = 5;
+  common.Money margin_used = 6;
+  common.Money margin_free = 7;
+  common.Money unrealized_pnl = 8;
+  common.Money realized_pnl_today = 9;
+
+  // Exposure
+  ExposureBreakdown exposure = 10;
+
+  // Risk metrics
+  PortfolioRiskMetrics risk = 11;
+
+  // Holdings
+  repeated PositionHolding positions = 12;
+
+  // Performance
+  PerformanceMetrics performance = 13;
+}
+
+message ExposureBreakdown {
+  common.Money total_notional = 1;
+  common.Money long_exposure = 2;
+  common.Money short_exposure = 3;
+  common.Money net_exposure = 4;
+  common.Percentage gross_exposure_percent = 5;
+  common.Percentage net_exposure_percent = 6;
+
+  // By asset class
+  repeated AssetClassExposure by_asset_class = 7;
+
+  // By currency
+  repeated CurrencyExposure by_currency = 8;
+
+  // Correlation-adjusted exposure
+  repeated CorrelatedExposure correlated_exposure = 9;
+}
+
+message AssetClassExposure {
+  common.AssetClass asset_class = 1;
+  common.Money exposure = 2;
+  common.Money net_exposure = 3;
+  common.Percentage portfolio_percent = 4;
+}
+
+message CurrencyExposure {
+  string currency = 1;
+  common.Money exposure = 2;
+  common.Decimal net_position = 3;
+}
+
+message CorrelatedExposure {
+  string group_id = 1;
+  repeated string symbols = 2;
+  common.Money gross_exposure = 3;
+  common.Money correlated_risk = 4;    // Risk adjusted for correlation
+  common.Decimal correlation_coefficient = 5;
+}
+
+message PortfolioRiskMetrics {
+  common.Percentage current_drawdown = 1;
+  common.Percentage max_drawdown_reached = 2;  // Today's max
+  ValueAtRisk var_95 = 3;
+  ValueAtRisk var_99 = 4;
+  common.Decimal expected_shortfall = 5;
+  common.Decimal beta_to_benchmark = 6;
+  common.Decimal volatility = 7;
+  common.Decimal sharpe_ratio = 8;
+  common.Decimal sortino_ratio = 9;
+  common.Decimal calmar_ratio = 10;
+  uint32 positions_at_risk_count = 11;
+}
+
+message ValueAtRisk {
+  common.Money absolute = 1;
+  common.Percentage percent = 2;
+  string calculation_method = 3;       // "historical", "parametric", "monte_carlo"
+  common.Timestamp calculated_at = 4;
+}
+
+message PositionHolding {
+  string position_id = 1;
+  common.Symbol symbol = 2;
+  common.TradeSide side = 3;
+  common.Volume volume = 4;
+  common.Money market_value = 5;
+  common.Money unrealized_pnl = 6;
+  common.Percentage return_percent = 7;
+  common.Percentage portfolio_weight = 8;
+  common.Price entry_price = 9;
+  common.Price current_price = 10;
+}
+
+message PerformanceMetrics {
+  common.Percentage return_today = 1;
+  common.Percentage return_this_week = 2;
+  common.Percentage return_this_month = 3;
+  common.Decimal win_rate = 4;
+  common.Decimal profit_factor = 5;
+  common.Decimal average_winner = 6;
+  common.Decimal average_loser = 7;
+}
+
+// Portfolio query
+message PortfolioQuery {
+  string portfolio_id = 1;
+  bool include_history = 2;
+}
+
+// History query
+message HistoryQuery {
+  string portfolio_id = 1;
+  common.Timestamp from = 2;
+  common.Timestamp to = 3;
+  HistoryGranularity granularity = 4;
+}
+
+enum HistoryGranularity {
+  GRANULARITY_UNSPECIFIED = 0;
+  GRANULARITY_TICK = 1;
+  GRANULARITY_MINUTE = 2;
+  GRANULARITY_HOUR = 3;
+  GRANULARITY_DAY = 4;
+}
+
+message PortfolioHistory {
+  string portfolio_id = 1;
+  repeated PortfolioDataPoint points = 2;
+}
+
+message PortfolioDataPoint {
+  common.Timestamp timestamp = 1;
+  common.Money equity = 2;
+  common.Money balance = 3;
+  common.Money margin_used = 4;
+  common.Money unrealized_pnl = 5;
+  uint32 position_count = 6;
+  common.Decimal drawdown_percent = 7;
+}
+
+// Allocation
+message AllocationQuery {
+  string portfolio_id = 1;
+  AllocationType type = 2;
+}
+
+enum AllocationType {
+  ALLOCATION_UNSPECIFIED = 0;
+  ALLOCATION_CURRENT = 1;
+  ALLOCATION_TARGET = 2;
+  ALLOCATION_DRIFT = 3;
+}
+
+message Allocation {
+  string portfolio_id = 1;
+  common.Timestamp as_of = 2;
+  repeated AllocationEntry entries = 3;
+  AllocationSummary summary = 4;
+}
+
+message AllocationEntry {
+  common.Symbol symbol = 1;
+  common.Percentage target_weight = 2;
+  common.Percentage actual_weight = 3;
+  common.Percentage drift = 4;
+  common.Money target_notional = 5;
+  common.Money actual_notional = 6;
+  bool rebalance_required = 7;
+}
+
+message AllocationSummary {
+  common.Decimal total_drift = 1;
+  uint32 positions_needing_rebalance = 2;
+  common.Money estimated_turnover = 3;
+}
+
+// Rebalancing
+message RebalanceRequest {
+  string portfolio_id = 1;
+  RebalanceMethod method = 2;
+  repeated SymbolTarget overrides = 3;  // Manual targets
+  bool dry_run = 4;                     // Calculate without executing
+}
+
+enum RebalanceMethod {
+  REBALANCE_UNSPECIFIED = 0;
+  REBALANCE_TO_TARGET = 1;             // Rebalance to allocation targets
+  REBALANCE_THRESHOLD = 2;             // Only drift beyond threshold
+  REBALANCE_CALENDAR = 3;              // Scheduled rebalance
+  REBALANCE_CASH_FLOW = 4;             // Rebalance with new cash
+}
+
+message SymbolTarget {
+  common.Symbol symbol = 1;
+  common.Percentage target_weight = 2;
+}
+
+message RebalanceResponse {
+  bool success = 1;
+  RebalanceExecution execution = 2;
+  repeated TradeInstruction instructions = 3;
+  common.Error error = 4;
+}
+
+message RebalanceExecution {
+  string execution_id = 1;
+  RebalanceStatus status = 2;
+  common.Money estimated_cost = 3;
+  common.Money estimated_tax = 4;
+  uint32 trades_required = 5;
+  common.Duration estimated_duration = 6;
+}
+
+enum RebalanceStatus {
+  REBALANCE_STATUS_UNSPECIFIED = 0;
+  REBALANCE_STATUS_PENDING = 1;
+  REBALANCE_STATUS_IN_PROGRESS = 2;
+  REBALANCE_STATUS_COMPLETED = 3;
+  REBALANCE_STATUS_FAILED = 4;
+  REBALANCE_STATUS_CANCELLED = 5;
+}
+
+message TradeInstruction {
+  common.Symbol symbol = 1;
+  common.TradeSide side = 2;
+  common.Volume volume = 3;
+  string reason = 4;                   // "target_underweight", "drift_correction", etc.
+}
+
+// Optimization
+message OptimizeRequest {
+  string portfolio_id = 1;
+  OptimizationObjective objective = 2;
+  OptimizationConstraints constraints = 3;
+  repeated string symbol_universe = 4;
+}
+
+enum OptimizationObjective {
+  OBJECTIVE_UNSPECIFIED = 0;
+  OBJECTIVE_MAX_SHARPE = 1;
+  OBJECTIVE_MIN_VARIANCE = 2;
+  OBJECTIVE_MAX_RETURN = 3;
+  OBJECTIVE_RISK_PARITY = 4;
+  OBJECTIVE_MAX_SORTINO = 5;
+  OBJECTIVE_MAX_CALMAR = 6;
+}
+
+message OptimizationConstraints {
+  common.Percentage max_single_position = 1;
+  common.Percentage min_single_position = 2;
+  common.Percentage max_sector_exposure = 3;
+  common.Decimal max_turnover = 4;
+  bool long_only = 5;
+  common.Decimal target_volatility = 6;
+  common.Decimal target_return = 7;
+}
+
+message OptimizeResponse {
+  OptimalAllocation optimal = 1;
+  EfficientFrontier frontier = 2;
+  OptimizationDiagnostics diagnostics = 3;
+}
+
+message OptimalAllocation {
+  common.Decimal objective_value = 1;
+  common.Decimal expected_return = 2;
+  common.Decimal expected_volatility = 3;
+  common.Decimal sharpe_ratio = 4;
+  repeated AllocationEntry allocations = 5;
+}
+
+message EfficientFrontier {
+  repeated FrontierPoint points = 1;
+}
+
+message FrontierPoint {
+  common.Decimal expected_return = 1;
+  common.Decimal volatility = 2;
+  common.Decimal sharpe = 3;
+}
+
+message OptimizationDiagnostics {
+  uint32 iterations = 1;
+  common.Duration solve_time = 2;
+  bool converged = 3;
+  common.Decimal convergence_tolerance = 4;
+  repeated string warnings = 5;
+}
+
+// Performance attribution
+message AttributionQuery {
+  string portfolio_id = 1;
+  common.Timestamp from = 2;
+  common.Timestamp to = 3;
+  AttributionMethod method = 4;
+}
+
+enum AttributionMethod {
+  ATTRIBUTION_UNSPECIFIED = 0;
+  ATTRIBUTION_BRINSON = 1;             // Brinson-Fachler model
+  ATTRIBUTION_RETURN_BASED = 2;
+  ATTRIBUTION_TRANSACTION_BASED = 3;
+}
+
+message AttributionReport {
+  AttributionSummary summary = 1;
+  repeated PeriodAttribution periods = 2;
+  repeated SymbolAttribution symbols = 3;
+  repeated FactorAttribution factors = 4;
+}
+
+message AttributionSummary {
+  common.Decimal total_return = 1;
+  common.Decimal benchmark_return = 2;
+  common.Decimal active_return = 3;    // Excess over benchmark
+  common.Money active_return_dollars = 4;
+  InformationRatio information_ratio = 5;
+}
+
+message InformationRatio {
+  common.Decimal value = 1;
+  common.Decimal tracking_error = 2;
+}
+
+message PeriodAttribution {
+  common.Timestamp period_start = 1;
+  common.Timestamp period_end = 2;
+  common.Decimal allocation_effect = 3;
+  common.Decimal selection_effect = 4;
+  common.Decimal interaction_effect = 5;
+  common.Decimal currency_effect = 6;
+  common.Decimal trading_effect = 7;
+}
+
+message SymbolAttribution {
+  common.Symbol symbol = 1;
+  common.Decimal portfolio_weight = 2;
+  common.Decimal benchmark_weight = 3;
+  common.Decimal portfolio_return = 4;
+  common.Decimal benchmark_return = 5;
+  common.Decimal attribution = 6;
+  common.Decimal selection = 7;
+  common.Decimal allocation = 8;
+}
+
+message FactorAttribution {
+  string factor_name = 1;
+  common.Decimal exposure = 2;
+  common.Decimal return_contribution = 3;
+  common.Decimal risk_contribution = 4;
+}
+
+// Subscription updates
+message SubscriptionFilter {
+  string portfolio_id = 1;
+  bool price_updates = 2;
+  bool allocation_updates = 3;
+  bool risk_updates = 4;
+  uint32 min_update_interval_ms = 5;
+}
+
+message PortfolioUpdate {
+  string portfolio_id = 1;
+  common.Timestamp timestamp = 2;
+
+  oneof update {
+    EquityUpdate equity = 3;
+    AllocationChange allocation = 4;
+    RiskAlert risk = 5;
+    PositionChange position = 6;
+  }
+}
+
+message EquityUpdate {
+  common.Money new_equity = 1;
+  common.Money change = 2;
+  common.Percentage change_percent = 3;
+}
+
+message AllocationChange {
+  repeated AllocationEntry new_allocation = 1;
+  common.Decimal total_drift = 2;
+  bool rebalance_triggered = 3;
+}
+
+message RiskAlert {
+  string alert_type = 1;               // "drawdown", "var_breach", "concentration"
+  string severity = 2;
+  string message = 3;
+  common.Decimal current_value = 4;
+  common.Decimal threshold = 5;
+}
+
+message PositionChange {
+  string position_id = 1;
+  string change_type = 2;
+  common.Money impact = 3;
+}

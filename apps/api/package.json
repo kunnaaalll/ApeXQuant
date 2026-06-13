@@ -1,0 +1,43 @@
+{
+  "name": "@apex-v3/api",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 API Gateway - HTTP/REST interface for external integrations",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "@apex-v3/events": "workspace:*",
+    "@grpc/grpc-js": "^1.10.0",
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.46.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "express-rate-limit": "^7.2.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.0.0",
+    "pino-http": "^10.0.0",
+    "prom-client": "^15.1.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.0",
+    "tsx": "^4.10.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

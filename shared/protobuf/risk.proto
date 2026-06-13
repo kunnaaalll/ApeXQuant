@@ -1,0 +1,383 @@
+syntax = "proto3";
+
+package apex.risk;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/risk";
+option rust_package = "apex_protos::risk";
+option java_package = "com.apex.v3.risk";
+option java_multiple_files = true;
+
+// Risk Engine Service
+service RiskEngine {
+  // Pre-trade risk assessment
+  rpc AssessRisk(AssessRequest) returns (AssessResponse);
+
+  // Validate an order against all risk limits
+  rpc ValidateOrder(ValidateOrderRequest) returns (ValidateOrderResponse);
+
+  // Calculate position sizing recommendation
+  rpc CalculatePositionSize(PositionSizeRequest) returns (PositionSizeResponse);
+
+  // Get current risk limits and usage
+  rpc GetLimits(common.Empty) returns (RiskLimits);
+
+  // Update risk configuration
+  rpc Configure(RiskConfiguration) returns (common.Result);
+
+  // Real-time risk exposure stream
+  rpc SubscribeExposure(ExposureFilter) returns (stream ExposureUpdate);
+
+  // Record trade outcome for risk model updates
+  rpc RecordOutcome(TradeOutcome) returns (common.Result);
+
+  // Health check
+  rpc Health(common.Empty) returns (common.Result);
+}
+
+// Risk assessment request
+message AssessRequest {
+  string assessment_id = 1;
+  common.Symbol symbol = 2;
+  common.OrderType order_type = 3;
+  common.TradeSide side = 4;
+  common.Price entry_price = 5;
+  common.Price stop_loss = 6;
+  common.Volume proposed_size = 7;
+
+  // Context
+  RiskContext context = 8;
+  string strategy_id = 9;
+  double signal_confidence = 10;       // Signal confidence score
+}
+
+message RiskContext {
+  common.Money account_equity = 1;
+  common.Money account_balance = 2;
+  common.Money free_margin = 3;
+  common.Money used_margin = 4;
+  common.Percentage current_drawdown = 5;
+  common.Timestamp as_of = 6;
+  repeated OpenPositionSummary open_positions = 7;
+  common.Timeframe timeframe = 8;
+  MarketRegime regime = 9;
+}
+
+message OpenPositionSummary {
+  string position_id = 1;
+  common.Symbol symbol = 2;
+  common.TradeSide side = 3;
+  common.Volume volume = 4;
+  common.Money unrealized_pnl = 5;
+  common.Price current_price = 6;
+}
+
+message MarketRegime {
+  string regime_type = 1;
+  common.Percentage volatility_annualized = 2;
+  common.Decimal atr_multiple = 3;
+}
+
+// Risk assessment response
+message AssessResponse {
+  string assessment_id = 1;
+  bool approved = 2;
+  ApprovalLevel approval_level = 3;
+  RiskTier tier = 4;
+
+  repeated RiskCheck checks_performed = 5;
+  repeated Violation violations = 6;
+  repeated Warning warnings = 7;
+
+  // Recommendations
+  PositionRecommendation recommendation = 8;
+  common.Timestamp assessed_at = 9;
+}
+
+enum ApprovalLevel {
+  APPROVAL_UNSPECIFIED = 0;
+  APPROVAL_AUTO = 1;                   // Approved, proceed
+  APPROVAL_CONDITIONAL = 2;            // Approved with modifications
+  APPROVAL_SUPERVISION_REQUIRED = 3;   // Requires human review
+  APPROVAL_DENIED = 4;                 // Rejected
+}
+
+enum RiskTier {
+  RISK_TIER_UNSPECIFIED = 0;
+  RISK_TIER_CONSERVATIVE = 1;          // Tight limits, high confidence required
+  RISK_TIER_MODERATE = 2;
+  RISK_TIER_AGGRESSIVE = 3;            // Extended limits for high quality signals
+  RISK_TIER_EMERGENCY = 4;             // Reduced limits during drawdown
+}
+
+// Individual risk check result
+message RiskCheck {
+  string check_name = 1;
+  bool passed = 2;
+  string message = 3;
+  common.Money current_value = 4;
+  common.Money limit_value = 5;
+  common.Money utilization_percent = 6;
+}
+
+// Risk violation (blocking)
+message Violation {
+  string violation_type = 1;
+  string description = 2;
+  string affected_limit = 3;
+  common.Money excess_amount = 4;
+  bool hard_limit = 5;                 // Cannot be overridden
+}
+
+// Risk warning (non-blocking)
+message Warning {
+  string warning_type = 1;
+  string description = 2;
+  common.Money current_value = 3;
+  common.Money threshold_value = 4;
+  uint32 severity = 5;                 // 1-5, 5 being most severe
+}
+
+// Position sizing recommendation
+message PositionRecommendation {
+  common.Decimal suggested_lots = 1;
+  common.Decimal max_lots = 2;
+  common.Money risk_amount = 3;
+  common.Money margin_required = 4;
+  common.Percentage risk_percent_of_equity = 5;
+  string position_sizing_method = 6;   // "fixed_fractional", "kelly", "optimal_f"
+  double kelly_fraction = 7;           // Kelly criterion value if used
+}
+
+// Validate order request
+message ValidateOrderRequest {
+  PendingOrder order = 1;
+  RiskContext context = 2;
+}
+
+message PendingOrder {
+  string order_id = 1;
+  common.Symbol symbol = 2;
+  common.OrderType order_type = 3;
+  common.TradeSide side = 4;
+  common.Volume volume = 5;
+  common.Price entry_price = 6;
+  common.Price stop_loss = 7;
+  common.Price take_profit = 8;
+  string signal_id = 9;
+  string strategy_id = 10;
+  bool is_hedge = 11;
+}
+
+message ValidateOrderResponse {
+  bool valid = 1;
+  repeated RiskCheck results = 2;
+  repeated Violation violations = 3;
+  repeated Warning warnings = 4;
+  common.Timestamp validated_at = 5;
+
+  // If invalid, can we suggest modifications to make it valid?
+  OrderModification suggested_modification = 6;
+}
+
+message OrderModification {
+  common.Decimal suggested_lots = 1;
+  common.Price suggested_stop = 2;
+  string reason = 3;
+}
+
+// Position size calculation
+message PositionSizeRequest {
+  common.Symbol symbol = 2;
+  common.Price entry_price = 3;
+  common.Price stop_loss = 4;
+  RiskContext context = 5;
+  PositionSizingMethod method = 6;
+  string strategy_id = 7;
+  double signal_quality_score = 8;     // 0.0 - 1.0, influences sizing
+}
+
+enum PositionSizingMethod {
+  SIZING_UNSPECIFIED = 0;
+  SIZING_FIXED_RISK_PERCENT = 1;       // Fixed % of equity per trade
+  SIZING_KELLY_CRITERION = 2;          // Kelly calculation
+  SIZING_HALF_KELLY = 3;               // Conservative Kelly
+  SIZING_ATR_BASED = 4;                // Volatility adjusted
+  SIZING_RUIN_PROBABILITY = 5;         // Based on risk of ruin
+  SIZING_FIXED_FRACTIONAL = 6;         // Fixed fractional method
+}
+
+message PositionSizeResponse {
+  common.Decimal recommended_lots = 1;
+  common.Money risk_amount = 2;
+  common.Money margin_required = 3;
+  common.Percentage risk_percent = 4;
+  common.Decimal stop_distance_atr = 5;
+  string sizing_rationale = 6;
+
+  // Alternative sizings
+  repeated PositionAlternative alternatives = 7;
+}
+
+message PositionAlternative {
+  PositionSizingMethod method = 1;
+  common.Decimal lots = 2;
+  common.Money risk = 3;
+}
+
+// Current risk limits and usage
+message RiskLimits {
+  common.Timestamp retrieved_at = 1;
+  string mode = 2;                     // "normal", "reduced", "recovery"
+  common.Timestamp mode_since = 3;
+
+  // Account-level limits
+  AccountLimits account_limits = 4;
+  AccountUsage account_usage = 5;
+
+  // Position-level limits
+  PositionLimits position_limits = 6;
+
+  // Symbol-specific limits
+  repeated SymbolRiskLimit symbol_limits = 7;
+
+  // Time-based limits
+  DailyLimits daily_limits = 8;
+  DailyUsage daily_usage = 9;
+}
+
+message AccountLimits {
+  common.Percentage max_drawdown_percent = 1;      // Max allowed drawdown
+  common.Money max_daily_loss = 2;
+  common.Percentage max_margin_usage_percent = 3;
+  uint32 max_simultaneous_positions = 4;
+  common.Percentage max_correlated_exposure = 5;
+}
+
+message AccountUsage {
+  common.Percentage current_drawdown_percent = 1;
+  common.Money daily_loss_today = 2;
+  common.Percentage margin_usage_percent = 3;
+  uint32 open_position_count = 4;
+  common.Money total_exposure = 5;
+}
+
+message PositionLimits {
+  common.Percentage max_risk_per_trade_percent = 1;
+  common.Decimal max_position_size_lots = 2;
+  common.Money max_position_notional = 3;
+  uint32 max_hedged_positions_per_symbol = 4;
+  common.Decimal min_risk_reward_ratio = 5;
+}
+
+message SymbolRiskLimit {
+  common.Symbol symbol = 1;
+  common.Decimal max_position_size = 2;
+  common.Money max_exposure = 3;
+  common.Percentage volatility_adjustment = 4;
+  bool trading_paused = 5;
+}
+
+message DailyLimits {
+  common.Money max_loss_absolute = 1;
+  common.Percentage max_loss_percent = 2;
+  uint32 max_trades = 3;
+  common.Percentage daily_risk_budget_percent = 4;
+}
+
+message DailyUsage {
+  common.Money loss_used_absolute = 1;
+  common.Percentage loss_used_percent = 2;
+  uint32 trades_today = 3;
+  common.Percentage risk_budget_used_percent = 4;
+  common.Timestamp last_trade_at = 5;
+}
+
+// Risk configuration update
+message RiskConfiguration {
+  optional AccountLimits new_account_limits = 1;
+  optional PositionLimits new_position_limits = 2;
+  repeated SymbolRiskLimit new_symbol_limits = 3;
+  optional DailyLimits new_daily_limits = 4;
+
+  // Feature toggles
+  bool enable_auto_circuit_breaker = 5;
+  bool enable_kelly_sizing = 6;
+  bool enable_correlation_check = 7;
+
+  // Algorithm parameters
+  RiskAlgorithmConfig algorithm = 8;
+}
+
+message RiskAlgorithmConfig {
+  double kelly_fraction = 1;           // Use half Kelly, quarter Kelly, etc.
+  uint32 risk_lookback_days = 2;       // For volatility calculation
+  common.Decimal volatility_scaling_factor = 3;
+  common.Decimal drawdown_reduction_rate = 4;  // How quickly to reduce risk on drawdown
+}
+
+// Real-time exposure subscription
+message ExposureFilter {
+  repeated string symbol_patterns = 1; // e.g., "EUR*", "XAUUSD"
+  bool include_positions = 2;
+  bool include_pending = 3;
+  bool include_correlation_matrix = 4;
+}
+
+message ExposureUpdate {
+  common.Timestamp timestamp = 1;
+  common.Money total_exposure = 2;
+  repeated SymbolExposure by_symbol = 3;
+  CorrelationMatrix correlations = 4;
+  common.Percentage portfolio_heat = 5;  // Total risk heat
+}
+
+message SymbolExposure {
+  common.Symbol symbol = 1;
+  common.Decimal net_position = 2;     // Positive = long, negative = short
+  common.Money exposure_notional = 3;
+  common.Money unrealized_pnl = 4;
+  common.Percentage risk_contribution = 5;
+}
+
+message CorrelationMatrix {
+  repeated string symbols = 1;
+  repeated CorrelationRow rows = 2;
+}
+
+message CorrelationRow {
+  string symbol = 1;
+  repeated double correlations = 2;    // -1.0 to 1.0, aligned with symbols list
+}
+
+// Trade outcome recording for risk model learning
+message TradeOutcome {
+  string trade_id = 1;
+  string position_id = 2;
+  string signal_id = 3;
+
+  // Entry details
+  common.Timestamp entry_time = 4;
+  common.Price entry_price = 5;
+
+  // Exit details
+  common.Timestamp exit_time = 6;
+  common.Price exit_price = 7;
+
+  // Outcome
+  common.Money gross_pnl = 8;
+  common.Money net_pnl = 9;
+  common.Percentage return_percent = 10;
+
+  // Risk metrics
+  common.Money max_adverse_excursion = 11;  // Max drawdown during position
+  common.Money max_favorable_excursion = 12; // Max profit during position
+  common.Duration holding_time = 13;
+
+  // Context
+  string exit_reason = 14;
+  string market_regime = 15;
+  double signal_confidence = 16;
+  RiskContext risk_context_at_entry = 17;
+}

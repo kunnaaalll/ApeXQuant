@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+Cargo.lock
+target/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.template
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output
+
+# Turbo
+.turbo/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+postgres-data/
+redis-data/
+
+# Generated files
+shared/*/generated/
+services/*/generated/
+
+# Rust
+**/*.rs.bk
+*.pdb
+
+# Instrumentation / Profiling
+*.profraw
+flamegraph.svg
+perf.data
+perf.data.old
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

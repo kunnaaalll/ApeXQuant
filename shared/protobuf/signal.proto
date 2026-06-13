@@ -1,0 +1,324 @@
+syntax = "proto3";
+
+package apex.signal;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/signal";
+option rust_package = "apex_protos::signal";
+option java_package = "com.apex.v3.signal";
+option java_multiple_files = true;
+
+// Signal Engine Service
+service SignalEngine {
+  // Stream incoming market data to the engine
+  rpc StreamMarketData(stream MarketDataChunk) returns (stream SignalOutput);
+
+  // Request one-time signal detection on provided data
+  rpc DetectSignals(DetectRequest) returns (DetectResponse);
+
+  // Subscribe to detected signals for a symbol/timeframe
+  rpc SubscribeSignals(SubscribeSignalsRequest) returns (stream Signal);
+
+  // Get engine status and performance metrics
+  rpc GetStatus(common.Empty) returns (EngineStatus);
+
+  // Configure detection parameters
+  rpc Configure(EngineConfiguration) returns (common.Result);
+
+  // Health check endpoint
+  rpc Health(common.Empty) returns (HealthStatus);
+}
+
+// Primary market data chunk format (compressed candle data)
+message MarketDataChunk {
+  common.Symbol symbol = 1;
+  common.Timeframe timeframe = 2;
+  repeated Candle candles = 3;
+  common.Timestamp received_at = 4;
+  string session_id = 5;
+}
+
+// OHLCV candlestick data
+message Candle {
+  common.Timestamp timestamp = 1;
+  common.Price open = 2;
+  common.Price high = 3;
+  common.Price low = 4;
+  common.Price close = 5;
+  common.Volume volume = 6;
+  bool confirmed = 7;  // True once candle is closed
+}
+
+// Signal detection request
+message DetectRequest {
+  common.Symbol symbol = 1;
+  common.Timeframe timeframe = 2;
+  repeated Candle candles = 3;
+  common.Money account_equity = 4;     // For context-aware detection
+  repeated DetectionStrategy strategies = 5;
+}
+
+// Strategy to use for detection
+message DetectionStrategy {
+  string strategy_id = 1;
+  common Metadata parameters = 2;
+  double weight = 3;                   // Weight in ensemble (0.0 - 1.0)
+}
+
+// Detect response with all signals found
+message DetectResponse {
+  repeated Signal signals = 1;
+  DetectionMetadata metadata = 2;
+  common.Timestamp processed_at = 3;
+  uint64 processing_time_us = 4;
+}
+
+// Detection process metadata
+message DetectionMetadata {
+  uint32 candles_analyzed = 1;
+  uint32 patterns_checked = 2;
+  uint32 patterns_matched = 3;
+  repeated string timeframes_synchronized = 4;
+}
+
+// Subscribe to signals request
+message SubscribeSignalsRequest {
+  common.Symbol symbol = 1;
+  common.Timeframe timeframe = 2;
+  double min_confluence_score = 3;     // Minimum score to receive (0.0 - 10.0)
+  bool require_confirmation = 4;       // Only confirmed signals
+}
+
+// Signal output from continuous streaming
+message SignalOutput {
+  oneof output {
+    Signal signal = 1;
+    DetectionHeartbeat heartbeat = 2;
+    ProcessingError error = 3;
+  }
+}
+
+// Heartbeat for streaming connections
+message DetectionHeartbeat {
+  common.Timestamp timestamp = 1;
+  uint32 signals_detected_this_minute = 2;
+  uint64 latency_micros = 3;
+}
+
+// Signal structure - primary output of signal engine
+message Signal {
+  // Identification
+  string signal_id = 1;
+  string parent_signal_id = 2;         // For related signals (e.g., continuation)
+
+  // Market context
+  common.Symbol symbol = 3;
+  common.Timeframe timeframe = 4;
+  common.Timestamp detected_at = 5;
+  common.Timestamp valid_until = 6;    // Expiration time
+
+  // Direction and type
+  common.TradeSide direction = 7;
+  SignalType type = 8;
+  string pattern_name = 9;             // Human-readable pattern name
+
+  // Entry zone (can be a range or specific level)
+  PriceZone entry_zone = 10;
+  common.Price suggested_entry = 11;
+
+  // Exit levels
+  common.Price stop_loss = 12;
+  PriceZone take_profit_zone = 13;
+  common.Price suggested_take_profit = 14;
+
+  // Risk metrics
+  RiskMetrics risk = 15;
+
+  // Confluence scoring
+  double confluence_score = 16;        // 0.0 to 10.0
+  repeated ConfluenceFactor confluence_factors = 17;
+
+  // Multi-timeframe status
+  MTFAlignment mtf_alignment = 18;
+
+  // Market regime
+  MarketRegime regime = 19;
+
+  // Audit trail
+  string strategy_id = 20;
+  string detector_version = 21;
+  repeated DetectionStep detection_path = 22;
+}
+
+// Signal type classification
+enum SignalType {
+  SIGNAL_TYPE_UNSPECIFIED = 0;
+  SIGNAL_TYPE_ORDER_BLOCK = 1;
+  SIGNAL_TYPE_FAIR_VALUE_GAP = 2;
+  SIGNAL_TYPE_BREAK_OF_STRUCTURE = 3;
+  SIGNAL_TYPE_CHANGE_OF_CHARACTER = 4;
+  SIGNAL_TYPE_LIQUIDITY_SWEEP = 5;
+  SIGNAL_TYPE_IMBALANCE = 6;
+  SIGNAL_TYPE_CONSOLIDATION_BREAK = 7;
+  SIGNAL_TYPE_RANGE_BOUNDARY = 8;
+  SIGNAL_TYPE_MITIGATION = 9;
+  SIGNAL_TYPE_CONTINUATION = 10;
+  SIGNAL_TYPE_REVERSAL = 11;
+}
+
+// Price zone for entry/exit ranges
+message PriceZone {
+  common.Price low = 1;
+  common.Price high = 2;
+  common.Price midpoint = 3;
+  string zone_type = 4;                // "demand", "supply", "equilibrium", etc.
+  double strength = 5;                 // Historical test count / strength score
+}
+
+// Risk metrics for the signal
+message RiskMetrics {
+  common.Price suggested_stop = 1;
+  common.Price technical_stop = 2;     // Based on ATR, swing, etc.
+  common.Money max_position_risk = 3;  // Recommended max loss
+  common.Decimal risk_reward_ratio = 4;
+  common.Decimal probability_estimate = 5;
+  common.Decimal expected_value = 6;
+}
+
+// Individual confluence factor
+message ConfluenceFactor {
+  string factor_type = 1;              // e.g., "atr", "volume", "structure"
+  double score_contribution = 2;       // How much this adds to total score
+  double raw_value = 3;                // Original metric value
+  string interpretation = 4;           // Human-readable explanation
+}
+
+// Multi-timeframe alignment status
+message MTFAlignment {
+  bool aligned = 1;
+  common.Timeframe reference_timeframe = 2;
+  repeated TimeframeAlignment alignments = 3;
+  double alignment_score = 4;          // 0.0 to 1.0
+}
+
+message TimeframeAlignment {
+  common.Timeframe timeframe = 1;
+  AlignmentDirection direction = 2;
+  double weight = 3;
+  string context = 4;                  // e.g., "bullish_bos", "bearish_choch"
+}
+
+enum AlignmentDirection {
+  ALIGNMENT_UNSPECIFIED = 0;
+  ALIGNMENT_BULLISH = 1;
+  ALIGNMENT_BEARISH = 2;
+  ALIGNMENT_NEUTRAL = 3;
+  ALIGNMENT_CONFLICT = 4;
+}
+
+// Market regime detection
+message MarketRegime {
+  RegimeType type = 1;
+  common.Percentage confidence = 2;
+  common.Timestamp regime_start = 3;
+  uint32 bars_in_regime = 4;
+  common.Decimal volatility_percentile = 5;
+  common.Decimal trend_strength = 6;
+}
+
+enum RegimeType {
+  REGIME_UNSPECIFIED = 0;
+  REGIME_TRENDING_UP = 1;
+  REGIME_TRENDING_DOWN = 2;
+  REGIME_RANGING = 3;
+  REGIME_CHOPPY = 4;
+  REGIME_BREAKOUT = 5;
+  REGIME_REVERSAL_FORMING = 6;
+  REGIME_LOW_VOLATILITY = 7;
+  REGIME_HIGH_VOLATILITY = 8;
+}
+
+// Detection step for audit trail
+message DetectionStep {
+  string step_name = 1;
+  common.Timestamp executed_at = 2;
+  common.Duration duration_us = 3;
+  string result = 4;
+  map<string, string> context = 5;
+}
+
+// Processing error for streaming
+message ProcessingError {
+  string error_code = 1;
+  string message = 2;
+  bool recoverable = 3;
+  common.Timestamp occurred_at = 4;
+}
+
+// Engine status response
+message EngineStatus {
+  bool ready = 1;
+  common.Timestamp booted_at = 2;
+  string version = 3;
+  repeated ActiveSymbol active_symbols = 4;
+  PerformanceMetrics performance = 5;
+  repeated LoadedStrategy strategies = 6;
+}
+
+message ActiveSymbol {
+  common.Symbol symbol = 1;
+  repeated common.Timeframe timeframes = 2;
+  common.Timestamp last_data_received = 3;
+  bool current = 4;
+}
+
+message PerformanceMetrics {
+  uint64 total_signals_generated = 1;
+  uint64 signals_this_hour = 2;
+  uint64 signals_this_day = 3;
+  common.Duration average_latency = 4;
+  common.Duration p99_latency = 5;
+  double cpu_utilization = 6;
+  uint64 memory_bytes = 7;
+}
+
+message LoadedStrategy {
+  string strategy_id = 1;
+  string name = 2;
+  bool active = 3;
+  double weight = 4;
+}
+
+// Engine configuration
+message EngineConfiguration {
+  map<string, StrategyConfig> strategies = 1;
+  GlobalConfig global = 2;
+}
+
+message StrategyConfig {
+  bool enabled = 1;
+  double sensitivity = 2;              // Detection sensitivity (0.0 - 1.0)
+  map<string, string> parameters = 3;
+}
+
+message GlobalConfig {
+  double min_confluence_threshold = 1;
+  uint32 max_signals_per_minute = 2;
+  bool enable_mtf_sync = 3;
+  bool enable_regime_filter = 4;
+  uint32 lookback_bars = 5;
+}
+
+// Health status
+message HealthStatus {
+  enum Status {
+    UNKNOWN = 0;
+    HEALTHY = 1;
+    DEGRADED = 2;
+    UNHEALTHY = 3;
+  }
+  Status status = 1;
+  string message = 2;
+  repeated string checks = 3;
+}

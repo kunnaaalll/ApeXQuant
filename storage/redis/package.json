@@ -1,0 +1,26 @@
+{
+  "name": "@apex-v3/cache",
+  "version": "3.0.0",
+  "private": true,
+  "description": "APEX V3 Redis Infrastructure - Streams, caching, and state management",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@apex-v3/contracts": "workspace:*",
+    "ioredis": "^5.4.0",
+    "msgpack-lite": "^0.1.26"
+  },
+  "devDependencies": {
+    "@types/msgpack-lite": "^0.1.11",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}
