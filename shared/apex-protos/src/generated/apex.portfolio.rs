@@ -652,6 +652,286 @@ pub struct PositionChange {
     pub impact: ::core::option::Option<super::common::Money>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PortfolioStateQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PortfolioStateResponse {
+    #[prost(message, optional, tag = "1")]
+    pub state: ::core::option::Option<PortfolioSnapshot>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExposureQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExposureResponse {
+    #[prost(message, optional, tag = "1")]
+    pub exposure: ::core::option::Option<ExposureBreakdown>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HeatQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HeatResponse {
+    #[prost(message, optional, tag = "1")]
+    pub heat_index: ::core::option::Option<super::common::Decimal>,
+    #[prost(message, optional, tag = "2")]
+    pub margin_utilization: ::core::option::Option<super::common::Percentage>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AllocationResponse {
+    #[prost(message, optional, tag = "1")]
+    pub allocation: ::core::option::Option<Allocation>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QualityQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct QualityResponse {
+    #[prost(message, optional, tag = "1")]
+    pub quality_score: ::core::option::Option<super::common::Decimal>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthResponse {
+    #[prost(message, optional, tag = "1")]
+    pub health_score: ::core::option::Option<super::common::Decimal>,
+    #[prost(string, tag = "2")]
+    pub status: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DrawdownResponse {
+    #[prost(message, optional, tag = "1")]
+    pub current_drawdown: ::core::option::Option<super::common::Percentage>,
+    #[prost(message, optional, tag = "2")]
+    pub max_drawdown: ::core::option::Option<super::common::Percentage>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DrawdownQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CorrelationQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CorrelationResponse {
+    #[prost(message, optional, tag = "1")]
+    pub avg_correlation: ::core::option::Option<super::common::Decimal>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RecommendationsQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RecommendationsResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub recommendations: ::prost::alloc::vec::Vec<TradeInstruction>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AnalyticsQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AnalyticsResponse {
+    #[prost(message, optional, tag = "1")]
+    pub analytics: ::core::option::Option<PerformanceMetrics>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReplayRequest {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub to_time: ::core::option::Option<super::common::Timestamp>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReplayResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(message, optional, tag = "2")]
+    pub state: ::core::option::Option<PortfolioSnapshot>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LoadSnapshotRequest {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub snapshot_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LoadSnapshotResponse {
+    #[prost(message, optional, tag = "1")]
+    pub state: ::core::option::Option<PortfolioSnapshot>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LoadEventsRequest {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub from: ::core::option::Option<super::common::Timestamp>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PortfolioEvent {
+    #[prost(string, tag = "1")]
+    pub event_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
+    #[prost(bytes = "vec", tag = "3")]
+    pub payload: ::prost::alloc::vec::Vec<u8>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EquityCurveQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EquityCurveResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub points: ::prost::alloc::vec::Vec<PortfolioDataPoint>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SymbolPerformanceQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub symbol: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SymbolPerformanceResponse {
+    #[prost(message, optional, tag = "1")]
+    pub return_pct: ::core::option::Option<super::common::Percentage>,
+    #[prost(message, optional, tag = "2")]
+    pub pnl: ::core::option::Option<super::common::Money>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RegimePerformanceQuery {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RegimePerformanceResponse {
+    #[prost(string, tag = "1")]
+    pub current_regime: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub regime_return: ::core::option::Option<super::common::Percentage>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClientStreamRequest {
+    #[prost(string, tag = "1")]
+    pub client_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSubscriptionRequest {
+    #[prost(string, tag = "1")]
+    pub client_id: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "2")]
+    pub event_types: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SnapshotSubscriptionRequest {
+    #[prost(string, tag = "1")]
+    pub client_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MetricsSubscriptionRequest {
+    #[prost(string, tag = "1")]
+    pub client_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PortfolioMetricsUpdate {
+    #[prost(string, tag = "1")]
+    pub portfolio_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub equity: ::core::option::Option<super::common::Decimal>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum HistoryGranularity {
@@ -963,12 +1243,12 @@ pub mod portfolio_engine_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        /// Get portfolio snapshot
-        pub async fn get_portfolio(
+        /// State and core engines
+        pub async fn get_portfolio_state(
             &mut self,
-            request: impl tonic::IntoRequest<super::PortfolioQuery>,
+            request: impl tonic::IntoRequest<super::PortfolioStateQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::PortfolioSnapshot>,
+            tonic::Response<super::PortfolioStateResponse>,
             tonic::Status,
         > {
             self.inner
@@ -982,51 +1262,74 @@ pub mod portfolio_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/GetPortfolio",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetPortfolio"),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// Get historical portfolio values
-        pub async fn get_portfolio_history(
-            &mut self,
-            request: impl tonic::IntoRequest<super::HistoryQuery>,
-        ) -> std::result::Result<
-            tonic::Response<super::PortfolioHistory>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/GetPortfolioHistory",
+                "/apex.portfolio.PortfolioEngine/GetPortfolioState",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "apex.portfolio.PortfolioEngine",
-                        "GetPortfolioHistory",
+                        "GetPortfolioState",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Get current allocation
+        pub async fn get_exposure(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ExposureQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::ExposureResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetExposure",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetExposure"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_heat(
+            &mut self,
+            request: impl tonic::IntoRequest<super::HeatQuery>,
+        ) -> std::result::Result<tonic::Response<super::HeatResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetHeat",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetHeat"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn get_allocation(
             &mut self,
             request: impl tonic::IntoRequest<super::AllocationQuery>,
-        ) -> std::result::Result<tonic::Response<super::Allocation>, tonic::Status> {
+        ) -> std::result::Result<
+            tonic::Response<super::AllocationResponse>,
+            tonic::Status,
+        > {
             self.inner
                 .ready()
                 .await
@@ -1047,12 +1350,11 @@ pub mod portfolio_engine_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Request rebalancing
-        pub async fn rebalance(
+        pub async fn get_quality(
             &mut self,
-            request: impl tonic::IntoRequest<super::RebalanceRequest>,
+            request: impl tonic::IntoRequest<super::QualityQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::RebalanceResponse>,
+            tonic::Response<super::QualityResponse>,
             tonic::Status,
         > {
             self.inner
@@ -1066,19 +1368,40 @@ pub mod portfolio_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/Rebalance",
+                "/apex.portfolio.PortfolioEngine/GetQuality",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("apex.portfolio.PortfolioEngine", "Rebalance"));
+                .insert(GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetQuality"));
             self.inner.unary(req, path, codec).await
         }
-        /// Calculate optimal allocation
-        pub async fn optimize_allocation(
+        pub async fn get_health(
             &mut self,
-            request: impl tonic::IntoRequest<super::OptimizeRequest>,
+            request: impl tonic::IntoRequest<super::HealthQuery>,
+        ) -> std::result::Result<tonic::Response<super::HealthResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetHealth",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetHealth"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_drawdown(
+            &mut self,
+            request: impl tonic::IntoRequest<super::DrawdownQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::OptimizeResponse>,
+            tonic::Response<super::DrawdownResponse>,
             tonic::Status,
         > {
             self.inner
@@ -1092,24 +1415,77 @@ pub mod portfolio_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/OptimizeAllocation",
+                "/apex.portfolio.PortfolioEngine/GetDrawdown",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetDrawdown"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_correlation(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CorrelationQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::CorrelationResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetCorrelation",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetCorrelation"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_recommendations(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RecommendationsQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::RecommendationsResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetRecommendations",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "apex.portfolio.PortfolioEngine",
-                        "OptimizeAllocation",
+                        "GetRecommendations",
                     ),
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Get performance attribution
-        pub async fn get_attribution(
+        pub async fn get_analytics(
             &mut self,
-            request: impl tonic::IntoRequest<super::AttributionQuery>,
+            request: impl tonic::IntoRequest<super::AnalyticsQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::AttributionReport>,
+            tonic::Response<super::AnalyticsResponse>,
             tonic::Status,
         > {
             self.inner
@@ -1123,19 +1499,186 @@ pub mod portfolio_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/GetAttribution",
+                "/apex.portfolio.PortfolioEngine/GetAnalytics",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetAttribution"),
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetAnalytics"),
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Subscribe to portfolio updates
-        pub async fn subscribe_updates(
+        /// Storage and replay
+        pub async fn replay_portfolio(
             &mut self,
-            request: impl tonic::IntoRequest<super::SubscriptionFilter>,
+            request: impl tonic::IntoRequest<super::ReplayRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReplayResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/ReplayPortfolio",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "ReplayPortfolio"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn load_snapshot(
+            &mut self,
+            request: impl tonic::IntoRequest<super::LoadSnapshotRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::LoadSnapshotResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/LoadSnapshot",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "LoadSnapshot"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn load_events(
+            &mut self,
+            request: impl tonic::IntoRequest<super::LoadEventsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::PortfolioEvent>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/LoadEvents",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.portfolio.PortfolioEngine", "LoadEvents"));
+            self.inner.server_streaming(req, path, codec).await
+        }
+        /// Advanced analytics
+        pub async fn get_equity_curve(
+            &mut self,
+            request: impl tonic::IntoRequest<super::EquityCurveQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::EquityCurveResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetEquityCurve",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "GetEquityCurve"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_symbol_performance(
+            &mut self,
+            request: impl tonic::IntoRequest<super::SymbolPerformanceQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::SymbolPerformanceResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetSymbolPerformance",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.portfolio.PortfolioEngine",
+                        "GetSymbolPerformance",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_regime_performance(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RegimePerformanceQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::RegimePerformanceResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/GetRegimePerformance",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.portfolio.PortfolioEngine",
+                        "GetRegimePerformance",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Streaming
+        pub async fn stream_updates(
+            &mut self,
+            request: impl tonic::IntoStreamingRequest<
+                Message = super::ClientStreamRequest,
+            >,
         ) -> std::result::Result<
             tonic::Response<tonic::codec::Streaming<super::PortfolioUpdate>>,
             tonic::Status,
@@ -1151,21 +1694,20 @@ pub mod portfolio_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/SubscribeUpdates",
+                "/apex.portfolio.PortfolioEngine/StreamUpdates",
             );
-            let mut req = request.into_request();
+            let mut req = request.into_streaming_request();
             req.extensions_mut()
                 .insert(
-                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "SubscribeUpdates"),
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "StreamUpdates"),
                 );
-            self.inner.server_streaming(req, path, codec).await
+            self.inner.streaming(req, path, codec).await
         }
-        /// Health check
-        pub async fn health(
+        pub async fn subscribe_events(
             &mut self,
-            request: impl tonic::IntoRequest<super::super::common::Empty>,
+            request: impl tonic::IntoRequest<super::EventSubscriptionRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
+            tonic::Response<tonic::codec::Streaming<super::PortfolioEvent>>,
             tonic::Status,
         > {
             self.inner
@@ -1179,12 +1721,71 @@ pub mod portfolio_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.portfolio.PortfolioEngine/Health",
+                "/apex.portfolio.PortfolioEngine/SubscribeEvents",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("apex.portfolio.PortfolioEngine", "Health"));
-            self.inner.unary(req, path, codec).await
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "SubscribeEvents"),
+                );
+            self.inner.server_streaming(req, path, codec).await
+        }
+        pub async fn subscribe_snapshots(
+            &mut self,
+            request: impl tonic::IntoRequest<super::SnapshotSubscriptionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::PortfolioSnapshot>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/SubscribeSnapshots",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.portfolio.PortfolioEngine",
+                        "SubscribeSnapshots",
+                    ),
+                );
+            self.inner.server_streaming(req, path, codec).await
+        }
+        pub async fn subscribe_metrics(
+            &mut self,
+            request: impl tonic::IntoRequest<super::MetricsSubscriptionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::PortfolioMetricsUpdate>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.portfolio.PortfolioEngine/SubscribeMetrics",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.portfolio.PortfolioEngine", "SubscribeMetrics"),
+                );
+            self.inner.server_streaming(req, path, codec).await
         }
     }
 }
@@ -1195,71 +1796,163 @@ pub mod portfolio_engine_server {
     /// Generated trait containing gRPC methods that should be implemented for use with PortfolioEngineServer.
     #[async_trait]
     pub trait PortfolioEngine: Send + Sync + 'static {
-        /// Get portfolio snapshot
-        async fn get_portfolio(
+        /// State and core engines
+        async fn get_portfolio_state(
             &self,
-            request: tonic::Request<super::PortfolioQuery>,
+            request: tonic::Request<super::PortfolioStateQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::PortfolioSnapshot>,
+            tonic::Response<super::PortfolioStateResponse>,
             tonic::Status,
         >;
-        /// Get historical portfolio values
-        async fn get_portfolio_history(
+        async fn get_exposure(
             &self,
-            request: tonic::Request<super::HistoryQuery>,
+            request: tonic::Request<super::ExposureQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::PortfolioHistory>,
+            tonic::Response<super::ExposureResponse>,
             tonic::Status,
         >;
-        /// Get current allocation
+        async fn get_heat(
+            &self,
+            request: tonic::Request<super::HeatQuery>,
+        ) -> std::result::Result<tonic::Response<super::HeatResponse>, tonic::Status>;
         async fn get_allocation(
             &self,
             request: tonic::Request<super::AllocationQuery>,
-        ) -> std::result::Result<tonic::Response<super::Allocation>, tonic::Status>;
-        /// Request rebalancing
-        async fn rebalance(
-            &self,
-            request: tonic::Request<super::RebalanceRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::RebalanceResponse>,
+            tonic::Response<super::AllocationResponse>,
             tonic::Status,
         >;
-        /// Calculate optimal allocation
-        async fn optimize_allocation(
+        async fn get_quality(
             &self,
-            request: tonic::Request<super::OptimizeRequest>,
+            request: tonic::Request<super::QualityQuery>,
+        ) -> std::result::Result<tonic::Response<super::QualityResponse>, tonic::Status>;
+        async fn get_health(
+            &self,
+            request: tonic::Request<super::HealthQuery>,
+        ) -> std::result::Result<tonic::Response<super::HealthResponse>, tonic::Status>;
+        async fn get_drawdown(
+            &self,
+            request: tonic::Request<super::DrawdownQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::OptimizeResponse>,
+            tonic::Response<super::DrawdownResponse>,
             tonic::Status,
         >;
-        /// Get performance attribution
-        async fn get_attribution(
+        async fn get_correlation(
             &self,
-            request: tonic::Request<super::AttributionQuery>,
+            request: tonic::Request<super::CorrelationQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::AttributionReport>,
+            tonic::Response<super::CorrelationResponse>,
             tonic::Status,
         >;
-        /// Server streaming response type for the SubscribeUpdates method.
-        type SubscribeUpdatesStream: tonic::codegen::tokio_stream::Stream<
+        async fn get_recommendations(
+            &self,
+            request: tonic::Request<super::RecommendationsQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::RecommendationsResponse>,
+            tonic::Status,
+        >;
+        async fn get_analytics(
+            &self,
+            request: tonic::Request<super::AnalyticsQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::AnalyticsResponse>,
+            tonic::Status,
+        >;
+        /// Storage and replay
+        async fn replay_portfolio(
+            &self,
+            request: tonic::Request<super::ReplayRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReplayResponse>, tonic::Status>;
+        async fn load_snapshot(
+            &self,
+            request: tonic::Request<super::LoadSnapshotRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::LoadSnapshotResponse>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the LoadEvents method.
+        type LoadEventsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::PortfolioEvent, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        async fn load_events(
+            &self,
+            request: tonic::Request<super::LoadEventsRequest>,
+        ) -> std::result::Result<tonic::Response<Self::LoadEventsStream>, tonic::Status>;
+        /// Advanced analytics
+        async fn get_equity_curve(
+            &self,
+            request: tonic::Request<super::EquityCurveQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::EquityCurveResponse>,
+            tonic::Status,
+        >;
+        async fn get_symbol_performance(
+            &self,
+            request: tonic::Request<super::SymbolPerformanceQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::SymbolPerformanceResponse>,
+            tonic::Status,
+        >;
+        async fn get_regime_performance(
+            &self,
+            request: tonic::Request<super::RegimePerformanceQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::RegimePerformanceResponse>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the StreamUpdates method.
+        type StreamUpdatesStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::PortfolioUpdate, tonic::Status>,
             >
             + Send
             + 'static;
-        /// Subscribe to portfolio updates
-        async fn subscribe_updates(
+        /// Streaming
+        async fn stream_updates(
             &self,
-            request: tonic::Request<super::SubscriptionFilter>,
+            request: tonic::Request<tonic::Streaming<super::ClientStreamRequest>>,
         ) -> std::result::Result<
-            tonic::Response<Self::SubscribeUpdatesStream>,
+            tonic::Response<Self::StreamUpdatesStream>,
             tonic::Status,
         >;
-        /// Health check
-        async fn health(
+        /// Server streaming response type for the SubscribeEvents method.
+        type SubscribeEventsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::PortfolioEvent, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        async fn subscribe_events(
             &self,
-            request: tonic::Request<super::super::common::Empty>,
+            request: tonic::Request<super::EventSubscriptionRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
+            tonic::Response<Self::SubscribeEventsStream>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the SubscribeSnapshots method.
+        type SubscribeSnapshotsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::PortfolioSnapshot, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        async fn subscribe_snapshots(
+            &self,
+            request: tonic::Request<super::SnapshotSubscriptionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<Self::SubscribeSnapshotsStream>,
+            tonic::Status,
+        >;
+        /// Server streaming response type for the SubscribeMetrics method.
+        type SubscribeMetricsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::PortfolioMetricsUpdate, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        async fn subscribe_metrics(
+            &self,
+            request: tonic::Request<super::MetricsSubscriptionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<Self::SubscribeMetricsStream>,
             tonic::Status,
         >;
     }
@@ -1343,25 +2036,26 @@ pub mod portfolio_engine_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/apex.portfolio.PortfolioEngine/GetPortfolio" => {
+                "/apex.portfolio.PortfolioEngine/GetPortfolioState" => {
                     #[allow(non_camel_case_types)]
-                    struct GetPortfolioSvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetPortfolioStateSvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::UnaryService<super::PortfolioQuery>
-                    for GetPortfolioSvc<T> {
-                        type Response = super::PortfolioSnapshot;
+                    > tonic::server::UnaryService<super::PortfolioStateQuery>
+                    for GetPortfolioStateSvc<T> {
+                        type Response = super::PortfolioStateResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::PortfolioQuery>,
+                            request: tonic::Request<super::PortfolioStateQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::get_portfolio(&inner, request).await
+                                <T as PortfolioEngine>::get_portfolio_state(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1373,7 +2067,7 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = GetPortfolioSvc(inner);
+                        let method = GetPortfolioStateSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1389,29 +2083,25 @@ pub mod portfolio_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.portfolio.PortfolioEngine/GetPortfolioHistory" => {
+                "/apex.portfolio.PortfolioEngine/GetExposure" => {
                     #[allow(non_camel_case_types)]
-                    struct GetPortfolioHistorySvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetExposureSvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::UnaryService<super::HistoryQuery>
-                    for GetPortfolioHistorySvc<T> {
-                        type Response = super::PortfolioHistory;
+                    > tonic::server::UnaryService<super::ExposureQuery>
+                    for GetExposureSvc<T> {
+                        type Response = super::ExposureResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::HistoryQuery>,
+                            request: tonic::Request<super::ExposureQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::get_portfolio_history(
-                                        &inner,
-                                        request,
-                                    )
-                                    .await
+                                <T as PortfolioEngine>::get_exposure(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1423,7 +2113,52 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = GetPortfolioHistorySvc(inner);
+                        let method = GetExposureSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/GetHeat" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetHeatSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::HeatQuery> for GetHeatSvc<T> {
+                        type Response = super::HeatResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HeatQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::get_heat(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetHeatSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1446,7 +2181,7 @@ pub mod portfolio_engine_server {
                         T: PortfolioEngine,
                     > tonic::server::UnaryService<super::AllocationQuery>
                     for GetAllocationSvc<T> {
-                        type Response = super::Allocation;
+                        type Response = super::AllocationResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
@@ -1486,25 +2221,25 @@ pub mod portfolio_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.portfolio.PortfolioEngine/Rebalance" => {
+                "/apex.portfolio.PortfolioEngine/GetQuality" => {
                     #[allow(non_camel_case_types)]
-                    struct RebalanceSvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetQualitySvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::UnaryService<super::RebalanceRequest>
-                    for RebalanceSvc<T> {
-                        type Response = super::RebalanceResponse;
+                    > tonic::server::UnaryService<super::QualityQuery>
+                    for GetQualitySvc<T> {
+                        type Response = super::QualityResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::RebalanceRequest>,
+                            request: tonic::Request<super::QualityQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::rebalance(&inner, request).await
+                                <T as PortfolioEngine>::get_quality(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1516,7 +2251,7 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = RebalanceSvc(inner);
+                        let method = GetQualitySvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1532,25 +2267,117 @@ pub mod portfolio_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.portfolio.PortfolioEngine/OptimizeAllocation" => {
+                "/apex.portfolio.PortfolioEngine/GetHealth" => {
                     #[allow(non_camel_case_types)]
-                    struct OptimizeAllocationSvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetHealthSvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::UnaryService<super::OptimizeRequest>
-                    for OptimizeAllocationSvc<T> {
-                        type Response = super::OptimizeResponse;
+                    > tonic::server::UnaryService<super::HealthQuery>
+                    for GetHealthSvc<T> {
+                        type Response = super::HealthResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::OptimizeRequest>,
+                            request: tonic::Request<super::HealthQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::optimize_allocation(&inner, request)
+                                <T as PortfolioEngine>::get_health(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetHealthSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/GetDrawdown" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetDrawdownSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::DrawdownQuery>
+                    for GetDrawdownSvc<T> {
+                        type Response = super::DrawdownResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DrawdownQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::get_drawdown(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetDrawdownSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/GetCorrelation" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetCorrelationSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::CorrelationQuery>
+                    for GetCorrelationSvc<T> {
+                        type Response = super::CorrelationResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CorrelationQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::get_correlation(&inner, request)
                                     .await
                             };
                             Box::pin(fut)
@@ -1563,7 +2390,7 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = OptimizeAllocationSvc(inner);
+                        let method = GetCorrelationSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1579,25 +2406,25 @@ pub mod portfolio_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.portfolio.PortfolioEngine/GetAttribution" => {
+                "/apex.portfolio.PortfolioEngine/GetRecommendations" => {
                     #[allow(non_camel_case_types)]
-                    struct GetAttributionSvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetRecommendationsSvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::UnaryService<super::AttributionQuery>
-                    for GetAttributionSvc<T> {
-                        type Response = super::AttributionReport;
+                    > tonic::server::UnaryService<super::RecommendationsQuery>
+                    for GetRecommendationsSvc<T> {
+                        type Response = super::RecommendationsResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::AttributionQuery>,
+                            request: tonic::Request<super::RecommendationsQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::get_attribution(&inner, request)
+                                <T as PortfolioEngine>::get_recommendations(&inner, request)
                                     .await
                             };
                             Box::pin(fut)
@@ -1610,7 +2437,7 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = GetAttributionSvc(inner);
+                        let method = GetRecommendationsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1626,27 +2453,165 @@ pub mod portfolio_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.portfolio.PortfolioEngine/SubscribeUpdates" => {
+                "/apex.portfolio.PortfolioEngine/GetAnalytics" => {
                     #[allow(non_camel_case_types)]
-                    struct SubscribeUpdatesSvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetAnalyticsSvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::ServerStreamingService<super::SubscriptionFilter>
-                    for SubscribeUpdatesSvc<T> {
-                        type Response = super::PortfolioUpdate;
-                        type ResponseStream = T::SubscribeUpdatesStream;
+                    > tonic::server::UnaryService<super::AnalyticsQuery>
+                    for GetAnalyticsSvc<T> {
+                        type Response = super::AnalyticsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::AnalyticsQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::get_analytics(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetAnalyticsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/ReplayPortfolio" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReplayPortfolioSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::ReplayRequest>
+                    for ReplayPortfolioSvc<T> {
+                        type Response = super::ReplayResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ReplayRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::replay_portfolio(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReplayPortfolioSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/LoadSnapshot" => {
+                    #[allow(non_camel_case_types)]
+                    struct LoadSnapshotSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::LoadSnapshotRequest>
+                    for LoadSnapshotSvc<T> {
+                        type Response = super::LoadSnapshotResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::LoadSnapshotRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::load_snapshot(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = LoadSnapshotSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/LoadEvents" => {
+                    #[allow(non_camel_case_types)]
+                    struct LoadEventsSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::ServerStreamingService<super::LoadEventsRequest>
+                    for LoadEventsSvc<T> {
+                        type Response = super::PortfolioEvent;
+                        type ResponseStream = T::LoadEventsStream;
                         type Future = BoxFuture<
                             tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::SubscriptionFilter>,
+                            request: tonic::Request<super::LoadEventsRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::subscribe_updates(&inner, request)
-                                    .await
+                                <T as PortfolioEngine>::load_events(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1658,7 +2623,7 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = SubscribeUpdatesSvc(inner);
+                        let method = LoadEventsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1674,25 +2639,26 @@ pub mod portfolio_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.portfolio.PortfolioEngine/Health" => {
+                "/apex.portfolio.PortfolioEngine/GetEquityCurve" => {
                     #[allow(non_camel_case_types)]
-                    struct HealthSvc<T: PortfolioEngine>(pub Arc<T>);
+                    struct GetEquityCurveSvc<T: PortfolioEngine>(pub Arc<T>);
                     impl<
                         T: PortfolioEngine,
-                    > tonic::server::UnaryService<super::super::common::Empty>
-                    for HealthSvc<T> {
-                        type Response = super::super::common::Result;
+                    > tonic::server::UnaryService<super::EquityCurveQuery>
+                    for GetEquityCurveSvc<T> {
+                        type Response = super::EquityCurveResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::super::common::Empty>,
+                            request: tonic::Request<super::EquityCurveQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as PortfolioEngine>::health(&inner, request).await
+                                <T as PortfolioEngine>::get_equity_curve(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -1704,7 +2670,7 @@ pub mod portfolio_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = HealthSvc(inner);
+                        let method = GetEquityCurveSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1716,6 +2682,303 @@ pub mod portfolio_engine_server {
                                 max_encoding_message_size,
                             );
                         let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/GetSymbolPerformance" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetSymbolPerformanceSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::SymbolPerformanceQuery>
+                    for GetSymbolPerformanceSvc<T> {
+                        type Response = super::SymbolPerformanceResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::SymbolPerformanceQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::get_symbol_performance(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetSymbolPerformanceSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/GetRegimePerformance" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetRegimePerformanceSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::UnaryService<super::RegimePerformanceQuery>
+                    for GetRegimePerformanceSvc<T> {
+                        type Response = super::RegimePerformanceResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::RegimePerformanceQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::get_regime_performance(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetRegimePerformanceSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/StreamUpdates" => {
+                    #[allow(non_camel_case_types)]
+                    struct StreamUpdatesSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::StreamingService<super::ClientStreamRequest>
+                    for StreamUpdatesSvc<T> {
+                        type Response = super::PortfolioUpdate;
+                        type ResponseStream = T::StreamUpdatesStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                tonic::Streaming<super::ClientStreamRequest>,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::stream_updates(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = StreamUpdatesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/SubscribeEvents" => {
+                    #[allow(non_camel_case_types)]
+                    struct SubscribeEventsSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::ServerStreamingService<
+                        super::EventSubscriptionRequest,
+                    > for SubscribeEventsSvc<T> {
+                        type Response = super::PortfolioEvent;
+                        type ResponseStream = T::SubscribeEventsStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::EventSubscriptionRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::subscribe_events(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SubscribeEventsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/SubscribeSnapshots" => {
+                    #[allow(non_camel_case_types)]
+                    struct SubscribeSnapshotsSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::ServerStreamingService<
+                        super::SnapshotSubscriptionRequest,
+                    > for SubscribeSnapshotsSvc<T> {
+                        type Response = super::PortfolioSnapshot;
+                        type ResponseStream = T::SubscribeSnapshotsStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::SnapshotSubscriptionRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::subscribe_snapshots(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SubscribeSnapshotsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.portfolio.PortfolioEngine/SubscribeMetrics" => {
+                    #[allow(non_camel_case_types)]
+                    struct SubscribeMetricsSvc<T: PortfolioEngine>(pub Arc<T>);
+                    impl<
+                        T: PortfolioEngine,
+                    > tonic::server::ServerStreamingService<
+                        super::MetricsSubscriptionRequest,
+                    > for SubscribeMetricsSvc<T> {
+                        type Response = super::PortfolioMetricsUpdate;
+                        type ResponseStream = T::SubscribeMetricsStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::MetricsSubscriptionRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as PortfolioEngine>::subscribe_metrics(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SubscribeMetricsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

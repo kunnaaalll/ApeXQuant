@@ -1,0 +1,10 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ExpectancyState {
+    Exceptional,
+    Strong,
+    Normal,
+    Weak,
+    Negative,
+}

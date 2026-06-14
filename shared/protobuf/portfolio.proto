@@ -11,29 +11,33 @@ option java_multiple_files = true;
 
 // Portfolio Engine Service
 service PortfolioEngine {
-  // Get portfolio snapshot
-  rpc GetPortfolio(PortfolioQuery) returns (PortfolioSnapshot);
+  // State and core engines
+  rpc GetPortfolioState(PortfolioStateQuery) returns (PortfolioStateResponse);
+  rpc GetExposure(ExposureQuery) returns (ExposureResponse);
+  rpc GetHeat(HeatQuery) returns (HeatResponse);
+  rpc GetAllocation(AllocationQuery) returns (AllocationResponse);
+  rpc GetQuality(QualityQuery) returns (QualityResponse);
+  rpc GetHealth(HealthQuery) returns (HealthResponse);
+  rpc GetDrawdown(DrawdownQuery) returns (DrawdownResponse);
+  rpc GetCorrelation(CorrelationQuery) returns (CorrelationResponse);
+  rpc GetRecommendations(RecommendationsQuery) returns (RecommendationsResponse);
+  rpc GetAnalytics(AnalyticsQuery) returns (AnalyticsResponse);
 
-  // Get historical portfolio values
-  rpc GetPortfolioHistory(HistoryQuery) returns (PortfolioHistory);
+  // Storage and replay
+  rpc ReplayPortfolio(ReplayRequest) returns (ReplayResponse);
+  rpc LoadSnapshot(LoadSnapshotRequest) returns (LoadSnapshotResponse);
+  rpc LoadEvents(LoadEventsRequest) returns (stream PortfolioEvent);
 
-  // Get current allocation
-  rpc GetAllocation(AllocationQuery) returns (Allocation);
+  // Advanced analytics
+  rpc GetEquityCurve(EquityCurveQuery) returns (EquityCurveResponse);
+  rpc GetSymbolPerformance(SymbolPerformanceQuery) returns (SymbolPerformanceResponse);
+  rpc GetRegimePerformance(RegimePerformanceQuery) returns (RegimePerformanceResponse);
 
-  // Request rebalancing
-  rpc Rebalance(RebalanceRequest) returns (RebalanceResponse);
-
-  // Calculate optimal allocation
-  rpc OptimizeAllocation(OptimizeRequest) returns (OptimizeResponse);
-
-  // Get performance attribution
-  rpc GetAttribution(AttributionQuery) returns (AttributionReport);
-
-  // Subscribe to portfolio updates
-  rpc SubscribeUpdates(SubscriptionFilter) returns (stream PortfolioUpdate);
-
-  // Health check
-  rpc Health(common.Empty) returns (common.Result);
+  // Streaming
+  rpc StreamUpdates(stream ClientStreamRequest) returns (stream PortfolioUpdate);
+  rpc SubscribeEvents(EventSubscriptionRequest) returns (stream PortfolioEvent);
+  rpc SubscribeSnapshots(SnapshotSubscriptionRequest) returns (stream PortfolioSnapshot);
+  rpc SubscribeMetrics(MetricsSubscriptionRequest) returns (stream PortfolioMetricsUpdate);
 }
 
 // Portfolio snapshot
@@ -441,3 +445,151 @@ message PositionChange {
   string change_type = 2;
   common.Money impact = 3;
 }
+
+// ==== NEW MESSAGES FOR V3 API ====
+
+message PortfolioStateQuery {
+  string portfolio_id = 1;
+}
+message PortfolioStateResponse {
+  PortfolioSnapshot state = 1;
+}
+
+message ExposureQuery {
+  string portfolio_id = 1;
+}
+message ExposureResponse {
+  ExposureBreakdown exposure = 1;
+}
+
+message HeatQuery {
+  string portfolio_id = 1;
+}
+message HeatResponse {
+  common.Decimal heat_index = 1;
+  common.Percentage margin_utilization = 2;
+}
+
+message AllocationResponse {
+  Allocation allocation = 1;
+}
+
+message QualityQuery {
+  string portfolio_id = 1;
+}
+message QualityResponse {
+  common.Decimal quality_score = 1;
+}
+
+message HealthQuery {
+  string portfolio_id = 1;
+}
+message HealthResponse {
+  common.Decimal health_score = 1;
+  string status = 2;
+}
+
+message DrawdownResponse {
+  common.Percentage current_drawdown = 1;
+  common.Percentage max_drawdown = 2;
+}
+
+message DrawdownQuery {
+  string portfolio_id = 1;
+}
+
+message CorrelationQuery {
+  string portfolio_id = 1;
+}
+message CorrelationResponse {
+  common.Decimal avg_correlation = 1;
+}
+
+message RecommendationsQuery {
+  string portfolio_id = 1;
+}
+message RecommendationsResponse {
+  repeated TradeInstruction recommendations = 1;
+}
+
+message AnalyticsQuery {
+  string portfolio_id = 1;
+}
+message AnalyticsResponse {
+  PerformanceMetrics analytics = 1;
+}
+
+message ReplayRequest {
+  string portfolio_id = 1;
+  common.Timestamp to_time = 2;
+}
+message ReplayResponse {
+  bool success = 1;
+  PortfolioSnapshot state = 2;
+}
+
+message LoadSnapshotRequest {
+  string portfolio_id = 1;
+  string snapshot_id = 2;
+}
+message LoadSnapshotResponse {
+  PortfolioSnapshot state = 1;
+}
+
+message LoadEventsRequest {
+  string portfolio_id = 1;
+  common.Timestamp from = 2;
+}
+message PortfolioEvent {
+  string event_id = 1;
+  string type = 2;
+  bytes payload = 3;
+}
+
+message EquityCurveQuery {
+  string portfolio_id = 1;
+}
+
+message EquityCurveResponse {
+  repeated PortfolioDataPoint points = 1;
+}
+
+message SymbolPerformanceQuery {
+  string portfolio_id = 1;
+  string symbol = 2;
+}
+message SymbolPerformanceResponse {
+  common.Percentage return_pct = 1;
+  common.Money pnl = 2;
+}
+
+message RegimePerformanceQuery {
+  string portfolio_id = 1;
+}
+message RegimePerformanceResponse {
+  string current_regime = 1;
+  common.Percentage regime_return = 2;
+}
+
+message ClientStreamRequest {
+  string client_id = 1;
+}
+
+message EventSubscriptionRequest {
+  string client_id = 1;
+  repeated string event_types = 2;
+}
+
+message SnapshotSubscriptionRequest {
+  string client_id = 1;
+}
+
+message MetricsSubscriptionRequest {
+  string client_id = 1;
+}
+
+message PortfolioMetricsUpdate {
+  string portfolio_id = 1;
+  common.Decimal equity = 2;
+}
+
