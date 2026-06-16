@@ -23,6 +23,7 @@ pub mod streaks;
 pub mod symbol;
 pub mod timeframe;
 pub mod validation;
+pub mod shadow;
 pub mod intelligence;
 pub mod drift;
 pub mod learning;

@@ -37,8 +37,6 @@ apex-protos = { path = "../../shared/apex-protos" }
 # Service-specific
 once_cell = "1.19"
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
-rand = "0.9.4"
-
 [dev-dependencies]
 tokio-test.workspace = true
 mockall.workspace = true
