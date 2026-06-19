@@ -10,3 +10,26 @@ rust-version.workspace = true
 [dependencies]
 rust_decimal.workspace = true
 rust_decimal_macros = "1.40.0"
+sqlx.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+async-trait.workspace = true
+
+# Internal
+apex-protos = { path = "../../shared/apex-protos" }
+
+# API & gRPC
+tonic.workspace = true
+prost.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tokio = { workspace = true, features = ["full"] }
+http = "1.1"
+thiserror.workspace = true
+futures-util.workspace = true
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+reqwest.workspace = true

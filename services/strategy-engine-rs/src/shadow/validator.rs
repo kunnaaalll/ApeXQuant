@@ -39,9 +39,21 @@ impl GoLiveValidator {
                 _ => GoLiveState::Approved,
             };
         } else {
-            // Demotions occur immediately
-            self.consecutive_exact_matches = 0;
-            self.state = GoLiveState::NotReady;
+            // Demotions occur immediately but step-wise to prevent state skipping
+            match self.state {
+                GoLiveState::Approved => {
+                    self.consecutive_exact_matches = 999;
+                    self.state = GoLiveState::Candidate;
+                }
+                GoLiveState::Candidate => {
+                    self.consecutive_exact_matches = 99;
+                    self.state = GoLiveState::Monitoring;
+                }
+                GoLiveState::Monitoring | GoLiveState::NotReady => {
+                    self.consecutive_exact_matches = 0;
+                    self.state = GoLiveState::NotReady;
+                }
+            }
         }
     }
 }
