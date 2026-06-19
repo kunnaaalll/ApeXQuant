@@ -568,6 +568,208 @@ pub struct TradeOutcome {
     pub risk_context_at_entry: ::core::option::Option<RiskContext>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RiskStateQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RiskStateResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub as_of: ::core::option::Option<super::common::Timestamp>,
+    #[prost(string, tag = "3")]
+    pub state: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DrawdownQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DrawdownResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub current_drawdown: ::core::option::Option<super::common::Percentage>,
+    #[prost(message, optional, tag = "3")]
+    pub max_drawdown: ::core::option::Option<super::common::Percentage>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExposureQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExposureResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub total_exposure: ::core::option::Option<super::common::Money>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CorrelationQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CorrelationResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub matrix: ::core::option::Option<CorrelationMatrix>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HiddenLeverageQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HiddenLeverageResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub leverage_ratio: ::core::option::Option<super::common::Decimal>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct VarQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub confidence_level: ::core::option::Option<super::common::Percentage>,
+    #[prost(int32, tag = "3")]
+    pub time_horizon_days: i32,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct VarResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub value_at_risk: ::core::option::Option<super::common::Money>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExpectedShortfallResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub expected_shortfall: ::core::option::Option<super::common::Money>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CircuitBreakerQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CircuitBreakerResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(bool, tag = "2")]
+    pub is_tripped: bool,
+    #[prost(string, tag = "3")]
+    pub reason: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RecommendationQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub symbol: ::core::option::Option<super::common::Symbol>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RecommendationResponse {
+    #[prost(message, optional, tag = "1")]
+    pub recommendation: ::core::option::Option<PositionRecommendation>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StressQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub scenario_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StressResponse {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub scenario_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub estimated_loss: ::core::option::Option<super::common::Money>,
+    #[prost(bool, tag = "4")]
+    pub survived: bool,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventQuery {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub start_time: ::core::option::Option<super::common::Timestamp>,
+    #[prost(message, optional, tag = "3")]
+    pub end_time: ::core::option::Option<super::common::Timestamp>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EventSubscription {
+    #[prost(string, tag = "1")]
+    pub account_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct RiskEvent {
+    #[prost(string, tag = "1")]
+    pub event_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub account_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub event_type: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub timestamp: ::core::option::Option<super::common::Timestamp>,
+    #[prost(string, tag = "5")]
+    pub payload_json: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ApprovalLevel {
@@ -780,35 +982,12 @@ pub mod risk_engine_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        /// Pre-trade risk assessment
-        pub async fn assess_risk(
+        /// State
+        pub async fn get_risk_state(
             &mut self,
-            request: impl tonic::IntoRequest<super::AssessRequest>,
-        ) -> std::result::Result<tonic::Response<super::AssessResponse>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/AssessRisk",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "AssessRisk"));
-            self.inner.unary(req, path, codec).await
-        }
-        /// Validate an order against all risk limits
-        pub async fn validate_order(
-            &mut self,
-            request: impl tonic::IntoRequest<super::ValidateOrderRequest>,
+            request: impl tonic::IntoRequest<super::RiskStateQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::ValidateOrderResponse>,
+            tonic::Response<super::RiskStateResponse>,
             tonic::Status,
         > {
             self.inner
@@ -822,19 +1001,19 @@ pub mod risk_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/ValidateOrder",
+                "/apex.risk.RiskEngine/GetRiskState",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "ValidateOrder"));
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetRiskState"));
             self.inner.unary(req, path, codec).await
         }
-        /// Calculate position sizing recommendation
-        pub async fn calculate_position_size(
+        /// Drawdown
+        pub async fn get_drawdown(
             &mut self,
-            request: impl tonic::IntoRequest<super::PositionSizeRequest>,
+            request: impl tonic::IntoRequest<super::DrawdownQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::PositionSizeResponse>,
+            tonic::Response<super::DrawdownResponse>,
             tonic::Status,
         > {
             self.inner
@@ -848,44 +1027,19 @@ pub mod risk_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/CalculatePositionSize",
+                "/apex.risk.RiskEngine/GetDrawdown",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(
-                    GrpcMethod::new("apex.risk.RiskEngine", "CalculatePositionSize"),
-                );
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetDrawdown"));
             self.inner.unary(req, path, codec).await
         }
-        /// Get current risk limits and usage
-        pub async fn get_limits(
+        /// Exposure
+        pub async fn get_exposure(
             &mut self,
-            request: impl tonic::IntoRequest<super::super::common::Empty>,
-        ) -> std::result::Result<tonic::Response<super::RiskLimits>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/GetLimits",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetLimits"));
-            self.inner.unary(req, path, codec).await
-        }
-        /// Update risk configuration
-        pub async fn configure(
-            &mut self,
-            request: impl tonic::IntoRequest<super::RiskConfiguration>,
+            request: impl tonic::IntoRequest<super::ExposureQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
+            tonic::Response<super::ExposureResponse>,
             tonic::Status,
         > {
             self.inner
@@ -899,19 +1053,19 @@ pub mod risk_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/Configure",
+                "/apex.risk.RiskEngine/GetExposure",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "Configure"));
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetExposure"));
             self.inner.unary(req, path, codec).await
         }
-        /// Real-time risk exposure stream
-        pub async fn subscribe_exposure(
+        /// Correlation
+        pub async fn get_correlation(
             &mut self,
-            request: impl tonic::IntoRequest<super::ExposureFilter>,
+            request: impl tonic::IntoRequest<super::CorrelationQuery>,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::ExposureUpdate>>,
+            tonic::Response<super::CorrelationResponse>,
             tonic::Status,
         > {
             self.inner
@@ -925,19 +1079,215 @@ pub mod risk_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/SubscribeExposure",
+                "/apex.risk.RiskEngine/GetCorrelation",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "SubscribeExposure"));
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetCorrelation"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// Hidden Leverage
+        pub async fn get_hidden_leverage(
+            &mut self,
+            request: impl tonic::IntoRequest<super::HiddenLeverageQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::HiddenLeverageResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetHiddenLeverage",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetHiddenLeverage"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// VaR
+        pub async fn get_historical_var(
+            &mut self,
+            request: impl tonic::IntoRequest<super::VarQuery>,
+        ) -> std::result::Result<tonic::Response<super::VarResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetHistoricalVar",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetHistoricalVar"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_parametric_var(
+            &mut self,
+            request: impl tonic::IntoRequest<super::VarQuery>,
+        ) -> std::result::Result<tonic::Response<super::VarResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetParametricVar",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetParametricVar"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_expected_shortfall(
+            &mut self,
+            request: impl tonic::IntoRequest<super::VarQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::ExpectedShortfallResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetExpectedShortfall",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetExpectedShortfall"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// Circuit Breakers
+        pub async fn get_circuit_breaker(
+            &mut self,
+            request: impl tonic::IntoRequest<super::CircuitBreakerQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::CircuitBreakerResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetCircuitBreaker",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetCircuitBreaker"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// Recommendations
+        pub async fn get_recommendation(
+            &mut self,
+            request: impl tonic::IntoRequest<super::RecommendationQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::RecommendationResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetRecommendation",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetRecommendation"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// Stress Engine
+        pub async fn get_stress_assessment(
+            &mut self,
+            request: impl tonic::IntoRequest<super::StressQuery>,
+        ) -> std::result::Result<tonic::Response<super::StressResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/GetStressAssessment",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "GetStressAssessment"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// Events
+        pub async fn load_events(
+            &mut self,
+            request: impl tonic::IntoRequest<super::EventQuery>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::RiskEvent>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.risk.RiskEngine/LoadEvents",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "LoadEvents"));
             self.inner.server_streaming(req, path, codec).await
         }
-        /// Record trade outcome for risk model updates
-        pub async fn record_outcome(
+        pub async fn subscribe_events(
             &mut self,
-            request: impl tonic::IntoRequest<super::TradeOutcome>,
+            request: impl tonic::IntoRequest<super::EventSubscription>,
         ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
+            tonic::Response<tonic::codec::Streaming<super::RiskEvent>>,
             tonic::Status,
         > {
             self.inner
@@ -951,38 +1301,12 @@ pub mod risk_engine_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/RecordOutcome",
+                "/apex.risk.RiskEngine/SubscribeEvents",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "RecordOutcome"));
-            self.inner.unary(req, path, codec).await
-        }
-        /// Health check
-        pub async fn health(
-            &mut self,
-            request: impl tonic::IntoRequest<super::super::common::Empty>,
-        ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/apex.risk.RiskEngine/Health",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("apex.risk.RiskEngine", "Health"));
-            self.inner.unary(req, path, codec).await
+                .insert(GrpcMethod::new("apex.risk.RiskEngine", "SubscribeEvents"));
+            self.inner.server_streaming(req, path, codec).await
         }
     }
 }
@@ -993,68 +1317,105 @@ pub mod risk_engine_server {
     /// Generated trait containing gRPC methods that should be implemented for use with RiskEngineServer.
     #[async_trait]
     pub trait RiskEngine: Send + Sync + 'static {
-        /// Pre-trade risk assessment
-        async fn assess_risk(
+        /// State
+        async fn get_risk_state(
             &self,
-            request: tonic::Request<super::AssessRequest>,
-        ) -> std::result::Result<tonic::Response<super::AssessResponse>, tonic::Status>;
-        /// Validate an order against all risk limits
-        async fn validate_order(
-            &self,
-            request: tonic::Request<super::ValidateOrderRequest>,
+            request: tonic::Request<super::RiskStateQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::ValidateOrderResponse>,
+            tonic::Response<super::RiskStateResponse>,
             tonic::Status,
         >;
-        /// Calculate position sizing recommendation
-        async fn calculate_position_size(
+        /// Drawdown
+        async fn get_drawdown(
             &self,
-            request: tonic::Request<super::PositionSizeRequest>,
+            request: tonic::Request<super::DrawdownQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::PositionSizeResponse>,
+            tonic::Response<super::DrawdownResponse>,
             tonic::Status,
         >;
-        /// Get current risk limits and usage
-        async fn get_limits(
+        /// Exposure
+        async fn get_exposure(
             &self,
-            request: tonic::Request<super::super::common::Empty>,
-        ) -> std::result::Result<tonic::Response<super::RiskLimits>, tonic::Status>;
-        /// Update risk configuration
-        async fn configure(
-            &self,
-            request: tonic::Request<super::RiskConfiguration>,
+            request: tonic::Request<super::ExposureQuery>,
         ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
+            tonic::Response<super::ExposureResponse>,
             tonic::Status,
         >;
-        /// Server streaming response type for the SubscribeExposure method.
-        type SubscribeExposureStream: tonic::codegen::tokio_stream::Stream<
-                Item = std::result::Result<super::ExposureUpdate, tonic::Status>,
+        /// Correlation
+        async fn get_correlation(
+            &self,
+            request: tonic::Request<super::CorrelationQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::CorrelationResponse>,
+            tonic::Status,
+        >;
+        /// Hidden Leverage
+        async fn get_hidden_leverage(
+            &self,
+            request: tonic::Request<super::HiddenLeverageQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::HiddenLeverageResponse>,
+            tonic::Status,
+        >;
+        /// VaR
+        async fn get_historical_var(
+            &self,
+            request: tonic::Request<super::VarQuery>,
+        ) -> std::result::Result<tonic::Response<super::VarResponse>, tonic::Status>;
+        async fn get_parametric_var(
+            &self,
+            request: tonic::Request<super::VarQuery>,
+        ) -> std::result::Result<tonic::Response<super::VarResponse>, tonic::Status>;
+        async fn get_expected_shortfall(
+            &self,
+            request: tonic::Request<super::VarQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::ExpectedShortfallResponse>,
+            tonic::Status,
+        >;
+        /// Circuit Breakers
+        async fn get_circuit_breaker(
+            &self,
+            request: tonic::Request<super::CircuitBreakerQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::CircuitBreakerResponse>,
+            tonic::Status,
+        >;
+        /// Recommendations
+        async fn get_recommendation(
+            &self,
+            request: tonic::Request<super::RecommendationQuery>,
+        ) -> std::result::Result<
+            tonic::Response<super::RecommendationResponse>,
+            tonic::Status,
+        >;
+        /// Stress Engine
+        async fn get_stress_assessment(
+            &self,
+            request: tonic::Request<super::StressQuery>,
+        ) -> std::result::Result<tonic::Response<super::StressResponse>, tonic::Status>;
+        /// Server streaming response type for the LoadEvents method.
+        type LoadEventsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::RiskEvent, tonic::Status>,
             >
             + Send
             + 'static;
-        /// Real-time risk exposure stream
-        async fn subscribe_exposure(
+        /// Events
+        async fn load_events(
             &self,
-            request: tonic::Request<super::ExposureFilter>,
-        ) -> std::result::Result<
-            tonic::Response<Self::SubscribeExposureStream>,
-            tonic::Status,
-        >;
-        /// Record trade outcome for risk model updates
-        async fn record_outcome(
+            request: tonic::Request<super::EventQuery>,
+        ) -> std::result::Result<tonic::Response<Self::LoadEventsStream>, tonic::Status>;
+        /// Server streaming response type for the SubscribeEvents method.
+        type SubscribeEventsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::RiskEvent, tonic::Status>,
+            >
+            + Send
+            + 'static;
+        async fn subscribe_events(
             &self,
-            request: tonic::Request<super::TradeOutcome>,
+            request: tonic::Request<super::EventSubscription>,
         ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
-            tonic::Status,
-        >;
-        /// Health check
-        async fn health(
-            &self,
-            request: tonic::Request<super::super::common::Empty>,
-        ) -> std::result::Result<
-            tonic::Response<super::super::common::Result>,
+            tonic::Response<Self::SubscribeEventsStream>,
             tonic::Status,
         >;
     }
@@ -1138,23 +1499,25 @@ pub mod risk_engine_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/apex.risk.RiskEngine/AssessRisk" => {
+                "/apex.risk.RiskEngine/GetRiskState" => {
                     #[allow(non_camel_case_types)]
-                    struct AssessRiskSvc<T: RiskEngine>(pub Arc<T>);
-                    impl<T: RiskEngine> tonic::server::UnaryService<super::AssessRequest>
-                    for AssessRiskSvc<T> {
-                        type Response = super::AssessResponse;
+                    struct GetRiskStateSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<
+                        T: RiskEngine,
+                    > tonic::server::UnaryService<super::RiskStateQuery>
+                    for GetRiskStateSvc<T> {
+                        type Response = super::RiskStateResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::AssessRequest>,
+                            request: tonic::Request<super::RiskStateQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::assess_risk(&inner, request).await
+                                <T as RiskEngine>::get_risk_state(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1166,7 +1529,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = AssessRiskSvc(inner);
+                        let method = GetRiskStateSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1182,25 +1545,23 @@ pub mod risk_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.risk.RiskEngine/ValidateOrder" => {
+                "/apex.risk.RiskEngine/GetDrawdown" => {
                     #[allow(non_camel_case_types)]
-                    struct ValidateOrderSvc<T: RiskEngine>(pub Arc<T>);
-                    impl<
-                        T: RiskEngine,
-                    > tonic::server::UnaryService<super::ValidateOrderRequest>
-                    for ValidateOrderSvc<T> {
-                        type Response = super::ValidateOrderResponse;
+                    struct GetDrawdownSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<T: RiskEngine> tonic::server::UnaryService<super::DrawdownQuery>
+                    for GetDrawdownSvc<T> {
+                        type Response = super::DrawdownResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::ValidateOrderRequest>,
+                            request: tonic::Request<super::DrawdownQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::validate_order(&inner, request).await
+                                <T as RiskEngine>::get_drawdown(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1212,7 +1573,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = ValidateOrderSvc(inner);
+                        let method = GetDrawdownSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1228,25 +1589,115 @@ pub mod risk_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.risk.RiskEngine/CalculatePositionSize" => {
+                "/apex.risk.RiskEngine/GetExposure" => {
                     #[allow(non_camel_case_types)]
-                    struct CalculatePositionSizeSvc<T: RiskEngine>(pub Arc<T>);
-                    impl<
-                        T: RiskEngine,
-                    > tonic::server::UnaryService<super::PositionSizeRequest>
-                    for CalculatePositionSizeSvc<T> {
-                        type Response = super::PositionSizeResponse;
+                    struct GetExposureSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<T: RiskEngine> tonic::server::UnaryService<super::ExposureQuery>
+                    for GetExposureSvc<T> {
+                        type Response = super::ExposureResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::PositionSizeRequest>,
+                            request: tonic::Request<super::ExposureQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::calculate_position_size(&inner, request)
+                                <T as RiskEngine>::get_exposure(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetExposureSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.risk.RiskEngine/GetCorrelation" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetCorrelationSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<
+                        T: RiskEngine,
+                    > tonic::server::UnaryService<super::CorrelationQuery>
+                    for GetCorrelationSvc<T> {
+                        type Response = super::CorrelationResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CorrelationQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as RiskEngine>::get_correlation(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetCorrelationSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.risk.RiskEngine/GetHiddenLeverage" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetHiddenLeverageSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<
+                        T: RiskEngine,
+                    > tonic::server::UnaryService<super::HiddenLeverageQuery>
+                    for GetHiddenLeverageSvc<T> {
+                        type Response = super::HiddenLeverageResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HiddenLeverageQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as RiskEngine>::get_hidden_leverage(&inner, request)
                                     .await
                             };
                             Box::pin(fut)
@@ -1259,7 +1710,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = CalculatePositionSizeSvc(inner);
+                        let method = GetHiddenLeverageSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1275,25 +1726,23 @@ pub mod risk_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.risk.RiskEngine/GetLimits" => {
+                "/apex.risk.RiskEngine/GetHistoricalVar" => {
                     #[allow(non_camel_case_types)]
-                    struct GetLimitsSvc<T: RiskEngine>(pub Arc<T>);
-                    impl<
-                        T: RiskEngine,
-                    > tonic::server::UnaryService<super::super::common::Empty>
-                    for GetLimitsSvc<T> {
-                        type Response = super::RiskLimits;
+                    struct GetHistoricalVarSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<T: RiskEngine> tonic::server::UnaryService<super::VarQuery>
+                    for GetHistoricalVarSvc<T> {
+                        type Response = super::VarResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::super::common::Empty>,
+                            request: tonic::Request<super::VarQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::get_limits(&inner, request).await
+                                <T as RiskEngine>::get_historical_var(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1305,7 +1754,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = GetLimitsSvc(inner);
+                        let method = GetHistoricalVarSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1321,25 +1770,23 @@ pub mod risk_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.risk.RiskEngine/Configure" => {
+                "/apex.risk.RiskEngine/GetParametricVar" => {
                     #[allow(non_camel_case_types)]
-                    struct ConfigureSvc<T: RiskEngine>(pub Arc<T>);
-                    impl<
-                        T: RiskEngine,
-                    > tonic::server::UnaryService<super::RiskConfiguration>
-                    for ConfigureSvc<T> {
-                        type Response = super::super::common::Result;
+                    struct GetParametricVarSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<T: RiskEngine> tonic::server::UnaryService<super::VarQuery>
+                    for GetParametricVarSvc<T> {
+                        type Response = super::VarResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::RiskConfiguration>,
+                            request: tonic::Request<super::VarQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::configure(&inner, request).await
+                                <T as RiskEngine>::get_parametric_var(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1351,7 +1798,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = ConfigureSvc(inner);
+                        let method = GetParametricVarSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1367,26 +1814,209 @@ pub mod risk_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.risk.RiskEngine/SubscribeExposure" => {
+                "/apex.risk.RiskEngine/GetExpectedShortfall" => {
                     #[allow(non_camel_case_types)]
-                    struct SubscribeExposureSvc<T: RiskEngine>(pub Arc<T>);
+                    struct GetExpectedShortfallSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<T: RiskEngine> tonic::server::UnaryService<super::VarQuery>
+                    for GetExpectedShortfallSvc<T> {
+                        type Response = super::ExpectedShortfallResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::VarQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as RiskEngine>::get_expected_shortfall(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetExpectedShortfallSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.risk.RiskEngine/GetCircuitBreaker" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetCircuitBreakerSvc<T: RiskEngine>(pub Arc<T>);
                     impl<
                         T: RiskEngine,
-                    > tonic::server::ServerStreamingService<super::ExposureFilter>
-                    for SubscribeExposureSvc<T> {
-                        type Response = super::ExposureUpdate;
-                        type ResponseStream = T::SubscribeExposureStream;
+                    > tonic::server::UnaryService<super::CircuitBreakerQuery>
+                    for GetCircuitBreakerSvc<T> {
+                        type Response = super::CircuitBreakerResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CircuitBreakerQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as RiskEngine>::get_circuit_breaker(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetCircuitBreakerSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.risk.RiskEngine/GetRecommendation" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetRecommendationSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<
+                        T: RiskEngine,
+                    > tonic::server::UnaryService<super::RecommendationQuery>
+                    for GetRecommendationSvc<T> {
+                        type Response = super::RecommendationResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::RecommendationQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as RiskEngine>::get_recommendation(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetRecommendationSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.risk.RiskEngine/GetStressAssessment" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetStressAssessmentSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<T: RiskEngine> tonic::server::UnaryService<super::StressQuery>
+                    for GetStressAssessmentSvc<T> {
+                        type Response = super::StressResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::StressQuery>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as RiskEngine>::get_stress_assessment(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetStressAssessmentSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.risk.RiskEngine/LoadEvents" => {
+                    #[allow(non_camel_case_types)]
+                    struct LoadEventsSvc<T: RiskEngine>(pub Arc<T>);
+                    impl<
+                        T: RiskEngine,
+                    > tonic::server::ServerStreamingService<super::EventQuery>
+                    for LoadEventsSvc<T> {
+                        type Response = super::RiskEvent;
+                        type ResponseStream = T::LoadEventsStream;
                         type Future = BoxFuture<
                             tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::ExposureFilter>,
+                            request: tonic::Request<super::EventQuery>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::subscribe_exposure(&inner, request).await
+                                <T as RiskEngine>::load_events(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1398,7 +2028,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = SubscribeExposureSvc(inner);
+                        let method = LoadEventsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1414,69 +2044,26 @@ pub mod risk_engine_server {
                     };
                     Box::pin(fut)
                 }
-                "/apex.risk.RiskEngine/RecordOutcome" => {
+                "/apex.risk.RiskEngine/SubscribeEvents" => {
                     #[allow(non_camel_case_types)]
-                    struct RecordOutcomeSvc<T: RiskEngine>(pub Arc<T>);
-                    impl<T: RiskEngine> tonic::server::UnaryService<super::TradeOutcome>
-                    for RecordOutcomeSvc<T> {
-                        type Response = super::super::common::Result;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::TradeOutcome>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                <T as RiskEngine>::record_outcome(&inner, request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = RecordOutcomeSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/apex.risk.RiskEngine/Health" => {
-                    #[allow(non_camel_case_types)]
-                    struct HealthSvc<T: RiskEngine>(pub Arc<T>);
+                    struct SubscribeEventsSvc<T: RiskEngine>(pub Arc<T>);
                     impl<
                         T: RiskEngine,
-                    > tonic::server::UnaryService<super::super::common::Empty>
-                    for HealthSvc<T> {
-                        type Response = super::super::common::Result;
+                    > tonic::server::ServerStreamingService<super::EventSubscription>
+                    for SubscribeEventsSvc<T> {
+                        type Response = super::RiskEvent;
+                        type ResponseStream = T::SubscribeEventsStream;
                         type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
+                            tonic::Response<Self::ResponseStream>,
                             tonic::Status,
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::super::common::Empty>,
+                            request: tonic::Request<super::EventSubscription>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as RiskEngine>::health(&inner, request).await
+                                <T as RiskEngine>::subscribe_events(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -1488,7 +2075,7 @@ pub mod risk_engine_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = HealthSvc(inner);
+                        let method = SubscribeEventsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -1499,7 +2086,7 @@ pub mod risk_engine_server {
                                 max_decoding_message_size,
                                 max_encoding_message_size,
                             );
-                        let res = grpc.unary(method, req).await;
+                        let res = grpc.server_streaming(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

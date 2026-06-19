@@ -14,7 +14,7 @@ members = [
     "services/learning-engine-rs",
     "services/analytics-engine-rs",
     "services/backtester-rs",
-    "services/performance-engine-rs",
+    "services/performance-engine-rs", "services/strategy-engine-rs",
 ]
 
 [workspace.package]

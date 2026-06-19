@@ -1,2 +1,9 @@
-# Risk Parity Report
-Currently in Phase 1 setup. Full parity against historical benchmarks will be documented in the Validation Phase.
+# Risk Parity Report Strategy
+
+- `timestamp`: Event creation window.
+- `agreement_percentage`: Safe, bounds-checked percentage `[0.0, 100.0]`.
+- `mismatch_count`: Absolute quantitative tracking.
+- `drift_severity`: Enum mapping from Normal to Critical.
+- `most_problematic_subsystem`: Highlighting areas demanding immediate scrutiny.
+
+Generated without side effects or hidden business logic by `Reporter`.

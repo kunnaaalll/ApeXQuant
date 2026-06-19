@@ -1,0 +1,3 @@
+# RESEARCH_ENGINE_IMPLEMENTATION
+
+Implementation documentation for RESEARCH_ENGINE_IMPLEMENTATION.md in Phase 5.

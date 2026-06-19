@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used)]
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 

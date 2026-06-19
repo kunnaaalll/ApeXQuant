@@ -1,10 +1,10 @@
-# Risk Engine Go-Live Certification
+# Risk Go-Live Certification
 
-| Requirement | Status | Verification Method |
-| ----------- | ------ | ------------------- |
-| Zero Unsafe | PASS   | `#![deny(unsafe_code)]` |
-| Zero Panics | PASS   | `clippy::unwrap_used`, `clippy::expect_used`, `clippy::panic` |
-| Deterministic| PASS  | Removal of `rand`, logic manual review |
-| Immutable   | PASS   | Event Sourcing Snapshot architecture implemented |
-| rust_decimal| PASS   | Configuration and types strictly bound to `rust_decimal` |
-| 100% Tests  | PASS   | `cargo test` execution passed |
+Before promoting the `risk-engine-rs` to production, this go-live certification verifies the completeness of validation and stress tests.
+
+## Steps to Go-Live
+1. **Run Validation Test Suite**: All unit and integration tests under `tests/validation_tests.rs` must pass without failures.
+2. **Compile-time Checks**: The CI pipeline must strictly pass `cargo clippy --all-targets --all-features --no-deps` with 0 warnings.
+3. **Parity Sign-off**: Legacy team must confirm the `Reporter` output demonstrating > 99% logic parity.
+4. **Stress Sign-off**: Run the Monte Carlo permutation generator for 48 hours to guarantee absolute absence of state corruption or panicking logic.
+5. **Final Reporter Output**: Generate the `ValidationReport` json/markdown detailing the final verified measurements.

@@ -1,0 +1,3 @@
+# STRATEGY_HEALTH_IMPLEMENTATION
+
+Implementation documentation for STRATEGY_HEALTH_IMPLEMENTATION.md in Phase 5.

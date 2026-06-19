@@ -11,29 +11,38 @@ option java_multiple_files = true;
 
 // Risk Engine Service
 service RiskEngine {
-  // Pre-trade risk assessment
-  rpc AssessRisk(AssessRequest) returns (AssessResponse);
-
-  // Validate an order against all risk limits
-  rpc ValidateOrder(ValidateOrderRequest) returns (ValidateOrderResponse);
-
-  // Calculate position sizing recommendation
-  rpc CalculatePositionSize(PositionSizeRequest) returns (PositionSizeResponse);
-
-  // Get current risk limits and usage
-  rpc GetLimits(common.Empty) returns (RiskLimits);
-
-  // Update risk configuration
-  rpc Configure(RiskConfiguration) returns (common.Result);
-
-  // Real-time risk exposure stream
-  rpc SubscribeExposure(ExposureFilter) returns (stream ExposureUpdate);
-
-  // Record trade outcome for risk model updates
-  rpc RecordOutcome(TradeOutcome) returns (common.Result);
-
-  // Health check
-  rpc Health(common.Empty) returns (common.Result);
+  // State
+  rpc GetRiskState(RiskStateQuery) returns (RiskStateResponse);
+  
+  // Drawdown
+  rpc GetDrawdown(DrawdownQuery) returns (DrawdownResponse);
+  
+  // Exposure
+  rpc GetExposure(ExposureQuery) returns (ExposureResponse);
+  
+  // Correlation
+  rpc GetCorrelation(CorrelationQuery) returns (CorrelationResponse);
+  
+  // Hidden Leverage
+  rpc GetHiddenLeverage(HiddenLeverageQuery) returns (HiddenLeverageResponse);
+  
+  // VaR
+  rpc GetHistoricalVar(VarQuery) returns (VarResponse);
+  rpc GetParametricVar(VarQuery) returns (VarResponse);
+  rpc GetExpectedShortfall(VarQuery) returns (ExpectedShortfallResponse);
+  
+  // Circuit Breakers
+  rpc GetCircuitBreaker(CircuitBreakerQuery) returns (CircuitBreakerResponse);
+  
+  // Recommendations
+  rpc GetRecommendation(RecommendationQuery) returns (RecommendationResponse);
+  
+  // Stress Engine
+  rpc GetStressAssessment(StressQuery) returns (StressResponse);
+  
+  // Events
+  rpc LoadEvents(EventQuery) returns (stream RiskEvent);
+  rpc SubscribeEvents(EventSubscription) returns (stream RiskEvent);
 }
 
 // Risk assessment request
@@ -380,4 +389,106 @@ message TradeOutcome {
   string market_regime = 15;
   double signal_confidence = 16;
   RiskContext risk_context_at_entry = 17;
+}
+
+// New Message Types for RiskEngine V1 Phase 10
+
+message RiskStateQuery {
+  string account_id = 1;
+}
+message RiskStateResponse {
+  string account_id = 1;
+  common.Timestamp as_of = 2;
+  string state = 3;
+}
+
+message DrawdownQuery {
+  string account_id = 1;
+}
+message DrawdownResponse {
+  string account_id = 1;
+  common.Percentage current_drawdown = 2;
+  common.Percentage max_drawdown = 3;
+}
+
+message ExposureQuery {
+  string account_id = 1;
+}
+message ExposureResponse {
+  string account_id = 1;
+  common.Money total_exposure = 2;
+}
+
+message CorrelationQuery {
+  string account_id = 1;
+}
+message CorrelationResponse {
+  string account_id = 1;
+  CorrelationMatrix matrix = 2;
+}
+
+message HiddenLeverageQuery {
+  string account_id = 1;
+}
+message HiddenLeverageResponse {
+  string account_id = 1;
+  common.Decimal leverage_ratio = 2;
+}
+
+message VarQuery {
+  string account_id = 1;
+  common.Percentage confidence_level = 2;
+  int32 time_horizon_days = 3;
+}
+message VarResponse {
+  string account_id = 1;
+  common.Money value_at_risk = 2;
+}
+message ExpectedShortfallResponse {
+  string account_id = 1;
+  common.Money expected_shortfall = 2;
+}
+
+message CircuitBreakerQuery {
+  string account_id = 1;
+}
+message CircuitBreakerResponse {
+  string account_id = 1;
+  bool is_tripped = 2;
+  string reason = 3;
+}
+
+message RecommendationQuery {
+  string account_id = 1;
+  common.Symbol symbol = 2;
+}
+message RecommendationResponse {
+  PositionRecommendation recommendation = 1;
+}
+
+message StressQuery {
+  string account_id = 1;
+  string scenario_id = 2;
+}
+message StressResponse {
+  string account_id = 1;
+  string scenario_id = 2;
+  common.Money estimated_loss = 3;
+  bool survived = 4;
+}
+
+message EventQuery {
+  string account_id = 1;
+  common.Timestamp start_time = 2;
+  common.Timestamp end_time = 3;
+}
+message EventSubscription {
+  string account_id = 1;
+}
+message RiskEvent {
+  string event_id = 1;
+  string account_id = 2;
+  string event_type = 3;
+  common.Timestamp timestamp = 4;
+  string payload_json = 5;
 }
