@@ -1,4 +1,5 @@
-use execution_engine::health;
+#![deny(unsafe_code)]
+
 use tracing::{info, Level};
 
 #[tokio::main]
@@ -8,8 +9,6 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     info!("Starting APEX V3 Execution Engine...");
-
-    // TODO: Load configuration, connect to PostgreSQL, initialize modules
 
     info!("Execution Engine shutdown.");
     Ok(())

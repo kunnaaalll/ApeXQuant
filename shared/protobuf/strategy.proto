@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package apex.strategy;
+
+import "common.proto";
+
+option go_package = "github.com/apex/v3/strategy";
+option java_package = "com.apex.v3.strategy";
+option java_multiple_files = true;
+
+// The core deterministic Strategy Service
+service StrategyService {
+    // Evaluates a strategy without state mutation
+    rpc EvaluateStrategy(EvaluateStrategyRequest) returns (EvaluateStrategyResponse);
+
+    // Retrieves strategy health indicators
+    rpc GetStrategyHealth(GetStrategyHealthRequest) returns (GetStrategyHealthResponse);
+
+    // Retrieves confidence level for a strategy
+    rpc GetConfidence(GetConfidenceRequest) returns (GetConfidenceResponse);
+
+    // Retrieves recommended allocation
+    rpc GetAllocation(GetAllocationRequest) returns (GetAllocationResponse);
+
+    // Retrieves clustering profile
+    rpc GetClusterProfile(GetClusterProfileRequest) returns (GetClusterProfileResponse);
+
+    // Retrieves strategy recommendations
+    rpc GetRecommendations(GetRecommendationsRequest) returns (GetRecommendationsResponse);
+
+    // Retrieves context profile
+    rpc GetContextProfile(GetContextProfileRequest) returns (GetContextProfileResponse);
+
+    // Retrieves drift analysis
+    rpc GetDriftAnalysis(GetDriftAnalysisRequest) returns (GetDriftAnalysisResponse);
+
+    // Retrieves meta intelligence metrics
+    rpc GetMetaIntelligence(GetMetaIntelligenceRequest) returns (GetMetaIntelligenceResponse);
+
+    // Retrieves the current lifecycle state
+    rpc GetLifecycleState(GetLifecycleStateRequest) returns (GetLifecycleStateResponse);
+
+    // Retrieves strategy ranking
+    rpc GetStrategyRanking(GetStrategyRankingRequest) returns (GetStrategyRankingResponse);
+
+    // Retrieves evidence summary
+    rpc GetEvidenceSummary(GetEvidenceSummaryRequest) returns (GetEvidenceSummaryResponse);
+
+    // Retrieves validation status
+    rpc GetValidationStatus(GetValidationStatusRequest) returns (GetValidationStatusResponse);
+
+    // Retrieves certification status
+    rpc GetCertificationStatus(GetCertificationStatusRequest) returns (GetCertificationStatusResponse);
+}
+
+// Request & Response Messages
+
+message EvaluateStrategyRequest {
+    apex.common.UUID strategy_id = 1;
+    apex.common.Timestamp timestamp = 2;
+    // Map of signal IDs to their evaluations
+    map<string, string> inputs = 3; 
+}
+
+message EvaluateStrategyResponse {
+    apex.common.UUID evaluation_id = 1;
+    apex.common.Decimal score = 2;
+    apex.common.Result result = 3;
+}
+
+message GetStrategyHealthRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetStrategyHealthResponse {
+    string status = 1;
+    apex.common.Decimal health_score = 2;
+    int32 streak = 3;
+}
+
+message GetConfidenceRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetConfidenceResponse {
+    apex.common.Decimal confidence_score = 1;
+    repeated string factors = 2;
+}
+
+message GetAllocationRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetAllocationResponse {
+    apex.common.Decimal recommended_allocation = 1;
+}
+
+message GetClusterProfileRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetClusterProfileResponse {
+    string cluster_id = 1;
+    apex.common.Decimal similarity_score = 2;
+}
+
+message GetRecommendationsRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetRecommendationsResponse {
+    repeated string actions = 1;
+}
+
+message GetContextProfileRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetContextProfileResponse {
+    string market_regime = 1;
+    apex.common.Decimal volatility_index = 2;
+}
+
+message GetDriftAnalysisRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetDriftAnalysisResponse {
+    apex.common.Decimal drift_score = 1;
+    bool requires_retraining = 2;
+}
+
+message GetMetaIntelligenceRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetMetaIntelligenceResponse {
+    apex.common.Decimal learning_rate = 1;
+    apex.common.Decimal adaptation_score = 2;
+}
+
+message GetLifecycleStateRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetLifecycleStateResponse {
+    string state = 1;
+    apex.common.Timestamp transition_time = 2;
+}
+
+message GetStrategyRankingRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetStrategyRankingResponse {
+    int32 rank = 1;
+    apex.common.Decimal percent_rank = 2;
+}
+
+message GetEvidenceSummaryRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetEvidenceSummaryResponse {
+    int32 total_trades = 1;
+    apex.common.Decimal win_rate = 2;
+    apex.common.Decimal profit_factor = 3;
+}
+
+message GetValidationStatusRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetValidationStatusResponse {
+    bool is_valid = 1;
+    repeated string validation_errors = 2;
+}
+
+message GetCertificationStatusRequest {
+    apex.common.UUID strategy_id = 1;
+}
+
+message GetCertificationStatusResponse {
+    bool is_certified = 1;
+    apex.common.Timestamp certification_date = 2;
+}

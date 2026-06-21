@@ -1,14 +1,18 @@
-pub mod api;
-pub mod execution;
-pub mod health;
-pub mod metrics;
-pub mod orders;
-pub mod reconciliation;
-pub mod retry;
-pub mod state_machine;
-pub mod trade_management;
+#![deny(unsafe_code)]
 
-/// Configuration for the execution engine.
-pub mod config;
-/// Storage and persistence logic.
-pub mod storage;
+pub mod brokers;
+pub mod events;
+pub mod execution;
+pub mod fills;
+pub mod liquidity;
+pub mod order;
+pub mod order_split;
+pub mod policies;
+pub mod position;
+pub mod slippage;
+pub mod snapshots;
+pub mod state;
+pub mod validation;
+
+#[cfg(test)]
+pub mod tests;

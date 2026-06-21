@@ -35,6 +35,8 @@ backoff = { version = "0.4", features = ["tokio"] }
 bollard = "0.16"
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "macros", "chrono", "uuid"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
+rust_decimal_macros = "1.40.0"
+async-trait.workspace = true
 
 [dev-dependencies]
 tokio-test.workspace = true
@@ -44,9 +46,7 @@ proptest.workspace = true
 criterion = "0.5"
 # testcontainers.workspace = true  # Disabled due to version conflict
 
-[[bench]]
-name = "state_machine_bench"
-harness = false
+
 
 [[bin]]
 name = "execution-engine"

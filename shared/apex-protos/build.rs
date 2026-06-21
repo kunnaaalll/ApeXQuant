@@ -13,6 +13,7 @@ fn main() -> Result<()> {
         "analytics.proto",
         "learning.proto",
         "events.proto",
+        "strategy.proto",
     ];
 
     let paths: Vec<String> = proto_files

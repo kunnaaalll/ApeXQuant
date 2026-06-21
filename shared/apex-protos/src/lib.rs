@@ -29,6 +29,9 @@ pub mod events {
 pub mod learning {
     include!("generated/apex.learning.rs");
 }
+pub mod strategy {
+    include!("generated/apex.strategy.rs");
+}
 
 /// Placeholder until protobufs are generated
 pub const VERSION: &str = "3.0.0";
