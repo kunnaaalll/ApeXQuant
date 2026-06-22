@@ -13,17 +13,17 @@ pub struct BinancePosition {
     pub mark_price: Decimal,
 }
 
-impl Into<OpenPosition> for BinancePosition {
-    fn into(self) -> OpenPosition {
+impl From<BinancePosition> for OpenPosition {
+    fn from(val: BinancePosition) -> Self {
         OpenPosition {
-            ticket: format!("{}-{}", self.symbol, self.position_side),
-            symbol: self.symbol,
-            side: self.position_side,
-            volume: self.position_amount.abs(),
-            entry_price: self.entry_price,
+            ticket: format!("{}-{}", val.symbol, val.position_side),
+            symbol: val.symbol,
+            side: val.position_side,
+            volume: val.position_amount.abs(),
+            entry_price: val.entry_price,
             stop_loss: None,
             take_profit: None,
-            floating_pnl: self.unrealized_profit,
+            floating_pnl: val.unrealized_profit,
         }
     }
 }

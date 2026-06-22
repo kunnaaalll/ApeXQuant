@@ -15,15 +15,15 @@ pub struct BinanceSymbol {
     pub max_qty: Decimal,
 }
 
-impl Into<SymbolInfo> for BinanceSymbol {
-    fn into(self) -> SymbolInfo {
+impl From<BinanceSymbol> for SymbolInfo {
+    fn from(val: BinanceSymbol) -> Self {
         SymbolInfo {
-            symbol: self.symbol,
-            digits: self.price_precision,
-            lot_step: self.step_size,
-            tick_size: self.tick_size,
-            minimum_volume: self.min_qty,
-            maximum_volume: self.max_qty,
+            symbol: val.symbol,
+            digits: val.price_precision,
+            lot_step: val.step_size,
+            tick_size: val.tick_size,
+            minimum_volume: val.min_qty,
+            maximum_volume: val.max_qty,
         }
     }
 }

@@ -14,17 +14,17 @@ pub struct Mt5Position {
     pub floating_pnl: Decimal,
 }
 
-impl Into<OpenPosition> for Mt5Position {
-    fn into(self) -> OpenPosition {
+impl From<Mt5Position> for OpenPosition {
+    fn from(val: Mt5Position) -> Self {
         OpenPosition {
-            ticket: self.ticket,
-            symbol: self.symbol,
-            side: self.side,
-            volume: self.volume,
-            entry_price: self.entry_price,
-            stop_loss: self.stop_loss,
-            take_profit: self.take_profit,
-            floating_pnl: self.floating_pnl,
+            ticket: val.ticket,
+            symbol: val.symbol,
+            side: val.side,
+            volume: val.volume,
+            entry_price: val.entry_price,
+            stop_loss: val.stop_loss,
+            take_profit: val.take_profit,
+            floating_pnl: val.floating_pnl,
         }
     }
 }

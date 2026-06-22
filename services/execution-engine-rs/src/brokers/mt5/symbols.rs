@@ -12,15 +12,15 @@ pub struct Mt5Symbol {
     pub maximum_volume: Decimal,
 }
 
-impl Into<SymbolInfo> for Mt5Symbol {
-    fn into(self) -> SymbolInfo {
+impl From<Mt5Symbol> for SymbolInfo {
+    fn from(val: Mt5Symbol) -> Self {
         SymbolInfo {
-            symbol: self.symbol,
-            digits: self.digits,
-            lot_step: self.lot_step,
-            tick_size: self.tick_size,
-            minimum_volume: self.minimum_volume,
-            maximum_volume: self.maximum_volume,
+            symbol: val.symbol,
+            digits: val.digits,
+            lot_step: val.lot_step,
+            tick_size: val.tick_size,
+            minimum_volume: val.minimum_volume,
+            maximum_volume: val.maximum_volume,
         }
     }
 }

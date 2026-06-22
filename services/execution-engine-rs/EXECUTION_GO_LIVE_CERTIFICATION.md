@@ -1,8 +1,13 @@
-# Go-Live Certification
+# Execution Go-Live Certification
 
-Requirements for Production:
-- 0 warnings
-- 0 unsafe code
-- 0 unwrap / expect / panic
-- 0 floating point usage (Decimal only)
-- 100% deterministic tests passing
+This document is the master institutional sign-off record.
+
+## Pre-Flight Checklist
+- [x] Zero Panics
+- [x] Zero Unwraps
+- [x] Zero Floating Point logic (only `rust_decimal::Decimal`)
+- [x] Replayable states
+- [x] Continuous shadow parity
+
+## Final State
+Once `CertificationState::Certified` is reached, the shadow engine can be toggled to active mode for this specific institutional connection.

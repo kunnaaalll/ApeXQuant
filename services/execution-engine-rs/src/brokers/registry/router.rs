@@ -12,6 +12,12 @@ pub struct BrokerRegistry {
     pub failover_state: RwLock<FailoverState>,
 }
 
+impl Default for BrokerRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BrokerRegistry {
     pub fn new() -> Self {
         Self {

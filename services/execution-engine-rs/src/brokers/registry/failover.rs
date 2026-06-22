@@ -2,18 +2,15 @@ use crate::brokers::errors::BrokerError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum FailoverState {
+    #[default]
     Healthy,
     Warning,
     Failover,
     Recovery,
 }
 
-impl Default for FailoverState {
-    fn default() -> Self {
-        Self::Healthy
-    }
-}
 
 impl FailoverState {
     pub fn transition_to(&mut self, new_state: FailoverState) -> Result<(), BrokerError> {

@@ -11,14 +11,14 @@ pub struct Mt5Account {
     pub margin_level: Decimal,
 }
 
-impl Into<AccountInfo> for Mt5Account {
-    fn into(self) -> AccountInfo {
+impl From<Mt5Account> for AccountInfo {
+    fn from(val: Mt5Account) -> Self {
         AccountInfo {
-            balance: self.balance,
-            equity: self.equity,
-            free_margin: self.free_margin,
-            leverage: self.leverage,
-            margin_level: self.margin_level,
+            balance: val.balance,
+            equity: val.equity,
+            free_margin: val.free_margin,
+            leverage: val.leverage,
+            margin_level: val.margin_level,
         }
     }
 }

@@ -344,3 +344,111 @@ message BrokerStatus {
   string last_error = 4;
   common.Timestamp last_trade_at = 5;
 }
+
+// --- Execution Service Extensions (Phase 8) ---
+
+service ExecutionService {
+  rpc EvaluateExecution(EvaluateExecutionRequest) returns (EvaluateExecutionResponse);
+  rpc SubmitOrder(SubmitOrderRequest) returns (SubmitOrderResponse);
+  rpc GetOrderState(GetOrderStateRequest) returns (GetOrderStateResponse);
+  rpc GetPositionState(GetPositionStateRequest) returns (GetPositionStateResponse);
+  rpc GetExecutionRisk(ExecutionRiskRequest) returns (ExecutionRiskResponse);
+  rpc GetLiquidityProfile(LiquidityProfileRequest) returns (LiquidityProfileResponse);
+  rpc GetSlippageMetrics(SlippageRequest) returns (SlippageResponse);
+  rpc GetLatencyMetrics(LatencyRequest) returns (LatencyResponse);
+  rpc GetMicrostructureScore(MicrostructureRequest) returns (MicrostructureResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc Ready(ReadyRequest) returns (ReadyResponse);
+}
+
+message EvaluateExecutionRequest {
+  string order_id = 1;
+  common.Symbol symbol = 2;
+  common.TradeSide side = 3;
+  string volume = 4;
+}
+
+message EvaluateExecutionResponse {
+  bool executable = 1;
+  string estimated_slippage = 2;
+  string probability = 3;
+}
+
+message GetOrderStateRequest {
+  string order_id = 1;
+}
+
+message GetOrderStateResponse {
+  Order order = 1;
+}
+
+message GetPositionStateRequest {
+  string position_id = 1;
+}
+
+message GetPositionStateResponse {
+  string position_id = 1;
+  string current_volume = 2;
+  string unrealized_pnl = 3;
+}
+
+message ExecutionRiskRequest {
+  string order_id = 1;
+  string target_volume = 2;
+}
+
+message ExecutionRiskResponse {
+  bool risk_acceptable = 1;
+  string risk_score = 2;
+  string margin_required = 3;
+}
+
+message LiquidityProfileRequest {
+  common.Symbol symbol = 1;
+}
+
+message LiquidityProfileResponse {
+  string bid_liquidity = 1;
+  string ask_liquidity = 2;
+  string depth_score = 3;
+}
+
+message SlippageRequest {
+  string order_id = 1;
+  string executed_price = 2;
+}
+
+message SlippageResponse {
+  string slippage_amount = 1;
+  string slippage_bps = 2;
+}
+
+message LatencyRequest {
+  string order_id = 1;
+}
+
+message LatencyResponse {
+  string network_latency_ms = 1;
+  string processing_latency_ms = 2;
+}
+
+message MicrostructureRequest {
+  common.Symbol symbol = 1;
+}
+
+message MicrostructureResponse {
+  string tick_volatility = 1;
+  string order_book_imbalance = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}
+
+message ReadyRequest {}
+
+message ReadyResponse {
+  string status = 1;
+}

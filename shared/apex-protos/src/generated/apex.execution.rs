@@ -490,6 +490,172 @@ pub struct BrokerStatus {
     pub last_trade_at: ::core::option::Option<super::common::Timestamp>,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EvaluateExecutionRequest {
+    #[prost(string, tag = "1")]
+    pub order_id: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "2")]
+    pub symbol: ::core::option::Option<super::common::Symbol>,
+    #[prost(enumeration = "super::common::TradeSide", tag = "3")]
+    pub side: i32,
+    #[prost(string, tag = "4")]
+    pub volume: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EvaluateExecutionResponse {
+    #[prost(bool, tag = "1")]
+    pub executable: bool,
+    #[prost(string, tag = "2")]
+    pub estimated_slippage: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub probability: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrderStateRequest {
+    #[prost(string, tag = "1")]
+    pub order_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetOrderStateResponse {
+    #[prost(message, optional, tag = "1")]
+    pub order: ::core::option::Option<Order>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetPositionStateRequest {
+    #[prost(string, tag = "1")]
+    pub position_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetPositionStateResponse {
+    #[prost(string, tag = "1")]
+    pub position_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub current_volume: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub unrealized_pnl: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionRiskRequest {
+    #[prost(string, tag = "1")]
+    pub order_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub target_volume: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionRiskResponse {
+    #[prost(bool, tag = "1")]
+    pub risk_acceptable: bool,
+    #[prost(string, tag = "2")]
+    pub risk_score: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub margin_required: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LiquidityProfileRequest {
+    #[prost(message, optional, tag = "1")]
+    pub symbol: ::core::option::Option<super::common::Symbol>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LiquidityProfileResponse {
+    #[prost(string, tag = "1")]
+    pub bid_liquidity: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub ask_liquidity: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub depth_score: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SlippageRequest {
+    #[prost(string, tag = "1")]
+    pub order_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub executed_price: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SlippageResponse {
+    #[prost(string, tag = "1")]
+    pub slippage_amount: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub slippage_bps: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LatencyRequest {
+    #[prost(string, tag = "1")]
+    pub order_id: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LatencyResponse {
+    #[prost(string, tag = "1")]
+    pub network_latency_ms: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub processing_latency_ms: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MicrostructureRequest {
+    #[prost(message, optional, tag = "1")]
+    pub symbol: ::core::option::Option<super::common::Symbol>,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct MicrostructureResponse {
+    #[prost(string, tag = "1")]
+    pub tick_volatility: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub order_book_imbalance: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthRequest {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct HealthResponse {
+    #[prost(string, tag = "1")]
+    pub status: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReadyRequest {}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ReadyResponse {
+    #[prost(string, tag = "1")]
+    pub status: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum TimeInForce {
@@ -956,6 +1122,401 @@ pub mod execution_engine_client {
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("apex.execution.ExecutionEngine", "Health"));
+            self.inner.unary(req, path, codec).await
+        }
+    }
+}
+/// Generated client implementations.
+pub mod execution_service_client {
+    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
+    #[derive(Debug, Clone)]
+    pub struct ExecutionServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl ExecutionServiceClient<tonic::transport::Channel> {
+        /// Attempt to create a new client by connecting to a given endpoint.
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
+        }
+    }
+    impl<T> ExecutionServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::Error: Into<StdError>,
+        T::ResponseBody: Body<Data = Bytes> + Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> ExecutionServiceClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
+        {
+            ExecutionServiceClient::new(InterceptedService::new(inner, interceptor))
+        }
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
+            self
+        }
+        /// Enable decompressing responses.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
+        pub async fn evaluate_execution(
+            &mut self,
+            request: impl tonic::IntoRequest<super::EvaluateExecutionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::EvaluateExecutionResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/EvaluateExecution",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "EvaluateExecution",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn submit_order(
+            &mut self,
+            request: impl tonic::IntoRequest<super::SubmitOrderRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::SubmitOrderResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/SubmitOrder",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.execution.ExecutionService", "SubmitOrder"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_order_state(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetOrderStateRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetOrderStateResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetOrderState",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new("apex.execution.ExecutionService", "GetOrderState"),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_position_state(
+            &mut self,
+            request: impl tonic::IntoRequest<super::GetPositionStateRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetPositionStateResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetPositionState",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "GetPositionState",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_execution_risk(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ExecutionRiskRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ExecutionRiskResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetExecutionRisk",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "GetExecutionRisk",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_liquidity_profile(
+            &mut self,
+            request: impl tonic::IntoRequest<super::LiquidityProfileRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::LiquidityProfileResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetLiquidityProfile",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "GetLiquidityProfile",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_slippage_metrics(
+            &mut self,
+            request: impl tonic::IntoRequest<super::SlippageRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::SlippageResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetSlippageMetrics",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "GetSlippageMetrics",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_latency_metrics(
+            &mut self,
+            request: impl tonic::IntoRequest<super::LatencyRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::LatencyResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetLatencyMetrics",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "GetLatencyMetrics",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn get_microstructure_score(
+            &mut self,
+            request: impl tonic::IntoRequest<super::MicrostructureRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::MicrostructureResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/GetMicrostructureScore",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "apex.execution.ExecutionService",
+                        "GetMicrostructureScore",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn health(
+            &mut self,
+            request: impl tonic::IntoRequest<super::HealthRequest>,
+        ) -> std::result::Result<tonic::Response<super::HealthResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/Health",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.execution.ExecutionService", "Health"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn ready(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ReadyRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReadyResponse>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/apex.execution.ExecutionService/Ready",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("apex.execution.ExecutionService", "Ready"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -1529,5 +2090,726 @@ pub mod execution_engine_server {
     }
     impl<T: ExecutionEngine> tonic::server::NamedService for ExecutionEngineServer<T> {
         const NAME: &'static str = "apex.execution.ExecutionEngine";
+    }
+}
+/// Generated server implementations.
+pub mod execution_service_server {
+    #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
+    use tonic::codegen::*;
+    /// Generated trait containing gRPC methods that should be implemented for use with ExecutionServiceServer.
+    #[async_trait]
+    pub trait ExecutionService: Send + Sync + 'static {
+        async fn evaluate_execution(
+            &self,
+            request: tonic::Request<super::EvaluateExecutionRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::EvaluateExecutionResponse>,
+            tonic::Status,
+        >;
+        async fn submit_order(
+            &self,
+            request: tonic::Request<super::SubmitOrderRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::SubmitOrderResponse>,
+            tonic::Status,
+        >;
+        async fn get_order_state(
+            &self,
+            request: tonic::Request<super::GetOrderStateRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetOrderStateResponse>,
+            tonic::Status,
+        >;
+        async fn get_position_state(
+            &self,
+            request: tonic::Request<super::GetPositionStateRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetPositionStateResponse>,
+            tonic::Status,
+        >;
+        async fn get_execution_risk(
+            &self,
+            request: tonic::Request<super::ExecutionRiskRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::ExecutionRiskResponse>,
+            tonic::Status,
+        >;
+        async fn get_liquidity_profile(
+            &self,
+            request: tonic::Request<super::LiquidityProfileRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::LiquidityProfileResponse>,
+            tonic::Status,
+        >;
+        async fn get_slippage_metrics(
+            &self,
+            request: tonic::Request<super::SlippageRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::SlippageResponse>,
+            tonic::Status,
+        >;
+        async fn get_latency_metrics(
+            &self,
+            request: tonic::Request<super::LatencyRequest>,
+        ) -> std::result::Result<tonic::Response<super::LatencyResponse>, tonic::Status>;
+        async fn get_microstructure_score(
+            &self,
+            request: tonic::Request<super::MicrostructureRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::MicrostructureResponse>,
+            tonic::Status,
+        >;
+        async fn health(
+            &self,
+            request: tonic::Request<super::HealthRequest>,
+        ) -> std::result::Result<tonic::Response<super::HealthResponse>, tonic::Status>;
+        async fn ready(
+            &self,
+            request: tonic::Request<super::ReadyRequest>,
+        ) -> std::result::Result<tonic::Response<super::ReadyResponse>, tonic::Status>;
+    }
+    #[derive(Debug)]
+    pub struct ExecutionServiceServer<T: ExecutionService> {
+        inner: _Inner<T>,
+        accept_compression_encodings: EnabledCompressionEncodings,
+        send_compression_encodings: EnabledCompressionEncodings,
+        max_decoding_message_size: Option<usize>,
+        max_encoding_message_size: Option<usize>,
+    }
+    struct _Inner<T>(Arc<T>);
+    impl<T: ExecutionService> ExecutionServiceServer<T> {
+        pub fn new(inner: T) -> Self {
+            Self::from_arc(Arc::new(inner))
+        }
+        pub fn from_arc(inner: Arc<T>) -> Self {
+            let inner = _Inner(inner);
+            Self {
+                inner,
+                accept_compression_encodings: Default::default(),
+                send_compression_encodings: Default::default(),
+                max_decoding_message_size: None,
+                max_encoding_message_size: None,
+            }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
+        where
+            F: tonic::service::Interceptor,
+        {
+            InterceptedService::new(Self::new(inner), interceptor)
+        }
+        /// Enable decompressing requests with the given encoding.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.accept_compression_encodings.enable(encoding);
+            self
+        }
+        /// Compress responses with the given encoding, if the client supports it.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.send_compression_encodings.enable(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.max_decoding_message_size = Some(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.max_encoding_message_size = Some(limit);
+            self
+        }
+    }
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for ExecutionServiceServer<T>
+    where
+        T: ExecutionService,
+        B: Body + Send + 'static,
+        B::Error: Into<StdError> + Send + 'static,
+    {
+        type Response = http::Response<tonic::body::BoxBody>;
+        type Error = std::convert::Infallible;
+        type Future = BoxFuture<Self::Response, Self::Error>;
+        fn poll_ready(
+            &mut self,
+            _cx: &mut Context<'_>,
+        ) -> Poll<std::result::Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+        fn call(&mut self, req: http::Request<B>) -> Self::Future {
+            let inner = self.inner.clone();
+            match req.uri().path() {
+                "/apex.execution.ExecutionService/EvaluateExecution" => {
+                    #[allow(non_camel_case_types)]
+                    struct EvaluateExecutionSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::EvaluateExecutionRequest>
+                    for EvaluateExecutionSvc<T> {
+                        type Response = super::EvaluateExecutionResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::EvaluateExecutionRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::evaluate_execution(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = EvaluateExecutionSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/SubmitOrder" => {
+                    #[allow(non_camel_case_types)]
+                    struct SubmitOrderSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::SubmitOrderRequest>
+                    for SubmitOrderSvc<T> {
+                        type Response = super::SubmitOrderResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::SubmitOrderRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::submit_order(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = SubmitOrderSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetOrderState" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetOrderStateSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::GetOrderStateRequest>
+                    for GetOrderStateSvc<T> {
+                        type Response = super::GetOrderStateResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetOrderStateRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_order_state(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetOrderStateSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetPositionState" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetPositionStateSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::GetPositionStateRequest>
+                    for GetPositionStateSvc<T> {
+                        type Response = super::GetPositionStateResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetPositionStateRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_position_state(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetPositionStateSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetExecutionRisk" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetExecutionRiskSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::ExecutionRiskRequest>
+                    for GetExecutionRiskSvc<T> {
+                        type Response = super::ExecutionRiskResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ExecutionRiskRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_execution_risk(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetExecutionRiskSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetLiquidityProfile" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetLiquidityProfileSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::LiquidityProfileRequest>
+                    for GetLiquidityProfileSvc<T> {
+                        type Response = super::LiquidityProfileResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::LiquidityProfileRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_liquidity_profile(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetLiquidityProfileSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetSlippageMetrics" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetSlippageMetricsSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::SlippageRequest>
+                    for GetSlippageMetricsSvc<T> {
+                        type Response = super::SlippageResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::SlippageRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_slippage_metrics(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetSlippageMetricsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetLatencyMetrics" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetLatencyMetricsSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::LatencyRequest>
+                    for GetLatencyMetricsSvc<T> {
+                        type Response = super::LatencyResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::LatencyRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_latency_metrics(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetLatencyMetricsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/GetMicrostructureScore" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetMicrostructureScoreSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::MicrostructureRequest>
+                    for GetMicrostructureScoreSvc<T> {
+                        type Response = super::MicrostructureResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::MicrostructureRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::get_microstructure_score(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetMicrostructureScoreSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/Health" => {
+                    #[allow(non_camel_case_types)]
+                    struct HealthSvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::HealthRequest>
+                    for HealthSvc<T> {
+                        type Response = super::HealthResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::HealthRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::health(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = HealthSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/apex.execution.ExecutionService/Ready" => {
+                    #[allow(non_camel_case_types)]
+                    struct ReadySvc<T: ExecutionService>(pub Arc<T>);
+                    impl<
+                        T: ExecutionService,
+                    > tonic::server::UnaryService<super::ReadyRequest> for ReadySvc<T> {
+                        type Response = super::ReadyResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ReadyRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ExecutionService>::ready(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ReadySvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                _ => {
+                    Box::pin(async move {
+                        Ok(
+                            http::Response::builder()
+                                .status(200)
+                                .header("grpc-status", "12")
+                                .header("content-type", "application/grpc")
+                                .body(empty_body())
+                                .unwrap(),
+                        )
+                    })
+                }
+            }
+        }
+    }
+    impl<T: ExecutionService> Clone for ExecutionServiceServer<T> {
+        fn clone(&self) -> Self {
+            let inner = self.inner.clone();
+            Self {
+                inner,
+                accept_compression_encodings: self.accept_compression_encodings,
+                send_compression_encodings: self.send_compression_encodings,
+                max_decoding_message_size: self.max_decoding_message_size,
+                max_encoding_message_size: self.max_encoding_message_size,
+            }
+        }
+    }
+    impl<T: ExecutionService> Clone for _Inner<T> {
+        fn clone(&self) -> Self {
+            Self(Arc::clone(&self.0))
+        }
+    }
+    impl<T: std::fmt::Debug> std::fmt::Debug for _Inner<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{:?}", self.0)
+        }
+    }
+    impl<T: ExecutionService> tonic::server::NamedService for ExecutionServiceServer<T> {
+        const NAME: &'static str = "apex.execution.ExecutionService";
     }
 }

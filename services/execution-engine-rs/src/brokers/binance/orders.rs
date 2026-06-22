@@ -16,17 +16,17 @@ pub struct BinanceOrder {
     pub update_time: i64,
 }
 
-impl Into<PendingOrder> for BinanceOrder {
-    fn into(self) -> PendingOrder {
+impl From<BinanceOrder> for PendingOrder {
+    fn from(val: BinanceOrder) -> Self {
         PendingOrder {
-            ticket: self.order_id.to_string(),
-            symbol: self.symbol,
-            side: self.side,
-            order_type: self.r#type,
-            volume: self.orig_qty - self.executed_qty,
-            price: self.price,
-            status: self.status,
-            timestamp: self.update_time,
+            ticket: val.order_id.to_string(),
+            symbol: val.symbol,
+            side: val.side,
+            order_type: val.r#type,
+            volume: val.orig_qty - val.executed_qty,
+            price: val.price,
+            status: val.status,
+            timestamp: val.update_time,
         }
     }
 }

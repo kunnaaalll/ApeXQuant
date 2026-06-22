@@ -13,20 +13,20 @@ pub struct BinanceAccount {
     pub leverage: Decimal,
 }
 
-impl Into<AccountInfo> for BinanceAccount {
-    fn into(self) -> AccountInfo {
+impl From<BinanceAccount> for AccountInfo {
+    fn from(val: BinanceAccount) -> Self {
         use rust_decimal_macros::dec;
-        let margin_level = if self.maintenance_margin > dec!(0.0) {
-            (self.margin_balance / self.maintenance_margin) * dec!(100.0)
+        let margin_level = if val.maintenance_margin > dec!(0.0) {
+            (val.margin_balance / val.maintenance_margin) * dec!(100.0)
         } else {
             dec!(0.0)
         };
 
         AccountInfo {
-            balance: self.wallet_balance,
-            equity: self.margin_balance,
-            free_margin: self.available_balance,
-            leverage: self.leverage,
+            balance: val.wallet_balance,
+            equity: val.margin_balance,
+            free_margin: val.available_balance,
+            leverage: val.leverage,
             margin_level,
         }
     }

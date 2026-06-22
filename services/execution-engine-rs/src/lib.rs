@@ -13,6 +13,14 @@ pub mod slippage;
 pub mod snapshots;
 pub mod state;
 pub mod validation;
+pub mod microstructure;
+pub mod market;
+pub mod latency;
+pub mod execution_cost;
+pub mod execution_risk;
+pub mod shadow;
+pub mod storage;
 
+pub mod api;
 #[cfg(test)]
 pub mod tests;

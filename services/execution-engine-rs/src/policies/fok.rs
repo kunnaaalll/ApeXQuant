@@ -4,6 +4,12 @@ pub struct FokPolicy {
     pub state: PolicyState,
 }
 
+impl Default for FokPolicy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FokPolicy {
     pub fn new() -> Self {
         Self {

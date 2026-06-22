@@ -10,7 +10,6 @@ use execution_engine::slippage::SlippageScore;
 use execution_engine::events::SmartExecutionEvent;
 use execution_engine::snapshots::SmartExecutionSnapshot;
 
-use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use uuid::Uuid;
 

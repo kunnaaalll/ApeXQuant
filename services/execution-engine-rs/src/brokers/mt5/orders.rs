@@ -14,17 +14,17 @@ pub struct Mt5Order {
     pub timestamp: i64,
 }
 
-impl Into<PendingOrder> for Mt5Order {
-    fn into(self) -> PendingOrder {
+impl From<Mt5Order> for PendingOrder {
+    fn from(val: Mt5Order) -> Self {
         PendingOrder {
-            ticket: self.ticket,
-            symbol: self.symbol,
-            side: self.side,
-            order_type: self.order_type,
-            volume: self.volume,
-            price: self.price,
-            status: self.status,
-            timestamp: self.timestamp,
+            ticket: val.ticket,
+            symbol: val.symbol,
+            side: val.side,
+            order_type: val.order_type,
+            volume: val.volume,
+            price: val.price,
+            status: val.status,
+            timestamp: val.timestamp,
         }
     }
 }

@@ -4,6 +4,12 @@ pub struct GtcPolicy {
     pub state: PolicyState,
 }
 
+impl Default for GtcPolicy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GtcPolicy {
     pub fn new() -> Self {
         Self {
@@ -12,17 +18,17 @@ impl GtcPolicy {
     }
 
     pub fn transition(&mut self, to: PolicyState) -> Result<(), PolicyError> {
-        let valid = match (self.state, to) {
-            (PolicyState::New, PolicyState::Active) => true,
-            (PolicyState::New, PolicyState::Rejected) => true,
-            (PolicyState::Active, PolicyState::PartiallyFilled) => true,
-            (PolicyState::Active, PolicyState::Filled) => true,
-            (PolicyState::Active, PolicyState::Cancelled) => true,
-            (PolicyState::PartiallyFilled, PolicyState::Filled) => true,
-            (PolicyState::PartiallyFilled, PolicyState::PartiallyFilled) => true,
-            (PolicyState::PartiallyFilled, PolicyState::Cancelled) => true,
-            _ => false,
-        };
+        let valid = matches!(
+            (self.state, to),
+            (PolicyState::New, PolicyState::Active)
+                | (PolicyState::New, PolicyState::Rejected)
+                | (PolicyState::Active, PolicyState::PartiallyFilled)
+                | (PolicyState::Active, PolicyState::Filled)
+                | (PolicyState::Active, PolicyState::Cancelled)
+                | (PolicyState::PartiallyFilled, PolicyState::Filled)
+                | (PolicyState::PartiallyFilled, PolicyState::PartiallyFilled)
+                | (PolicyState::PartiallyFilled, PolicyState::Cancelled)
+        );
 
         if valid {
             self.state = to;
