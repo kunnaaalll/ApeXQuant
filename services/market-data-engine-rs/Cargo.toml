@@ -1,0 +1,19 @@
+[package]
+name = "market-data-engine-rs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rust_decimal = { workspace = true, features = ["serde"] }
+chrono = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true }
+tonic = { workspace = true }
+tower = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = "0.1"
+async-trait = { workspace = true }
