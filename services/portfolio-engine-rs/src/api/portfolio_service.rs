@@ -1,4 +1,3 @@
-use std::pin::Pin;
 use tonic::{Request, Response, Status, Streaming};
 use tokio_stream::wrappers::ReceiverStream;
 use tokio::sync::mpsc;
@@ -7,10 +6,15 @@ use tracing::info;
 use apex_protos::portfolio::portfolio_engine_server::PortfolioEngine;
 use apex_protos::portfolio::*;
 
-use super::error::ApiError;
 
 pub struct PortfolioServiceImpl {
     // Engine dependencies will go here
+}
+
+impl Default for PortfolioServiceImpl {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PortfolioServiceImpl {

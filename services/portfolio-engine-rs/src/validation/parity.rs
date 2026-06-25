@@ -8,22 +8,30 @@ pub enum ParityState {
     Certified,
 }
 
+use rust_decimal::Decimal;
+
 #[derive(Debug, Clone)]
 pub struct PortfolioParityResult {
-    pub state_agreement_pct: f64,
-    pub exposure_agreement_pct: f64,
-    pub heat_agreement_pct: f64,
-    pub allocation_agreement_pct: f64,
-    pub quality_agreement_pct: f64,
-    pub health_agreement_pct: f64,
-    pub drawdown_agreement_pct: f64,
-    pub correlation_agreement_pct: f64,
-    pub recommendation_agreement_pct: f64,
-    pub analytics_agreement_pct: f64,
+    pub state_agreement_pct: Decimal,
+    pub exposure_agreement_pct: Decimal,
+    pub heat_agreement_pct: Decimal,
+    pub allocation_agreement_pct: Decimal,
+    pub quality_agreement_pct: Decimal,
+    pub health_agreement_pct: Decimal,
+    pub drawdown_agreement_pct: Decimal,
+    pub correlation_agreement_pct: Decimal,
+    pub recommendation_agreement_pct: Decimal,
+    pub analytics_agreement_pct: Decimal,
     pub overall_state: ParityState,
 }
 
 pub struct PortfolioParityValidator;
+
+impl Default for PortfolioParityValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl PortfolioParityValidator {
     pub fn new() -> Self {
@@ -41,17 +49,18 @@ impl PortfolioParityValidator {
         // For now, we simulate a passing state based on identical inputs or strict testing constraints.
         // We assume 100% agreement.
         
+        let hundred = Decimal::new(100, 0);
         PortfolioParityResult {
-            state_agreement_pct: 100.0,
-            exposure_agreement_pct: 100.0,
-            heat_agreement_pct: 100.0,
-            allocation_agreement_pct: 100.0,
-            quality_agreement_pct: 100.0,
-            health_agreement_pct: 100.0,
-            drawdown_agreement_pct: 100.0,
-            correlation_agreement_pct: 100.0,
-            recommendation_agreement_pct: 100.0,
-            analytics_agreement_pct: 100.0,
+            state_agreement_pct: hundred,
+            exposure_agreement_pct: hundred,
+            heat_agreement_pct: hundred,
+            allocation_agreement_pct: hundred,
+            quality_agreement_pct: hundred,
+            health_agreement_pct: hundred,
+            drawdown_agreement_pct: hundred,
+            correlation_agreement_pct: hundred,
+            recommendation_agreement_pct: hundred,
+            analytics_agreement_pct: hundred,
             overall_state: ParityState::Certified,
         }
     }

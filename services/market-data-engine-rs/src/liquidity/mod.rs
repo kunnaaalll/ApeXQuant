@@ -36,9 +36,9 @@ impl LiquidityEngine {
         };
 
         let vol_score = match volatility {
-            VolatilityGrade::VeryLow => 20,
-            VolatilityGrade::Low => 20,
-            VolatilityGrade::Normal => 15,
+            VolatilityGrade::ExtremelyLow => 20,
+            VolatilityGrade::Low => 15,
+            VolatilityGrade::Normal => 10,
             VolatilityGrade::High => 5,
             VolatilityGrade::Extreme => 0,
         };

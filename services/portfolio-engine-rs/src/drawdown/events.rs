@@ -10,7 +10,7 @@ pub enum DrawdownEvent {
     PositionOpened { timestamp: time::OffsetDateTime, symbol: String },
     PositionClosed { timestamp: time::OffsetDateTime, symbol: String, realized_pnl: Decimal },
     StateTransitioned { timestamp: time::OffsetDateTime, from: DrawdownState, to: DrawdownState },
-    RecoveryProgressed { timestamp: time::OffsetDateTime, recovery_score: f64 },
+    RecoveryProgressed { timestamp: time::OffsetDateTime, recovery_score: Decimal },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,7 +37,7 @@ pub struct DrawdownSnapshot {
     pub rolling_drawdown: Decimal,
     pub peak_to_valley: Decimal,
     
-    pub equity_efficiency: f64,
+    pub equity_efficiency: Decimal,
     
     pub time_under_water: TimeUnderWaterAssessment,
     pub recovery_factor: RecoveryFactor,

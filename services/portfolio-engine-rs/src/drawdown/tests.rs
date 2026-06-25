@@ -22,35 +22,35 @@ fn test_state_transitions() {
 
 #[test]
 fn test_ulcer_index_calculation() {
-    let drawdowns = vec![0.0, 5.0, 10.0, 5.0, 0.0];
+    let drawdowns = vec![dec!(0.0), dec!(5.0), dec!(10.0), dec!(5.0), dec!(0.0)];
     let ulcer = UlcerIndexAssessment::calculate(&drawdowns);
     
     // UI = sqrt( (0 + 25 + 100 + 25 + 0) / 5 ) = sqrt(150 / 5) = sqrt(30) = 5.477
-    assert!((ulcer.ulcer_index - 5.477).abs() < 0.01);
+    assert!((ulcer.ulcer_index - dec!(5.477)).abs() < dec!(0.01));
     assert_eq!(ulcer.depth, dec!(10.0));
     assert_eq!(ulcer.duration, 5);
-    assert_eq!(ulcer.persistence, 0.6); // 3 out of 5 periods > 0
+    assert_eq!(ulcer.persistence, dec!(0.6)); // 3 out of 5 periods > 0
 }
 
 #[test]
 fn test_drawdown_recovery_model() {
-    let mut model = DrawdownRecoveryModel::new(10, 0.9);
+    let mut model = DrawdownRecoveryModel::new(10, dec!(0.9));
     
     assert_eq!(model.consecutive_positive_periods, 0);
     assert!(!model.is_stable());
     
-    model.update(true, 1.0);
+    model.update(true, dec!(1.0));
     assert_eq!(model.consecutive_positive_periods, 1);
     
     // Model should gradually recover
     for _ in 0..50 {
-        model.update(true, 1.0);
+        model.update(true, dec!(1.0));
     }
     
     assert!(model.is_stable());
     
     // Instant penalization
-    model.update(false, -1.0);
+    model.update(false, dec!(-1.0));
     assert_eq!(model.consecutive_positive_periods, 0);
     assert!(!model.is_stable());
 }

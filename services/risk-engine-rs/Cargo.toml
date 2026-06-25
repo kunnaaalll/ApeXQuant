@@ -9,8 +9,7 @@ rust-version.workspace = true
 description = "APEX V3 Risk Engine - Position sizing, drawdown, and exposure management"
 
 [dependencies]
-# Workspace dependencies
-tokio.workspace = true
+tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -32,7 +31,7 @@ metrics-exporter-prometheus.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
 
 # Local dependencies
-apex-protos = { path = "../../shared/apex-protos" }
+apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }
 tokio-stream = "0.1"
 tower = { version = "0.4", features = ["util"] }
 

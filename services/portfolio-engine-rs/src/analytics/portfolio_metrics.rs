@@ -1,33 +1,34 @@
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct PortfolioMetrics {
-    pub total_return: f64,
-    pub net_return: f64,
-    pub gross_return: f64,
+    pub total_return: Decimal,
+    pub net_return: Decimal,
+    pub gross_return: Decimal,
     
-    pub average_rr: f64,
-    pub profit_factor: f64,
-    pub expectancy: f64,
+    pub average_rr: Decimal,
+    pub profit_factor: Decimal,
+    pub expectancy: Decimal,
     
-    pub win_rate: f64,
-    pub loss_rate: f64,
+    pub win_rate: Decimal,
+    pub loss_rate: Decimal,
     
-    pub average_win: f64,
-    pub average_loss: f64,
-    pub largest_win: f64,
-    pub largest_loss: f64,
+    pub average_win: Decimal,
+    pub average_loss: Decimal,
+    pub largest_win: Decimal,
+    pub largest_loss: Decimal,
     
     pub average_duration: Duration,
-    pub average_holding_efficiency: f64,
-    pub capital_efficiency: f64,
+    pub average_holding_efficiency: Decimal,
+    pub capital_efficiency: Decimal,
     
-    pub recovery_factor: f64,
-    pub ulcer_index: f64,
+    pub recovery_factor: Decimal,
+    pub ulcer_index: Decimal,
     
-    pub max_drawdown: f64,
-    pub current_drawdown: f64,
+    pub max_drawdown: Decimal,
+    pub current_drawdown: Decimal,
     pub time_under_water: Duration,
 }
 
@@ -38,14 +39,14 @@ impl PortfolioMetrics {
 
     /// Enforce the APEX invariant: Profit factor >= 0
     pub fn enforce_invariants(&mut self) {
-        if self.profit_factor < 0.0 || self.profit_factor.is_nan() {
-            self.profit_factor = 0.0;
+        if self.profit_factor < Decimal::ZERO {
+            self.profit_factor = Decimal::ZERO;
         }
-        if self.win_rate < 0.0 || self.win_rate > 1.0 || self.win_rate.is_nan() {
-            self.win_rate = 0.0;
+        if self.win_rate < Decimal::ZERO || self.win_rate > Decimal::ONE {
+            self.win_rate = Decimal::ZERO;
         }
-        if self.loss_rate < 0.0 || self.loss_rate > 1.0 || self.loss_rate.is_nan() {
-            self.loss_rate = 0.0;
+        if self.loss_rate < Decimal::ZERO || self.loss_rate > Decimal::ONE {
+            self.loss_rate = Decimal::ZERO;
         }
     }
 }

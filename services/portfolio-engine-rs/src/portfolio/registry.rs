@@ -39,8 +39,8 @@ impl PortfolioRegistry {
     }
 
     /// Read-only access to the current state.
-    pub fn get_state(&self) -> PortfolioState {
-        self.state.read().unwrap().clone()
+    pub fn get_state(&self) -> Result<PortfolioState, PortfolioError> {
+        self.state.read().map(|guard| guard.clone()).map_err(|_| PortfolioError::SystemError("Lock poisoned".to_string()))
     }
 
     /// Get the current version of the portfolio state.
@@ -63,7 +63,7 @@ impl PortfolioRegistry {
     pub fn dispatch(&self, event: PortfolioEvent) -> Result<PortfolioSnapshot, PortfolioError> {
         let timestamp = OffsetDateTime::now_utc();
         
-        let mut state_guard = self.state.write().unwrap();
+        let mut state_guard = self.state.write().map_err(|_| PortfolioError::SystemError("Lock poisoned".to_string()))?;
         
         // Try applying event
         state_guard.apply_event(&event, timestamp)?;

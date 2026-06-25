@@ -528,3 +528,22 @@ message LessonRecordedEvent {
   repeated string tags = 5;
   map<string, double> features = 6;
 }
+
+// Event Bus Service Definition
+service EventBusService {
+  // Publish one or more events
+  rpc Publish(PublishRequest) returns (PublishResponse);
+  
+  // Subscribe to a stream of events
+  rpc Subscribe(SubscribeRequest) returns (stream EventBatch);
+  
+  // Acknowledge processed events
+  rpc Ack(AckRequest) returns (AckResponse);
+  
+  // Get stream statistics
+  rpc GetStreamStats(StreamStatsRequest) returns (StreamStats);
+}
+
+message StreamStatsRequest {
+  string topic = 1;
+}

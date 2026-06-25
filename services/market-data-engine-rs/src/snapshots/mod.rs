@@ -9,16 +9,15 @@ use crate::failover::FailoverState;
 use crate::latency::LatencyGrade;
 use std::collections::VecDeque;
 
-use crate::quality::MarketQualityGrade;
+use crate::quality::QualityGrade;
 use crate::liquidity::LiquidityGrade;
-use crate::trend::{TrendDirection, TrendStrength};
-use crate::momentum::{MomentumState, MomentumGrade};
+use crate::trend::TrendState;
+use crate::momentum::MomentumGrade;
 use crate::efficiency::EfficiencyGrade;
 use crate::noise::NoiseState;
 use crate::confidence::MarketConfidence;
 use crate::market_state::MarketState;
-use crate::regime::{MarketRegime, RegimeConfidence};
-use rust_decimal::Decimal;
+use crate::regime::MarketRegime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MarketDataSnapshot {
@@ -33,16 +32,14 @@ pub struct MarketDataSnapshot {
 pub struct MarketSnapshot {
     pub symbol: String,
     pub state: MarketState,
-    pub quality: MarketQualityGrade,
+    pub quality: QualityGrade,
     pub quality_score: u32,
     pub liquidity: LiquidityGrade,
     pub spread: SpreadGrade,
     pub volatility: VolatilityGrade,
     pub regime: MarketRegime,
-    pub regime_confidence: RegimeConfidence,
-    pub trend_direction: TrendDirection,
-    pub trend_strength: TrendStrength,
-    pub momentum_state: MomentumState,
+    pub regime_confidence: u8,
+    pub trend_state: TrendState,
     pub momentum_grade: MomentumGrade,
     pub efficiency: EfficiencyGrade,
     pub noise: NoiseState,
@@ -72,3 +69,35 @@ pub struct StreamingSnapshot {
     pub replays_executed: u64,
     pub throughput_grade: crate::throughput::ThroughputGrade,
 }
+
+use crate::intelligence::MarketIntelligenceProfile;
+use crate::regime::RegimeMetrics;
+use crate::volatility::VolatilityMetrics;
+use crate::trend::TrendMetrics;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VolatilitySnapshot {
+    pub metrics: VolatilityMetrics,
+    pub timestamp: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TrendSnapshot {
+    pub metrics: TrendMetrics,
+    pub timestamp: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RegimeSnapshot {
+    pub metrics: RegimeMetrics,
+    pub timestamp: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MarketIntelligenceSnapshot {
+    pub profile: MarketIntelligenceProfile,
+    pub timestamp: i64,
+}
+
+// These snapshots support exact replay reconstruction by serializing/deserializing deterministically.

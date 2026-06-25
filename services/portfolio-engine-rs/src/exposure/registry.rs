@@ -38,8 +38,8 @@ impl ExposureRegistry {
         Self::default()
     }
 
-    pub fn get_state(&self) -> ExposureState {
-        self.state.read().unwrap().clone()
+    pub fn get_state(&self) -> Result<ExposureState, ExposureError> {
+        self.state.read().map(|guard| guard.clone()).map_err(|_| ExposureError::SystemError("Lock poisoned".to_string()))
     }
 
     pub fn get_version(&self) -> u64 {
@@ -56,7 +56,7 @@ impl ExposureRegistry {
 
     pub fn dispatch(&self, event: ExposureEvent) -> Result<ExposureSnapshot, ExposureError> {
         let timestamp = OffsetDateTime::now_utc();
-        let mut state_guard = self.state.write().unwrap();
+        let mut state_guard = self.state.write().map_err(|_| ExposureError::SystemError("Lock poisoned".to_string()))?;
         
         state_guard.apply_event(&event, timestamp)?;
 

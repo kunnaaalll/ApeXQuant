@@ -22,6 +22,12 @@ pub struct ThemeConcentration {
     pub total_exposure_pct: f64,
 }
 
+impl Default for HiddenLeverageAssessment {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HiddenLeverageAssessment {
     pub fn new() -> Self {
         Self {

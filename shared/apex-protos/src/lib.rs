@@ -3,6 +3,7 @@
 //! Generated gRPC clients and servers for APEX services.
 
 #![allow(missing_docs)]
+#![allow(clippy::large_enum_variant)]
 
 // Protocol buffer modules will be generated here
 pub mod common {

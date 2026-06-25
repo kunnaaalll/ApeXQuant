@@ -42,4 +42,6 @@ pub enum PortfolioError {
     },
     #[error("Position {0} not found")]
     PositionNotFound(uuid::Uuid),
+    #[error("System Error: {0}")]
+    SystemError(String),
 }

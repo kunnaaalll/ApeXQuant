@@ -17,6 +17,12 @@ pub struct DriftAssessment {
 
 pub struct DriftMonitor;
 
+impl Default for DriftMonitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DriftMonitor {
     pub fn new() -> Self {
         Self

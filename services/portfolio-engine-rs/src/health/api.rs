@@ -13,12 +13,14 @@ pub struct LivenessResponse {
     timestamp: u64,
 }
 
+use rust_decimal::Decimal;
+
 #[derive(Serialize)]
 pub struct ReadinessResponse {
     status: String,
     postgres_connected: bool,
     redis_connected: bool,
-    memory_usage_mb: f64,
+    memory_usage_mb: Decimal,
     active_tasks: usize,
     timestamp: u64,
 }
@@ -40,7 +42,7 @@ async fn liveness() -> Json<LivenessResponse> {
         status: "OK".to_string(),
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or(std::time::Duration::from_secs(0))
             .as_secs(),
     })
 }
@@ -61,11 +63,11 @@ async fn readiness(axum::extract::State(state): axum::extract::State<Arc<HealthS
         status,
         postgres_connected,
         redis_connected,
-        memory_usage_mb: 0.0, // Placeholder
+        memory_usage_mb: Decimal::ZERO, // Placeholder
         active_tasks: state.active_tasks.load(Ordering::Relaxed),
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or(std::time::Duration::from_secs(0))
             .as_secs(),
     })
 }

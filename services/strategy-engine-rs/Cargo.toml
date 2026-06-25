@@ -18,7 +18,7 @@ chrono.workspace = true
 async-trait.workspace = true
 
 # Internal
-apex-protos = { path = "../../shared/apex-protos" }
+apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }
 
 # API & gRPC
 tonic.workspace = true
@@ -26,10 +26,11 @@ prost.workspace = true
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
-tokio = { workspace = true, features = ["full"] }
+tokio = { workspace = true, features = ["full", "macros", "rt-multi-thread", "sync"] }
 http = "1.1"
 thiserror.workspace = true
 futures-util.workspace = true
+anyhow.workspace = true
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
 reqwest.workspace = true

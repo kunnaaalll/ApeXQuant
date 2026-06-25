@@ -26,6 +26,12 @@ pub enum ReportFormat {
     Json,
 }
 
+impl Default for ShadowReporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ShadowReporter {
     pub fn new() -> Self {
         Self

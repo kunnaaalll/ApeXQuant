@@ -26,6 +26,12 @@ pub struct PgShadowStorage {
     // pool: sqlx::PgPool,
 }
 
+impl Default for PgShadowStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PgShadowStorage {
     pub fn new() -> Self {
         Self {}

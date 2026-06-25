@@ -9,8 +9,7 @@ rust-version.workspace = true
 description = "APEX V3 Portfolio Engine - Multi-asset portfolio optimization and allocation"
 
 [dependencies]
-# Workspace dependencies
-tokio.workspace = true
+tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -39,7 +38,7 @@ tokio-stream = "0.1"
 tonic-reflection.workspace = true
 
 # Local dependencies
-apex-protos = { path = "../../shared/apex-protos" }
+apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }
 
 [dev-dependencies]
 tokio-test.workspace = true

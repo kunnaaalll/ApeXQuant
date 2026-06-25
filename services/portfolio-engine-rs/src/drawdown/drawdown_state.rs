@@ -57,5 +57,5 @@ pub struct DrawdownAssessment {
     pub monthly_drawdown: Decimal,
     pub rolling_drawdown: Decimal,
     pub peak_to_valley: Decimal,
-    pub equity_efficiency: f64,
+    pub equity_efficiency: Decimal,
 }

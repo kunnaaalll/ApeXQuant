@@ -20,4 +20,6 @@ pub enum ExposureError {
     SyntheticImbalance,
     #[error("Symbol not found: {0}")]
     SymbolNotFound(String),
+    #[error("System Error: {0}")]
+    SystemError(String),
 }

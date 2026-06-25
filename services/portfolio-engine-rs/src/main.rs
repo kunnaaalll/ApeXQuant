@@ -1,3 +1,7 @@
+#![deny(unsafe_code)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::expect_used))]
+
 use tracing::{info, Level};
 
 #[tokio::main]

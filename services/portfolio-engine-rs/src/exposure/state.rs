@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -207,7 +206,7 @@ impl ExposureState {
             }
         }
 
-        if risk_on_weight > Decimal::from_f64(0.4).unwrap() {
+        if risk_on_weight > Decimal::new(4, 1) { // 0.4
             results.push(DuplicateExposureResult::new(
                 "High Risk-on concentration (Crypto + Metals + Indices)".to_string(),
                 ConcentrationAssessment::High,

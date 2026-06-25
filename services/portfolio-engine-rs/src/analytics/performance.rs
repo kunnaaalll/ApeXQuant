@@ -1,5 +1,7 @@
 // src/analytics/performance.rs
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PerformanceState {
@@ -12,30 +14,33 @@ pub enum PerformanceState {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct PerformanceAssessment {
-    pub sharpe_ratio: f64,
-    pub sortino_ratio: f64,
-    pub calmar_ratio: f64,
-    pub recovery_factor: f64,
-    pub ulcer_performance_index: f64,
-    pub return_volatility: f64,
-    pub downside_deviation: f64,
-    pub stability_score: f64,
+    pub sharpe_ratio: Decimal,
+    pub sortino_ratio: Decimal,
+    pub calmar_ratio: Decimal,
+    pub recovery_factor: Decimal,
+    pub ulcer_performance_index: Decimal,
+    pub return_volatility: Decimal,
+    pub downside_deviation: Decimal,
+    pub stability_score: Decimal,
     pub state: PerformanceState,
 }
 
 impl PerformanceAssessment {
     /// Determines the portfolio's health state based on institutional stability factors.
     /// Primarily weighs the Sortino Ratio and Stability Score.
-    pub fn evaluate_state(sortino: f64, stability: f64) -> PerformanceState {
-        let composite_score = (sortino * 0.6) + (stability * 0.4);
+    pub fn evaluate_state(sortino: Decimal, stability: Decimal) -> PerformanceState {
+        let weight_sortino = Decimal::from_f32(0.6).unwrap_or(Decimal::ZERO);
+        let weight_stability = Decimal::from_f32(0.4).unwrap_or(Decimal::ZERO);
         
-        if composite_score < 0.0 {
+        let composite_score = (sortino * weight_sortino) + (stability * weight_stability);
+        
+        if composite_score < Decimal::ZERO {
             PerformanceState::Critical
-        } else if composite_score < 0.5 {
+        } else if composite_score < Decimal::from_f32(0.5).unwrap_or(Decimal::ZERO) {
             PerformanceState::Weak
-        } else if composite_score < 1.0 {
+        } else if composite_score < Decimal::ONE {
             PerformanceState::Normal
-        } else if composite_score < 2.0 {
+        } else if composite_score < Decimal::from_f32(2.0).unwrap_or(Decimal::ZERO) {
             PerformanceState::Healthy
         } else {
             PerformanceState::Excellent
@@ -43,30 +48,26 @@ impl PerformanceAssessment {
     }
 
     pub fn new(
-        sharpe_ratio: f64,
-        sortino_ratio: f64,
-        calmar_ratio: f64,
-        recovery_factor: f64,
-        ulcer_performance_index: f64,
-        return_volatility: f64,
-        downside_deviation: f64,
-        stability_score: f64,
+        sharpe_ratio: Decimal,
+        sortino_ratio: Decimal,
+        calmar_ratio: Decimal,
+        recovery_factor: Decimal,
+        ulcer_performance_index: Decimal,
+        return_volatility: Decimal,
+        downside_deviation: Decimal,
+        stability_score: Decimal,
     ) -> Self {
-        // Enforce math invariants (0 panics, no NaNs)
-        let safe_sortino = if sortino_ratio.is_nan() { 0.0 } else { sortino_ratio };
-        let safe_stability = if stability_score.is_nan() { 0.0 } else { stability_score };
-        
-        let state = Self::evaluate_state(safe_sortino, safe_stability);
+        let state = Self::evaluate_state(sortino_ratio, stability_score);
 
         Self {
-            sharpe_ratio: if sharpe_ratio.is_nan() { 0.0 } else { sharpe_ratio },
-            sortino_ratio: safe_sortino,
-            calmar_ratio: if calmar_ratio.is_nan() { 0.0 } else { calmar_ratio },
-            recovery_factor: if recovery_factor.is_nan() { 0.0 } else { recovery_factor },
-            ulcer_performance_index: if ulcer_performance_index.is_nan() { 0.0 } else { ulcer_performance_index },
-            return_volatility: if return_volatility.is_nan() { 0.0 } else { return_volatility },
-            downside_deviation: if downside_deviation.is_nan() { 0.0 } else { downside_deviation },
-            stability_score: safe_stability,
+            sharpe_ratio,
+            sortino_ratio,
+            calmar_ratio,
+            recovery_factor,
+            ulcer_performance_index,
+            return_volatility,
+            downside_deviation,
+            stability_score,
             state,
         }
     }

@@ -1,6 +1,5 @@
 use tonic::{Request, Status};
 use tracing::info;
-use std::time::Instant;
 
 #[derive(Clone)]
 pub struct LoggingInterceptor;

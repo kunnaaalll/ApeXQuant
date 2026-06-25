@@ -16,6 +16,12 @@ pub struct DeterminismReport {
 
 pub struct DeterminismValidator;
 
+impl Default for DeterminismValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DeterminismValidator {
     pub fn new() -> Self {
         Self

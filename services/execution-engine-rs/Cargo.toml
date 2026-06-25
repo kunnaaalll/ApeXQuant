@@ -9,8 +9,7 @@ rust-version.workspace = true
 description = "APEX V3 Execution Engine - Order routing and MT5 bridge communication"
 
 [dependencies]
-# Workspace dependencies
-tokio.workspace = true
+tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -31,7 +30,7 @@ tower.workspace = true
 tower-http.workspace = true
 
 # Local dependencies
-apex-protos = { path = "../../shared/apex-protos" }
+apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }
 
 # Service-specific
 backoff = { version = "0.4", features = ["tokio"] }

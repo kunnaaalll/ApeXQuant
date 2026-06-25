@@ -20,6 +20,12 @@ pub struct RegimePerformanceProfile {
     pub asia_session: RegimePerformanceMetrics,
 }
 
+impl Default for RegimePerformanceProfile {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RegimePerformanceProfile {
     pub fn new() -> Self {
         Self {

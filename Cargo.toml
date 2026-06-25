@@ -103,7 +103,7 @@ chrono = { version = "0.4", features = ["serde", "clock", "std", "now"] }
 uuid = { version = "1.8", features = ["v4", "v7", "serde"] }
 
 # Error Handling
-anyhow = { version = "1.0", features = ["backtrace"] }
+anyhow = { version = "1.0",  }
 thiserror = "1.0"
 
 # Validation

@@ -123,7 +123,7 @@ impl CapitalAllocator {
         let mut final_allocation_size = requested_capital;
         if final_decision == TradeAdmissionDecision::ApproveReduced {
             // Apply a 50% reduction
-            final_allocation_size = final_allocation_size * Decimal::new(50, 2);
+            final_allocation_size *= Decimal::new(50, 2);
         } else if matches!(final_decision, TradeAdmissionDecision::Reject | TradeAdmissionDecision::Freeze | TradeAdmissionDecision::Delay) {
             final_allocation_size = Decimal::ZERO;
         }

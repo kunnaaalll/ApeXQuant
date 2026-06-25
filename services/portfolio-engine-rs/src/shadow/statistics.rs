@@ -22,6 +22,12 @@ pub enum WindowPeriod {
 
 pub struct StatisticsEngine;
 
+impl Default for StatisticsEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StatisticsEngine {
     pub fn new() -> Self {
         Self

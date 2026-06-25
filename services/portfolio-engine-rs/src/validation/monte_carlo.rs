@@ -1,19 +1,30 @@
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
+
 #[derive(Debug, Clone)]
 pub struct MonteCarloReport {
     pub total_simulations: usize,
-    pub survival_rate_pct: f64,
-    pub average_recovery_days: f64,
-    pub max_simulated_drawdown_pct: f64,
-    pub robustness_score: f64,
+    pub survival_rate_pct: Decimal,
+    pub average_recovery_days: Decimal,
+    pub max_simulated_drawdown_pct: Decimal,
+    pub robustness_score: Decimal,
 }
 
 impl MonteCarloReport {
     pub fn is_passing(&self) -> bool {
-        self.survival_rate_pct > 99.0 && self.robustness_score > 90.0
+        let threshold_survival = Decimal::from_f64(99.0).unwrap_or(Decimal::ZERO);
+        let threshold_robustness = Decimal::from_f64(90.0).unwrap_or(Decimal::ZERO);
+        self.survival_rate_pct > threshold_survival && self.robustness_score > threshold_robustness
     }
 }
 
 pub struct PortfolioMonteCarlo;
+
+impl Default for PortfolioMonteCarlo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl PortfolioMonteCarlo {
     pub fn new() -> Self {
@@ -30,10 +41,10 @@ impl PortfolioMonteCarlo {
 
         MonteCarloReport {
             total_simulations: 10_000,
-            survival_rate_pct: 100.0,
-            average_recovery_days: 14.2,
-            max_simulated_drawdown_pct: 18.5,
-            robustness_score: 98.7,
+            survival_rate_pct: Decimal::from_f64(100.0).unwrap_or(Decimal::ZERO),
+            average_recovery_days: Decimal::from_f64(14.2).unwrap_or(Decimal::ZERO),
+            max_simulated_drawdown_pct: Decimal::from_f64(18.5).unwrap_or(Decimal::ZERO),
+            robustness_score: Decimal::from_f64(98.7).unwrap_or(Decimal::ZERO),
         }
     }
 }

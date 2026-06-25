@@ -7,6 +7,12 @@ pub struct ReplayResult {
 
 pub struct ReplayValidator;
 
+impl Default for ReplayValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReplayValidator {
     pub fn new() -> Self {
         Self

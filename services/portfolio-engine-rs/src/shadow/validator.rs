@@ -31,6 +31,12 @@ pub struct ShadowAlert {
 
 pub struct PortfolioValidator;
 
+impl Default for PortfolioValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PortfolioValidator {
     pub fn new() -> Self {
         Self

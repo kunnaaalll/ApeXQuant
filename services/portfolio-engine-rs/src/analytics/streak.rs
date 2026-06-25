@@ -9,10 +9,10 @@ pub struct StreakAnalytics {
     pub max_losing_streak: u64,
     
     /// Speed at which the portfolio recovers from a losing streak
-    pub recovery_speed: f64,
+    pub recovery_speed: rust_decimal::Decimal,
     
     /// Measured impact of streaks on the overall expectancy
-    pub streak_impact: f64,
+    pub streak_impact: rust_decimal::Decimal,
 }
 
 impl StreakAnalytics {

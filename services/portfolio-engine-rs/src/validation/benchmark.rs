@@ -1,4 +1,6 @@
 use std::time::Duration;
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 
 #[derive(Debug, Clone)]
 pub struct BenchmarkReport {
@@ -6,8 +8,8 @@ pub struct BenchmarkReport {
     pub p50_latency: Duration,
     pub p95_latency: Duration,
     pub p99_latency: Duration,
-    pub memory_usage_mb: f64,
-    pub throughput_eps: f64, // events per second
+    pub memory_usage_mb: Decimal,
+    pub throughput_eps: Decimal, // events per second
     pub memory_leaks_detected: usize,
 }
 
@@ -20,6 +22,12 @@ impl BenchmarkReport {
 }
 
 pub struct PortfolioBenchmark;
+
+impl Default for PortfolioBenchmark {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl PortfolioBenchmark {
     pub fn new() -> Self {
@@ -35,8 +43,8 @@ impl PortfolioBenchmark {
             p50_latency: Duration::from_millis(2),
             p95_latency: Duration::from_millis(5),
             p99_latency: Duration::from_millis(8),
-            memory_usage_mb: 45.5,
-            throughput_eps: 50_000.0,
+            memory_usage_mb: Decimal::from_f64(45.5).unwrap_or(Decimal::ZERO),
+            throughput_eps: Decimal::from_f64(50_000.0).unwrap_or(Decimal::ZERO),
             memory_leaks_detected: 0,
         }
     }

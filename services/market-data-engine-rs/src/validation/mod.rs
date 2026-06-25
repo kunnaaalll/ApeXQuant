@@ -1,51 +1,51 @@
-use crate::state_machine::{ConnectionState, StateTransitionError};
-use crate::failover::{FailoverState, FailoverTransitionError};
+use crate::intelligence::MarketIntelligenceProfile;
+use crate::regime::MarketRegime;
+use crate::correlation::CorrelationMetrics;
 
-pub struct ConnectionValidator {}
+pub struct ValidationFramework;
 
-impl ConnectionValidator {
-    pub fn validate_transition(from: ConnectionState, to: ConnectionState) -> Result<ConnectionState, StateTransitionError> {
-        from.transition(to)
+impl ValidationFramework {
+    pub fn validate_determinism(profile1: &MarketIntelligenceProfile, profile2: &MarketIntelligenceProfile) -> bool {
+        profile1 == profile2
+    }
+
+    pub fn validate_replay(live_profile: &MarketIntelligenceProfile, replay_profile: &MarketIntelligenceProfile) -> Result<(), &'static str> {
+        if live_profile != replay_profile {
+            return Err("Replay determinism failed: Profiles do not match");
+        }
+        Ok(())
+    }
+
+    pub fn validate_bounds(profile: &MarketIntelligenceProfile) -> Result<(), &'static str> {
+        if profile.market_score > 100 { return Err("Market score out of bounds"); }
+        if profile.confidence_score > 100 { return Err("Confidence score out of bounds"); }
+        if profile.tradeability_score > 100 { return Err("Tradeability score out of bounds"); }
+        if profile.volatility.score > 100 { return Err("Volatility score out of bounds"); }
+        if profile.trend.strength_score > 100 { return Err("Trend strength score out of bounds"); }
+        if profile.correlation.score > 100 { return Err("Correlation score out of bounds"); }
+        Ok(())
+    }
+
+    pub fn validate_regime(regime: MarketRegime) -> bool {
+        matches!(regime, 
+            MarketRegime::TrendFollowing | 
+            MarketRegime::MeanReversion | 
+            MarketRegime::Breakout | 
+            MarketRegime::Expansion | 
+            MarketRegime::Compression | 
+            MarketRegime::RiskOn | 
+            MarketRegime::RiskOff | 
+            MarketRegime::Transitional
+        )
+    }
+
+    pub fn validate_correlation(metrics: &CorrelationMetrics) -> Result<(), &'static str> {
+        if metrics.score > 100 {
+            return Err("Correlation score out of bounds");
+        }
+        Ok(())
     }
 }
 
-pub struct FailoverValidator {}
-
-impl FailoverValidator {
-    pub fn validate_sequence(from: FailoverState, to: FailoverState) -> Result<FailoverState, FailoverTransitionError> {
-        from.transition(to)
-    }
-}
-
-pub struct DeterminismValidator {}
-
-impl DeterminismValidator {
-    pub fn verify_iteration(&self) -> bool {
-        // Placeholder for deterministic checks
-        true
-    }
-}
-
-pub struct ReplayValidator {}
-
-impl ReplayValidator {
-    pub fn verify_replay(&self) -> bool {
-        true
-    }
-}
-
-pub struct StressValidator {}
-
-impl StressValidator {
-    pub fn run_stress_test(&self) -> bool {
-        true
-    }
-}
-
-pub struct CertificationEngine {}
-
-impl CertificationEngine {
-    pub fn certify_all() -> bool {
-        true
-    }
-}
+#[cfg(test)]
+pub mod phase5_tests;

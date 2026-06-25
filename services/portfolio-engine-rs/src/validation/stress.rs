@@ -20,6 +20,12 @@ impl StressReport {
 
 pub struct PortfolioStressSuite;
 
+impl Default for PortfolioStressSuite {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PortfolioStressSuite {
     pub fn new() -> Self {
         Self
