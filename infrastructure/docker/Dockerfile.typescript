@@ -9,6 +9,8 @@ ARG APP
 # ---------------- Dependencies Stage ----------------
 FROM node:${NODE_VERSION}-alpine AS deps
 
+ARG APP
+
 RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
@@ -24,7 +26,7 @@ COPY storage/postgres/package.json ./storage/postgres/
 COPY storage/redis/package.json ./storage/redis/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --filter=@apex-v3/${APP} --filter=@apex-v3/contracts --filter=@apex-v3/events
+RUN pnpm install --no-frozen-lockfile --filter=@apex-v3/${APP} --filter=@apex-v3/contracts --filter=@apex-v3/events
 
 # ---------------- Builder Stage ----------------
 FROM node:${NODE_VERSION}-alpine AS builder
