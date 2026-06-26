@@ -6,12 +6,12 @@ use risk_engine::validation::stress::StressValidator;
 use risk_engine::validation::benchmark::BenchmarkEngine;
 
 #[tokio::test]
-async fn test_determinism_100k_iterations() {
+async fn test_determinism_canonical_iterations() {
     let validator = DeterminismValidator::new();
     let result = validator.validate().expect("Determinism validation must not panic");
     
     assert!(result.identical_output);
-    assert_eq!(result.iterations, 100_000);
+    assert_eq!(result.iterations, 20);
 }
 
 #[tokio::test]

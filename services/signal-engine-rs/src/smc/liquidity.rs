@@ -2,6 +2,7 @@
 //!
 //! Liquidity sweeps occur when price briefly violates a significant level
 //! (taking out stops) before reversing sharply.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use crate::structure::swings::{SwingPoint, SwingType};

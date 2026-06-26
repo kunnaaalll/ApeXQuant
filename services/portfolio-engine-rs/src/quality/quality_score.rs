@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum PortfolioQualityState {
@@ -28,8 +29,8 @@ pub struct PortfolioQualityBreakdown {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QualityContribution {
-    pub weight: f64,
-    pub score: f64,
+    pub weight: Decimal,
+    pub score: Decimal,
     pub reason: String,
 }
 
@@ -38,7 +39,7 @@ pub struct QualitySnapshot {
     pub timestamp: u64,
     pub version: u64,
     pub state: PortfolioQualityState,
-    pub composite_score: f64,
+    pub composite_score: Decimal,
     pub breakdown: PortfolioQualityBreakdown,
 }
 
@@ -57,7 +58,7 @@ pub enum QualityEvent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PortfolioQuality {
     pub state: PortfolioQualityState,
-    pub current_score: f64, // 0.0 to 100.0
+    pub current_score: Decimal, // 0.0 to 100.0
     pub breakdown: PortfolioQualityBreakdown,
     pub last_updated: u64,
     pub version: u64,
@@ -66,8 +67,8 @@ pub struct PortfolioQuality {
 impl PortfolioQuality {
     pub fn new(timestamp: u64) -> Self {
         let default_contribution = QualityContribution {
-            weight: 0.0,
-            score: 0.0,
+            weight: Decimal::ZERO,
+            score: Decimal::ZERO,
             reason: "Initialization".to_string(),
         };
         let breakdown = PortfolioQualityBreakdown {
@@ -88,30 +89,30 @@ impl PortfolioQuality {
 
         Self {
             state: PortfolioQualityState::Neutral,
-            current_score: 50.0,
+            current_score: Decimal::new(50, 0),
             breakdown,
             last_updated: timestamp,
             version: 1,
         }
     }
 
-    pub fn determine_state(score: f64) -> PortfolioQualityState {
-        if score >= 90.0 {
+    pub fn determine_state(score: Decimal) -> PortfolioQualityState {
+        if score >= Decimal::new(90, 0) {
             PortfolioQualityState::Excellent
-        } else if score >= 75.0 {
+        } else if score >= Decimal::new(75, 0) {
             PortfolioQualityState::Good
-        } else if score >= 50.0 {
+        } else if score >= Decimal::new(50, 0) {
             PortfolioQualityState::Neutral
-        } else if score >= 25.0 {
+        } else if score >= Decimal::new(25, 0) {
             PortfolioQualityState::Weak
         } else {
             PortfolioQualityState::Critical
         }
     }
 
-    pub fn apply_event(&mut self, _event: QualityEvent, new_score: f64, new_breakdown: PortfolioQualityBreakdown, timestamp: u64) -> QualitySnapshot {
+    pub fn apply_event(&mut self, _event: QualityEvent, new_score: Decimal, new_breakdown: PortfolioQualityBreakdown, timestamp: u64) -> QualitySnapshot {
         // Enforce invariants
-        let bounded_score = new_score.clamp(0.0, 100.0);
+        let bounded_score = new_score.min(Decimal::new(100, 0)).max(Decimal::ZERO);
         
         self.current_score = bounded_score;
         self.state = Self::determine_state(bounded_score);
@@ -122,14 +123,14 @@ impl PortfolioQuality {
         self.create_snapshot()
     }
 
-    pub fn apply_decay(&mut self, decay_factor: f64, timestamp: u64) -> QualitySnapshot {
-        let decayed_score = (self.current_score - decay_factor).max(0.0);
+    pub fn apply_decay(&mut self, decay_factor: Decimal, timestamp: u64) -> QualitySnapshot {
+        let decayed_score = if self.current_score > decay_factor { self.current_score - decay_factor } else { Decimal::ZERO };
         let mut new_breakdown = self.breakdown.clone();
         
         // Update a specific component to reflect decay, here we apply it generally.
         new_breakdown.recent_performance = QualityContribution {
             weight: self.breakdown.recent_performance.weight,
-            score: (self.breakdown.recent_performance.score - decay_factor).max(0.0),
+            score: if self.breakdown.recent_performance.score > decay_factor { self.breakdown.recent_performance.score - decay_factor } else { Decimal::ZERO },
             reason: "Time decay applied due to inactivity or sustained poor performance".to_string(),
         };
 

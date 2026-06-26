@@ -5,42 +5,7 @@ use strategy_engine_rs::storage::pg_store::PgStore;
 use strategy_engine_rs::storage::rebuilder::Aggregatable;
 use strategy_engine_rs::storage::repository::StrategyRepository;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct MockAggregate {
-    pub health_updates: i32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct MockSnapshot {
-    pub health_updates: i32,
-}
-
-impl Aggregatable for MockAggregate {
-    type Snapshot = MockSnapshot;
-    type Error = String;
-
-    fn apply_event(&mut self, event: &StrategyEventWrapper) -> Result<(), Self::Error> {
-        match event {
-            StrategyEventWrapper::Health(_) => {
-                self.health_updates += 1;
-                Ok(())
-            }
-            _ => Ok(()),
-        }
-    }
-
-    fn snapshot(&self) -> Self::Snapshot {
-        MockSnapshot {
-            health_updates: self.health_updates,
-        }
-    }
-
-    fn restore(snapshot: Self::Snapshot) -> Result<Self, Self::Error> {
-        Ok(MockAggregate {
-            health_updates: snapshot.health_updates,
-        })
-    }
-}
+use strategy_engine_rs::storage::aggregate::{StrategyAggregate, StrategyAggregateSnapshot};
 
 // -----------------------------------------------------------------------------
 // Database connection helper
@@ -55,7 +20,7 @@ async fn get_test_pool() -> Result<PgPool, sqlx::Error> {
 // -----------------------------------------------------------------------------
 #[test]
 fn test_event_ordering() -> Result<(), Box<dyn std::error::Error>> {
-    let mut aggregate = MockAggregate::default();
+    let mut aggregate = StrategyAggregate::default();
     let e1 = StrategyEventWrapper::Health(HealthEvent { details: "1".into() });
     let e2 = StrategyEventWrapper::Health(HealthEvent { details: "2".into() });
 
@@ -74,8 +39,8 @@ fn test_sequence_integrity() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_replay_equals_snapshot() -> Result<(), Box<dyn std::error::Error>> {
-    let mut a1 = MockAggregate::default();
-    let mut a2 = MockAggregate::default();
+    let mut a1 = StrategyAggregate::default();
+    let mut a2 = StrategyAggregate::default();
 
     let event = StrategyEventWrapper::Health(HealthEvent { details: "test".into() });
     
@@ -84,7 +49,7 @@ fn test_replay_equals_snapshot() -> Result<(), Box<dyn std::error::Error>> {
 
     a2.apply_event(&event)?;
     let snap = a2.snapshot();
-    let mut restored = MockAggregate::restore(snap)?;
+    let mut restored = StrategyAggregate::restore(snap)?;
     restored.apply_event(&event)?;
 
     assert_eq!(a1, restored);

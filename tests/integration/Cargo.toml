@@ -1,0 +1,18 @@
+[package]
+name = "integration-tests"
+version = "3.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+strategy-engine-rs = { path = "../../services/strategy-engine-rs" }
+risk-engine-rs = { path = "../../services/risk-engine-rs" }
+tokio = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = "1.35"
+chrono = { workspace = true }
+ring = { workspace = true }
+
+[[test]]
+name = "shadow_flow_test"
+path = "shadow_flow_test.rs"

@@ -30,7 +30,7 @@ fn test_error_mapping() {
 
 #[tokio::test]
 async fn test_streaming() {
-    let service = RiskServiceImpl;
+    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None);
     let request = Request::new(EventQuery {
         account_id: "acc_123".to_string(),
         start_time: None,
@@ -56,7 +56,7 @@ async fn test_health_endpoints() {
 
 #[tokio::test]
 async fn test_determinism() {
-    let service = RiskServiceImpl;
+    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None);
     
     // Simulate 100,000 requests
     for i in 0..100_000 {
@@ -67,7 +67,7 @@ async fn test_determinism() {
         let response = service.get_risk_state(request).await.unwrap().into_inner();
         
         // Assert determinism
-        assert_eq!(response.state, "ACTIVE");
+        assert_eq!(response.state, "Normal");
         assert_eq!(response.account_id, format!("acc_{}", i % 10));
     }
 }

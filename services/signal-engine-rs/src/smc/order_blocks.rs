@@ -2,6 +2,7 @@
 //!
 //! Order blocks are institutional price levels where significant buying or selling
 //! occurred, often leaving a footprint that acts as support/resistance.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use crate::structure::swings::{SwingPoint, SwingType};

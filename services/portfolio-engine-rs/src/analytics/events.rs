@@ -1,24 +1,25 @@
 // src/analytics/events.rs
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum AnalyticsEventType {
     PositionClosed {
         symbol: String,
-        pnl: f64,
+        pnl: Decimal,
         duration_ms: u64,
     },
     PnLUpdate {
-        realized_pnl: f64,
-        unrealized_pnl: f64,
+        realized_pnl: Decimal,
+        unrealized_pnl: Decimal,
     },
     DrawdownUpdate {
-        current_drawdown: f64,
-        max_drawdown: f64,
+        current_drawdown: Decimal,
+        max_drawdown: Decimal,
     },
     PortfolioUpdate {
-        total_value: f64,
-        cash_balance: f64,
+        total_value: Decimal,
+        cash_balance: Decimal,
     },
 }
 

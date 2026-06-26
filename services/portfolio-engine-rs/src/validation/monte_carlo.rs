@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
 
 #[derive(Debug, Clone)]
 pub struct MonteCarloReport {
@@ -12,8 +11,8 @@ pub struct MonteCarloReport {
 
 impl MonteCarloReport {
     pub fn is_passing(&self) -> bool {
-        let threshold_survival = Decimal::from_f64(99.0).unwrap_or(Decimal::ZERO);
-        let threshold_robustness = Decimal::from_f64(90.0).unwrap_or(Decimal::ZERO);
+        let threshold_survival = Decimal::new(990, 1);
+        let threshold_robustness = Decimal::new(900, 1);
         self.survival_rate_pct > threshold_survival && self.robustness_score > threshold_robustness
     }
 }
@@ -41,10 +40,10 @@ impl PortfolioMonteCarlo {
 
         MonteCarloReport {
             total_simulations: 10_000,
-            survival_rate_pct: Decimal::from_f64(100.0).unwrap_or(Decimal::ZERO),
-            average_recovery_days: Decimal::from_f64(14.2).unwrap_or(Decimal::ZERO),
-            max_simulated_drawdown_pct: Decimal::from_f64(18.5).unwrap_or(Decimal::ZERO),
-            robustness_score: Decimal::from_f64(98.7).unwrap_or(Decimal::ZERO),
+            survival_rate_pct: Decimal::new(1000, 1),
+            average_recovery_days: Decimal::new(142, 1),
+            max_simulated_drawdown_pct: Decimal::new(185, 1),
+            robustness_score: Decimal::new(987, 1),
         }
     }
 }

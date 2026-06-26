@@ -20,3 +20,8 @@ async-trait = { workspace = true }
 serde_json = "1.0"
 apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }
 anyhow.workspace = true
+tokio-tungstenite.workspace = true
+futures-util.workspace = true
+ring.workspace = true
+uuid = { workspace = true }
+tracing = { workspace = true }

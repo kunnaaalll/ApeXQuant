@@ -41,7 +41,7 @@ fn test_registry_determinism() {
         registry.dispatch(event).unwrap();
     }
 
-    let final_state = registry.get_state();
+    let final_state = registry.get_state().unwrap();
     assert_eq!(final_state.balance, Decimal::from(10500));
     assert_eq!(final_state.equity, Decimal::from(10500));
     assert_eq!(final_state.active_positions, 0);
@@ -101,7 +101,7 @@ fn test_registry_concurrency() {
         handle.join().unwrap();
     }
 
-    let final_state = registry.get_state();
+    let final_state = registry.get_state().unwrap();
     
     // Initial balance (1M) + (10 threads * 100 loops * 5 realized PnL) = 1,000,000 + 5000 = 1,005,000
     assert_eq!(final_state.balance, Decimal::from(1_005_000));

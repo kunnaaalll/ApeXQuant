@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use std::str::FromStr;
 
 use super::decay::HeatDecayModel;
 use super::heat_score::{HeatContributionBreakdown, PortfolioHeat, PortfolioHeatState};
@@ -57,16 +56,16 @@ fn test_decay_model_cooldown() {
 #[test]
 fn test_risk_budget_allocations() {
     let budget = RiskBudget::new(
-        Decimal::from_str("100.0").unwrap(),
-        Decimal::from_str("50.0").unwrap(),
-        Decimal::from_str("10.0").unwrap(),
-        Decimal::from_str("20.0").unwrap(),
+        Decimal::new(1000, 1),
+        Decimal::new(500, 1),
+        Decimal::new(100, 1),
+        Decimal::new(200, 1),
     );
     
-    assert_eq!(budget.total_risk_capacity, Decimal::from_str("100.0").unwrap());
-    assert_eq!(budget.remaining_risk, Decimal::from_str("20.0").unwrap()); // 100 - 50 - 10 - 20 = 20
+    assert_eq!(budget.total_risk_capacity, Decimal::new(1000, 1));
+    assert_eq!(budget.remaining_risk, Decimal::new(200, 1)); // 100 - 50 - 10 - 20 = 20
     
-    assert!(budget.can_allocate(Decimal::from_str("15.0").unwrap()));
-    assert!(!budget.can_allocate(Decimal::from_str("25.0").unwrap()));
+    assert!(budget.can_allocate(Decimal::new(150, 1)));
+    assert!(!budget.can_allocate(Decimal::new(250, 1)));
 }
 

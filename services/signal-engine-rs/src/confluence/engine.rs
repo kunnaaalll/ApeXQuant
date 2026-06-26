@@ -1,4 +1,5 @@
 //! Confluence scoring engine
+use num_traits::ToPrimitive;
 
 use crate::confluence::factors::{ConfluenceFactor, FactorBuilder};
 use crate::confluence::ConfluenceScore;
@@ -315,14 +316,7 @@ fn calculate_risk_reward(entry: Decimal, stop: Decimal, target: Decimal) -> f64 
     }
 }
 
-/// Signal direction
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum SignalDirection {
-    /// Long signal
-    Long,
-    /// Short signal
-    Short,
-}
+
 
 #[cfg(test)]
 mod tests {

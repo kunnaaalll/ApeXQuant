@@ -31,6 +31,7 @@ http = "1.1"
 thiserror.workspace = true
 futures-util.workspace = true
 anyhow.workspace = true
+ring.workspace = true
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
 reqwest.workspace = true

@@ -175,7 +175,7 @@ impl Config {
             .add_source(config::Environment::with_prefix("APEX_SIGNAL"))
             .build()?;
 
-        Ok(settings.try_into()?)
+        Ok(settings.try_deserialize()?)
     }
 }
 

@@ -2,6 +2,7 @@
 //!
 //! Displacement is a strong, impulsive move indicating institutional participation
 //! and often marking the start of a new trend or significant continuation.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use rust_decimal::Decimal;

@@ -9,9 +9,10 @@ use crate::heat::heat_score::{HeatContributionBreakdown, PortfolioHeat};
 use crate::heat::risk_budget::RiskBudget;
 
 #[test]
-fn test_reserve_manager_initialization() {
-    let rm = ReserveManager::new(Decimal::new(10000, 0), Decimal::new(5000, 0)).unwrap();
+fn test_reserve_manager_initialization() -> Result<(), Box<dyn std::error::Error>> {
+    let rm = ReserveManager::new(Decimal::new(10000, 0), Decimal::new(5000, 0))?;
     assert_eq!(rm.total_reserved(), Decimal::new(15000, 0));
+    Ok(())
 }
 
 #[test]
@@ -40,8 +41,8 @@ fn test_recovery_model_decay() {
 }
 
 #[test]
-fn test_trade_admission_rejected_on_heat() {
-    let rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0)).unwrap();
+fn test_trade_admission_rejected_on_heat() -> Result<(), Box<dyn std::error::Error>> {
+    let rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0))?;
     let rec_model = AllocationRecoveryModel::new(Decimal::new(10, 0), Decimal::new(5, 2));
     let mut allocator = CapitalAllocator::new(rm, rec_model);
 
@@ -58,16 +59,17 @@ fn test_trade_admission_rejected_on_heat() {
         &global_exposure,
         false,
         0
-    ).unwrap();
+    )?;
 
     assert!(!decision.can_accept_trade);
     assert_eq!(decision.admission_decision, TradeAdmissionDecision::Reject);
     assert_eq!(decision.allocation_size, Decimal::new(0, 0));
+    Ok(())
 }
 
 #[test]
-fn test_trade_admission_reduced_on_heat() {
-    let rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0)).unwrap();
+fn test_trade_admission_reduced_on_heat() -> Result<(), Box<dyn std::error::Error>> {
+    let rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0))?;
     let rec_model = AllocationRecoveryModel::new(Decimal::new(10, 0), Decimal::new(5, 2));
     let mut allocator = CapitalAllocator::new(rm, rec_model);
 
@@ -84,16 +86,17 @@ fn test_trade_admission_reduced_on_heat() {
         &global_exposure,
         false,
         0
-    ).unwrap();
+    )?;
 
     assert!(decision.can_accept_trade);
     assert_eq!(decision.admission_decision, TradeAdmissionDecision::ApproveReduced);
     assert_eq!(decision.allocation_size, Decimal::new(500, 0)); // 50% reduction
+    Ok(())
 }
 
 #[test]
-fn test_trade_admission_rejected_on_risk_budget() {
-    let rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0)).unwrap();
+fn test_trade_admission_rejected_on_risk_budget() -> Result<(), Box<dyn std::error::Error>> {
+    let rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0))?;
     let rec_model = AllocationRecoveryModel::new(Decimal::new(10, 0), Decimal::new(5, 2));
     let mut allocator = CapitalAllocator::new(rm, rec_model);
 
@@ -113,15 +116,16 @@ fn test_trade_admission_rejected_on_risk_budget() {
         &global_exposure,
         false,
         0
-    ).unwrap();
+    )?;
 
     assert!(!decision.can_accept_trade);
     assert_eq!(decision.admission_decision, TradeAdmissionDecision::Reject);
+    Ok(())
 }
 
 #[test]
-fn test_trade_admission_opportunity_reserve() {
-    let mut rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0)).unwrap();
+fn test_trade_admission_opportunity_reserve() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rm = ReserveManager::new(Decimal::new(1000, 0), Decimal::new(1000, 0))?;
     
     // Give 500 in opportunity reserve
     rm.update_opportunity_reserve(OpportunityReserveAssessment {
@@ -129,7 +133,7 @@ fn test_trade_admission_opportunity_reserve() {
         required_reserve: Decimal::new(500, 0),
         confidence: Decimal::new(1, 0),
         reason: "Exceptional".into(),
-    }).unwrap();
+    })?;
 
     let rec_model = AllocationRecoveryModel::new(Decimal::new(10, 0), Decimal::new(5, 2));
     let mut allocator = CapitalAllocator::new(rm, rec_model);
@@ -148,9 +152,10 @@ fn test_trade_admission_opportunity_reserve() {
         &global_exposure,
         true,
         0
-    ).unwrap();
+    )?;
 
     assert!(decision.can_accept_trade);
     assert_eq!(decision.admission_decision, TradeAdmissionDecision::Approve);
     assert!(decision.contributing_factors.iter().any(|f| f.name == "Opportunity Reserve Used"));
+    Ok(())
 }

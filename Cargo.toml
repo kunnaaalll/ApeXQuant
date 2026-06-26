@@ -14,7 +14,7 @@ members = [
     "services/learning-engine-rs",
     "services/analytics-engine-rs",
     "services/backtester-rs",
-    "services/performance-engine-rs", "services/strategy-engine-rs", "services/market-data-engine-rs",
+    "services/performance-engine-rs", "services/strategy-engine-rs", "services/market-data-engine-rs", "services/ai-engine-rs", "services/apex-core-rs", "tests/integration",
 ]
 
 [workspace.package]
@@ -97,7 +97,7 @@ dotenvy = "0.15"
 
 # Time
 time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros", "local-offset"] }
-chrono = { version = "0.4", features = ["serde", "clock", "std", "now"] }
+chrono = { version = "0.4", features = ["serde"] }
 
 # UUID
 uuid = { version = "1.8", features = ["v4", "v7", "serde"] }

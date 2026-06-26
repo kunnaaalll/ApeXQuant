@@ -35,6 +35,7 @@ apex-protos = { path = "../../shared/apex-protos" }
 # Service-specific
 rand = "0.8"
 rand_distr = "0.4"
+tracing-subscriber.workspace = true
 
 [dev-dependencies]
 tokio-test.workspace = true

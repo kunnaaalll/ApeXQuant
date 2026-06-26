@@ -1,7 +1,9 @@
-//! Execution Model Module
-//!
-//! Simulate spreads, slippage, latency, partial fills, and order rejections.
+pub mod spread;
+pub mod slippage;
+pub mod latency;
+pub mod fill;
 
-pub struct ExecutionModel {
-    // Stub
-}
+pub use spread::{SpreadModel, SpreadContext};
+pub use slippage::{SlippageModel, SlippageContext};
+pub use latency::{LatencyModel, LatencyContext};
+pub use fill::{FillEngine, FillRequest, FillResult, FillStatus};

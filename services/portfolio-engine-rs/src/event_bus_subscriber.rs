@@ -2,6 +2,7 @@ use apex_protos::events::{Event, SubscribeRequest, event_bus_service_client::Eve
 use anyhow::{Result, Context};
 use tokio::sync::mpsc;
 use tonic::transport::Channel;
+use tracing::{info, warn};
 
 #[derive(Clone)]
 pub struct EventBusSubscriber {
@@ -66,5 +67,43 @@ impl EventBusSubscriber {
             .context("Failed to ack events")?;
             
         Ok(response.into_inner())
+    }
+
+    pub async fn start_listening(&self, mut rx: mpsc::Receiver<Event>) {
+        tokio::spawn(async move {
+            while let Some(event) = rx.recv().await {
+                // Determine event type from string property or payload
+                let event_type = event.event_type.as_str();
+                match event_type {
+                    "StrategyPerformanceEvent" => {
+                        info!("Received StrategyPerformanceEvent");
+                        // Process strategy performance
+                    }
+                    "ExecutionQualityEvent" => {
+                        info!("Received ExecutionQualityEvent");
+                        // Process execution quality
+                    }
+                    "RiskInterventionEvent" => {
+                        info!("Received RiskInterventionEvent");
+                        // Process risk intervention
+                    }
+                    "MarketRegimeEvent" => {
+                        info!("Received MarketRegimeEvent");
+                        // Process market regime change
+                    }
+                    "LearningRecommendationEvent" => {
+                        info!("Received LearningRecommendationEvent");
+                        // Process learning recommendation
+                    }
+                    "AiAllocationRecommendationEvent" => {
+                        info!("Received AiAllocationRecommendationEvent");
+                        // Process AI recommendation
+                    }
+                    _ => {
+                        warn!("Received unknown event type: {}", event_type);
+                    }
+                }
+            }
+        });
     }
 }

@@ -15,3 +15,4 @@ pub mod interceptors;
 pub mod shadow;
 pub mod validation;
 pub mod error;
+pub mod event_bus;

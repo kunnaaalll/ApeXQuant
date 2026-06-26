@@ -1,13 +1,14 @@
 // src/analytics/symbol.rs
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct SymbolPerformanceMetrics {
-    pub profit_factor: f64,
-    pub expectancy: f64,
-    pub win_rate: f64,
-    pub average_rr: f64,
+    pub profit_factor: Decimal,
+    pub expectancy: Decimal,
+    pub win_rate: Decimal,
+    pub average_rr: Decimal,
     pub total_trades: u64,
 }
 

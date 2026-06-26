@@ -2,6 +2,7 @@
 //!
 //! Detects areas of significant buying or selling pressure that create
 //! directional bias in price action.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use rust_decimal::Decimal;

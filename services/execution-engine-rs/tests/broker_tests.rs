@@ -139,20 +139,20 @@ fn test_event_determinism() {
 #[tokio::test]
 async fn test_registry_states() {
     let mut registry = BrokerRegistry::new();
-    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new("MT5-1".to_string()));
-    let binance: Arc<dyn BrokerAdapter> = Arc::new(BinanceAdapter::new("BINANCE-1".to_string()));
+    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new("MT5-1".to_string(), "http://localhost:8080".to_string()));
+    let binance: Arc<dyn BrokerAdapter> = Arc::new(BinanceAdapter::new("BINANCE-1".to_string(), "http://localhost".to_string(), "key".to_string(), "sec".to_string()));
     
     registry.register("MT5-1".to_string(), mt5, BrokerRole::Primary);
     registry.register("BINANCE-1".to_string(), binance, BrokerRole::Secondary);
 
     let primary = registry.get_primary().await.unwrap();
-    assert!(primary.health().await.is_err()); // Adapter not fully implemented, returns InternalError
+    assert!(primary.health().await.is_err()); // Adapter not fully implemented or mock fails
 }
 
 #[tokio::test]
 async fn test_router_selection() {
     let mut registry = BrokerRegistry::new();
-    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new("MT5-1".to_string()));
+    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new("MT5-1".to_string(), "http://localhost".to_string()));
     registry.register("MT5-1".to_string(), mt5, BrokerRole::Primary);
 
     let registry_arc = Arc::new(registry);

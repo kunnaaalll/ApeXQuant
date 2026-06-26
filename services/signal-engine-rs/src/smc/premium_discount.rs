@@ -2,6 +2,7 @@
 //!
 //! Premium zones are above the equilibrium (midpoint) where selling is favorable.
 //! Discount zones are below the equilibrium where buying is favorable.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use rust_decimal::Decimal;

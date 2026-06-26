@@ -111,7 +111,7 @@ impl IncreaseExposureEngine {
             };
         }
 
-        let score = ((health_score as f32 + quality_score as f32) / 2.0) as u8;
+        let score = ((health_score as u16 + quality_score as u16) / 2) as u8;
 
         IncreaseExposureRecommendation {
             outcome: IncreaseOutcome::Increase,

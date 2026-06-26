@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum PortfolioHealthState {
@@ -28,8 +29,8 @@ pub struct PortfolioHealthBreakdown {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthContribution {
-    pub weight: f64,
-    pub contribution: f64,
+    pub weight: Decimal,
+    pub contribution: Decimal,
     pub reason: String,
 }
 
@@ -66,8 +67,8 @@ pub struct PortfolioHealth {
 impl PortfolioHealth {
     pub fn new(timestamp: u64) -> Self {
         let default_contribution = HealthContribution {
-            weight: 0.0,
-            contribution: 0.0,
+            weight: Decimal::ZERO,
+            contribution: Decimal::ZERO,
             reason: "Initialization".to_string(),
         };
         let breakdown = PortfolioHealthBreakdown {
@@ -132,7 +133,7 @@ impl PortfolioHealth {
         let mut new_breakdown = self.breakdown.clone();
         new_breakdown.recovery_state = HealthContribution {
             weight: self.breakdown.recovery_state.weight,
-            contribution: self.breakdown.recovery_state.contribution + (safe_recovery as f64),
+            contribution: self.breakdown.recovery_state.contribution + Decimal::from(safe_recovery),
             reason: "Time-based health recovery applied".to_string(),
         };
 

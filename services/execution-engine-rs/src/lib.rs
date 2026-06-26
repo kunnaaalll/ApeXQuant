@@ -21,6 +21,20 @@ pub mod execution_risk;
 pub mod shadow;
 pub mod storage;
 
+pub mod broker_connectivity;
+pub mod connection_supervisor;
+pub mod order_reconciliation;
+pub mod position_recovery;
+pub mod account_synchronization;
+pub mod failover_engine;
+pub mod disaster_recovery;
+pub mod operational_governance;
+pub mod event_bus;
+pub mod event_bus_subscriber;
+
+pub mod config;
+pub mod broker_supervisor;
+
 pub mod api;
 #[cfg(test)]
 pub mod tests;

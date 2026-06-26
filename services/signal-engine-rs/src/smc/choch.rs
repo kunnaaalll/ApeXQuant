@@ -2,6 +2,7 @@
 //!
 //! CHoCH indicates a shift in market structure, potentially signaling
 //! a trend change or major correction.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use crate::structure::swings::{SwingPoint, SwingType};

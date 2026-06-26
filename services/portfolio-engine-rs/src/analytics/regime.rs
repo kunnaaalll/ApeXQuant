@@ -1,11 +1,12 @@
 // src/analytics/regime.rs
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct RegimePerformanceMetrics {
-    pub profit_factor: f64,
-    pub expectancy: f64,
-    pub win_rate: f64,
+    pub profit_factor: Decimal,
+    pub expectancy: Decimal,
+    pub win_rate: Decimal,
     pub total_trades: u64,
 }
 
@@ -43,7 +44,7 @@ impl RegimePerformanceProfile {
     /// with the highest expectancy that has a statistically significant trade count (e.g., > 30).
     pub fn best_performing_regime(&self) -> &'static str {
         let mut best_name = "None";
-        let mut best_expectancy = f64::NEG_INFINITY;
+        let mut best_expectancy = Decimal::MIN;
 
         let mut check = |name: &'static str, metrics: &RegimePerformanceMetrics| {
             if metrics.total_trades > 30 && metrics.expectancy > best_expectancy {

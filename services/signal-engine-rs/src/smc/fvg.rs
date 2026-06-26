@@ -2,6 +2,7 @@
 //!
 //! FVGs represent areas where price moved rapidly, leaving an unfilled gap
 //! that often acts as a magnet for future price action.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use rust_decimal::Decimal;

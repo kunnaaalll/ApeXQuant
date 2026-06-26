@@ -50,6 +50,10 @@ mod tests {
                 Decimal::from(100),
                 true,
                 0,
+                Decimal::from(1),
+                Decimal::from(1),
+                Decimal::from(1),
+                Decimal::from(1),
             )?;
 
             let profile = IntelligenceAggregator::build_profile(

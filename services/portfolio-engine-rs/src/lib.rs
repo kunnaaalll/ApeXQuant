@@ -15,21 +15,16 @@ pub mod quality;
 pub mod recommendations;
 pub mod storage;
 pub mod rebalancing;
-pub mod portfolio_optimizer;
-pub mod diversification;
-pub mod factor_exposure;
-pub mod attribution;
-pub mod capital_rotation;
-pub mod account_allocator;
-pub mod funded_account_manager;
-pub mod prop_firm_constraints;
-pub mod payout_management;
-pub mod multi_account_orchestrator;
+pub mod multi_account;
+pub mod prop_firm;
+pub mod optimization;
 pub mod interceptors;
 pub mod shadow;
 pub mod validation;
 pub mod integrations;
 pub mod certification;
+pub mod event_bus;
+pub mod event_bus_subscriber;
 
 // APEX V3 Portfolio Engine
 // Owns account-level intelligence, global exposure, and allocation.

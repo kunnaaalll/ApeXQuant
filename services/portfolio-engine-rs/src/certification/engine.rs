@@ -43,7 +43,25 @@ impl StateTrackerEngine {
                 }
             }
         }
-        
         current_state
+    }
+    
+    pub fn generate_audit_artifact(&self, certification: &PortfolioCertification) -> std::io::Result<()> {
+        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let filename = format!("/tmp/apex_certification_audit_{}.json", timestamp);
+        
+        // Convert to a simple JSON string representation for the audit artifact
+        let artifact = format!(
+            "{{\n  \"level\": \"{:?}\",\n  \"parity_match\": {},\n  \"replay_exact\": {},\n  \"timestamp\": {}\n}}",
+            certification.level,
+            certification.parity_result.state_agreement_pct,
+            certification.replay_result.exact_match,
+            timestamp
+        );
+        
+        std::fs::write(&filename, artifact)?;
+        tracing::info!("Institutional Audit Artifact generated at: {}", filename);
+        
+        Ok(())
     }
 }

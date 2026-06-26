@@ -1,5 +1,6 @@
 use crate::shadow::statistics::ShadowStatistics;
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ValidationState {
@@ -47,7 +48,7 @@ impl PortfolioValidator {
         let mut issues = Vec::new();
         let mut state = ValidationState::Pass;
 
-        if stats.agreement_percentage <= 99.0 {
+        if stats.agreement_percentage <= Decimal::new(990, 1) {
             issues.push(format!("State agreement is {}%, expected >99%", stats.agreement_percentage));
             state = ValidationState::Fail;
         }
@@ -78,7 +79,7 @@ impl PortfolioValidator {
     pub fn generate_alerts(&self, stats: &ShadowStatistics) -> Vec<ShadowAlert> {
         let mut alerts = Vec::new();
 
-        if stats.major_mismatch_percentage > 1.0 {
+        if stats.major_mismatch_percentage > Decimal::ONE {
             alerts.push(ShadowAlert {
                 severity: AlertSeverity::Critical,
                 message: "Major mismatches increasing".to_string(),
@@ -86,7 +87,7 @@ impl PortfolioValidator {
             });
         }
 
-        if stats.average_drift > 0.05 {
+        if stats.average_drift > Decimal::new(5, 2) {
             alerts.push(ShadowAlert {
                 severity: AlertSeverity::Warning,
                 message: "Drift accelerating".to_string(),

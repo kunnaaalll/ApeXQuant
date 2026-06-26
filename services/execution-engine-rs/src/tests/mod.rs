@@ -5,3 +5,4 @@ pub mod test_snapshot_restore;
 pub mod test_event_rebuild;
 pub mod test_determinism_100k_iterations;
 pub mod test_validation_rejects_invalid_orders;
+pub mod test_phase11_stress;

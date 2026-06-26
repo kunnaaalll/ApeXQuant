@@ -1,9 +1,8 @@
-#[cfg(test)]
-mod tests {
-    use crate::health::health_score::{PortfolioHealth, PortfolioHealthState, HealthEvent, PortfolioHealthBreakdown, HealthContribution};
+use rust_decimal::Decimal;
+use crate::health::health_score::{PortfolioHealth, PortfolioHealthState, HealthEvent, PortfolioHealthBreakdown, HealthContribution};
 
     fn default_breakdown() -> PortfolioHealthBreakdown {
-        let contrib = HealthContribution { weight: 0.0, contribution: 0.0, reason: "".to_string() };
+        let contrib = HealthContribution { weight: Decimal::ZERO, contribution: Decimal::ZERO, reason: "".to_string() };
         PortfolioHealthBreakdown {
             portfolio_heat: contrib.clone(),
             drawdown: contrib.clone(),
@@ -77,4 +76,3 @@ mod tests {
         assert_eq!(snapshot2.composite_score, 20);
         assert_eq!(snapshot2.state, PortfolioHealthState::Critical);
     }
-}

@@ -24,3 +24,4 @@ pub mod drift;
 pub mod anomaly;
 pub mod explanation;
 pub mod certification;
+pub mod event_bus;

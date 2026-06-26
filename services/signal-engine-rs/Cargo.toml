@@ -25,7 +25,7 @@ anyhow.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 time.workspace = true
-rust_decimal.workspace = true
+rust_decimal = { workspace = true, features = ["serde-with-str"] }
 statrs.workspace = true
 rayon.workspace = true
 dashmap.workspace = true
@@ -51,6 +51,8 @@ csv = "1.3"
 serde_bytes = "0.11"
 tokio-stream = "0.1"
 pin-project = "1.1"
+num-traits = "0.2.19"
+tracing-subscriber.workspace = true
 
 [dev-dependencies]
 tokio-test.workspace = true

@@ -18,7 +18,7 @@ impl TimeframePerformanceProfile {
     /// Determines the best performing timeframe by expectancy
     pub fn best_performing_timeframe(&self) -> &'static str {
         let mut best_name = "None";
-        let mut best_expectancy = f64::NEG_INFINITY;
+        let mut best_expectancy = rust_decimal::Decimal::MIN;
 
         let mut check = |name: &'static str, metrics: &RegimePerformanceMetrics| {
             if metrics.total_trades > 30 && metrics.expectancy > best_expectancy {

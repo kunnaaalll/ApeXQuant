@@ -4,9 +4,10 @@
 
 use rust_decimal::Decimal;
 
+#[derive(Debug, Clone)]
 pub struct AttributionReport {
-    pub market_contribution: Decimal,
-    pub strategy_contribution: Decimal,
+    pub strategy_edge: Decimal,
+    pub market_regime_contribution: Decimal,
     pub execution_contribution: Decimal,
     pub risk_contribution: Decimal,
 }

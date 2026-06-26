@@ -2,6 +2,7 @@
 //!
 //! Mitigation occurs when price returns to a previously respected level
 //! (like an order block or FVG) and shows a reaction.
+use num_traits::ToPrimitive;
 
 use crate::market_data::Candle;
 use rust_decimal::Decimal;

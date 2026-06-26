@@ -72,4 +72,20 @@ impl RebalanceEngine {
 
         actions
     }
+    
+    pub fn spawn_reconciliation_loop(interval_secs: u64) {
+        tokio::spawn(async move {
+            tracing::info!("PortfolioEngine: Reconciliation loop started ({}s)", interval_secs);
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
+                
+                // Fetch simulated state
+                let simulated_holdings = vec![("AAPL".to_string(), rust_decimal::Decimal::new(5, 1))];
+                let targets = vec![RebalanceTarget { symbol: "AAPL".to_string(), target_weight: rust_decimal::Decimal::new(6, 1) }];
+                
+                tracing::info!("Reconciling portfolio state against targets: {} holdings", simulated_holdings.len());
+                // In a real scenario, we'd trigger calculate_actions and dispatch them here
+            }
+        });
+    }
 }

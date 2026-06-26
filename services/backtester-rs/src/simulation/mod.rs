@@ -1,15 +1,7 @@
-//! Simulation Module
-//!
-//! Tick, candle, order lifecycle, and fill simulation.
+pub mod session;
+pub mod state;
+pub mod metrics;
 
-pub enum SimulationState {
-    Idle,
-    Running,
-    Paused,
-    Completed,
-    Failed,
-}
-
-pub struct SimulationEngine {
-    pub state: SimulationState,
-}
+pub use session::SimulationSession;
+pub use state::SimulationState;
+pub use metrics::SimulationMetrics;

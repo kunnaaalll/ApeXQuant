@@ -1,7 +1,7 @@
 // src/analytics/performance.rs
 use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PerformanceState {
@@ -29,18 +29,18 @@ impl PerformanceAssessment {
     /// Determines the portfolio's health state based on institutional stability factors.
     /// Primarily weighs the Sortino Ratio and Stability Score.
     pub fn evaluate_state(sortino: Decimal, stability: Decimal) -> PerformanceState {
-        let weight_sortino = Decimal::from_f32(0.6).unwrap_or(Decimal::ZERO);
-        let weight_stability = Decimal::from_f32(0.4).unwrap_or(Decimal::ZERO);
+        let weight_sortino = Decimal::new(6, 1);
+        let weight_stability = Decimal::new(4, 1);
         
         let composite_score = (sortino * weight_sortino) + (stability * weight_stability);
         
         if composite_score < Decimal::ZERO {
             PerformanceState::Critical
-        } else if composite_score < Decimal::from_f32(0.5).unwrap_or(Decimal::ZERO) {
+        } else if composite_score < Decimal::new(5, 1) {
             PerformanceState::Weak
         } else if composite_score < Decimal::ONE {
             PerformanceState::Normal
-        } else if composite_score < Decimal::from_f32(2.0).unwrap_or(Decimal::ZERO) {
+        } else if composite_score < Decimal::new(2, 0) {
             PerformanceState::Healthy
         } else {
             PerformanceState::Excellent

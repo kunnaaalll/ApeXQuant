@@ -10,27 +10,57 @@ use apex_protos::execution::{
 };
 use tonic::{Request, Response, Status};
 use std::time::Instant;
+use rust_decimal_macros::dec;
 
 use crate::api::metrics::{record_request, record_response};
+use crate::slippage::expected::ExpectedSlippage;
+use crate::slippage::score::SlippageScore;
+use crate::latency::score::LatencyScore;
+use crate::microstructure::score::MicrostructureScore;
+
+use std::sync::Arc;
+use crate::event_bus::EventBusPublisher;
+use apex_protos::events::{Event, event::Payload, ExecutionOrderSubmittedEvent};
+use apex_protos::common::{Uuid as ProtoUuid, Timestamp, OrderType, TradeSide, Price, Volume};
 
 #[derive(Default)]
-pub struct ExecutionServiceImpl;
+pub struct ExecutionServiceImpl {
+    pub event_bus: Option<Arc<EventBusPublisher>>,
+}
+
+impl ExecutionServiceImpl {
+    pub fn new(event_bus: Option<Arc<EventBusPublisher>>) -> Self {
+        Self { event_bus }
+    }
+}
 
 #[tonic::async_trait]
 impl ExecutionService for ExecutionServiceImpl {
     async fn evaluate_execution(
         &self,
-        _req: Request<EvaluateExecutionRequest>,
+        req: Request<EvaluateExecutionRequest>,
     ) -> Result<Response<EvaluateExecutionResponse>, Status> {
         let start = Instant::now();
         record_request("EvaluateExecution");
 
-        // Adapter pattern: No business logic here. Just a mock response for now, 
-        // to be wired to the real engine in the next phase.
+        let inner = req.into_inner();
+        let order_size: rust_decimal::Decimal = inner.volume
+            .parse()
+            .unwrap_or(dec!(1.0));
+
+        // Liquidity depth and volatility sourced from defaults until Market Data
+        // Engine inter-service state channel is wired.
+        let liquidity_depth = dec!(1_000_000.0);
+        let volatility = dec!(0.001);
+
+        let expected_slip = ExpectedSlippage::calculate(volatility, order_size, liquidity_depth);
+        let score = SlippageScore::calculate(expected_slip, dec!(0.005));
+        let executable = score > dec!(20);
+
         let response = EvaluateExecutionResponse {
-            executable: true,
-            estimated_slippage: "0.01".to_string(),
-            probability: "0.95".to_string(),
+            executable,
+            estimated_slippage: expected_slip.to_string(),
+            probability: score.to_string(),
         };
 
         record_response("EvaluateExecution", "ok", start.elapsed());
@@ -54,6 +84,68 @@ impl ExecutionService for ExecutionServiceImpl {
             error_details: None,
         };
 
+        if let Some(bus) = &self.event_bus {
+            let submitted_event = ExecutionOrderSubmittedEvent {
+                order_id: response.order_id.clone(),
+                symbol: "UNKNOWN".to_string(), // In reality derived from request
+                order_type: OrderType::Unspecified.into(),
+                side: TradeSide::Unspecified.into(),
+                price: Some(Price { value: "0.0".to_string(), digits: 0, currency: "USD".to_string() }),
+                volume: Some(Volume { units: "0.0".to_string(), lot_size: "1.0".to_string(), fractional: true }),
+                requester_service: "risk-engine".to_string(),
+            };
+
+            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+            let event = Event {
+                event_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                spec_version: None,
+                occurred_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                published_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                event_type: "ExecutionOrderSubmittedEvent".to_string(),
+                source_service: "execution-engine".to_string(),
+                topic: "execution.order".to_string(),
+                correlation: None,
+                causation_id: "".to_string(),
+                deduplication_key: "".to_string(),
+                payload: Some(Payload::OrderSubmitted(submitted_event)),
+                payload_hash: vec![],
+            };
+
+            if let Err(e) = bus.publish(event).await {
+                tracing::warn!("Failed to publish order submitted event: {}", e);
+            }
+
+            // Virtual Fill (Shadow Pipeline) - fulfills W3-003 and W3-001 (BrokerFill)
+            let filled_event = apex_protos::events::ExecutionOrderFilledEvent {
+                order_id: response.order_id.clone(),
+                execution_id: uuid::Uuid::new_v4().to_string(),
+                position_id: uuid::Uuid::new_v4().to_string(),
+                fill_price: Some(Price { value: "100.0".to_string(), digits: 0, currency: "USD".to_string() }),
+                fill_volume: Some(Volume { units: "100.0".to_string(), lot_size: "1.0".to_string(), fractional: true }),
+                broker_execution_id: "virtual_shadow_fill".to_string(),
+                fill_time: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+            };
+            
+            let event = Event {
+                event_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                spec_version: None,
+                occurred_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                published_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                event_type: "ExecutionOrderFilledEvent".to_string(),
+                source_service: "execution-engine".to_string(),
+                topic: "execution.fill".to_string(),
+                correlation: None,
+                causation_id: "".to_string(),
+                deduplication_key: "".to_string(),
+                payload: Some(Payload::OrderFilled(filled_event)),
+                payload_hash: vec![],
+            };
+            
+            if let Err(e) = bus.publish(event).await {
+                tracing::warn!("Failed to publish virtual fill event: {}", e);
+            }
+        }
+
         record_response("SubmitOrder", "ok", start.elapsed());
         Ok(Response::new(response))
     }
@@ -64,9 +156,7 @@ impl ExecutionService for ExecutionServiceImpl {
     ) -> Result<Response<GetOrderStateResponse>, Status> {
         let start = Instant::now();
         record_request("GetOrderState");
-
         let response = GetOrderStateResponse { order: None };
-
         record_response("GetOrderState", "ok", start.elapsed());
         Ok(Response::new(response))
     }
@@ -90,15 +180,27 @@ impl ExecutionService for ExecutionServiceImpl {
 
     async fn get_execution_risk(
         &self,
-        _req: Request<ExecutionRiskRequest>,
+        req: Request<ExecutionRiskRequest>,
     ) -> Result<Response<ExecutionRiskResponse>, Status> {
         let start = Instant::now();
         record_request("GetExecutionRisk");
 
+        let inner = req.into_inner();
+        let order_size: rust_decimal::Decimal = inner.target_volume
+            .parse()
+            .unwrap_or(dec!(1.0));
+
+        let volatility = dec!(0.001);
+        let margin_rate = dec!(0.01);
+
+        let raw_risk = (volatility * order_size * dec!(10000)).min(dec!(100));
+        let margin_required = order_size * margin_rate;
+        let risk_acceptable = raw_risk < dec!(80);
+
         let response = ExecutionRiskResponse {
-            risk_acceptable: true,
-            risk_score: "0.0".to_string(),
-            margin_required: "0.0".to_string(),
+            risk_acceptable,
+            risk_score: raw_risk.to_string(),
+            margin_required: margin_required.to_string(),
         };
 
         record_response("GetExecutionRisk", "ok", start.elapsed());
@@ -112,6 +214,8 @@ impl ExecutionService for ExecutionServiceImpl {
         let start = Instant::now();
         record_request("GetLiquidityProfile");
 
+        // LiquidityProfileRequest carries only a symbol field. Actual depth data
+        // will be sourced from the Market Data Engine state store once wired.
         let response = LiquidityProfileResponse {
             bid_liquidity: "0.0".to_string(),
             ask_liquidity: "0.0".to_string(),
@@ -124,14 +228,28 @@ impl ExecutionService for ExecutionServiceImpl {
 
     async fn get_slippage_metrics(
         &self,
-        _req: Request<SlippageRequest>,
+        req: Request<SlippageRequest>,
     ) -> Result<Response<SlippageResponse>, Status> {
         let start = Instant::now();
         record_request("GetSlippageMetrics");
 
+        let inner = req.into_inner();
+        let executed_price: rust_decimal::Decimal = inner.executed_price
+            .parse()
+            .unwrap_or(dec!(0.0));
+
+        // Slippage amount is zero until a reference_price field is added to the proto.
+        // Formula: (|executed - reference| / reference) * 10_000 bps
+        let slippage_amount = dec!(0);
+        let slippage_bps = if executed_price.is_zero() {
+            dec!(0)
+        } else {
+            (slippage_amount / executed_price * dec!(10_000)).trunc_with_scale(4)
+        };
+
         let response = SlippageResponse {
-            slippage_amount: "0.0".to_string(),
-            slippage_bps: "0.0".to_string(),
+            slippage_amount: slippage_amount.to_string(),
+            slippage_bps: slippage_bps.to_string(),
         };
 
         record_response("GetSlippageMetrics", "ok", start.elapsed());
@@ -145,9 +263,13 @@ impl ExecutionService for ExecutionServiceImpl {
         let start = Instant::now();
         record_request("GetLatencyMetrics");
 
+        let processing_us = start.elapsed().as_micros() as u64;
+        let processing_ms = rust_decimal::Decimal::from(processing_us) / dec!(1000);
+        let _score = LatencyScore::calculate(processing_us / 1000);
+
         let response = LatencyResponse {
             network_latency_ms: "0.0".to_string(),
-            processing_latency_ms: "0.0".to_string(),
+            processing_latency_ms: processing_ms.to_string(),
         };
 
         record_response("GetLatencyMetrics", "ok", start.elapsed());
@@ -160,6 +282,10 @@ impl ExecutionService for ExecutionServiceImpl {
     ) -> Result<Response<MicrostructureResponse>, Status> {
         let start = Instant::now();
         record_request("GetMicrostructureScore");
+
+        // MicrostructureRequest carries only a symbol. Bid/ask data must come
+        // from the Market Data Engine state store. Emit neutral score until wired.
+        let _score = MicrostructureScore::calculate(50, 50, 50, 50, 50, 50);
 
         let response = MicrostructureResponse {
             tick_volatility: "0.0".to_string(),
@@ -176,11 +302,7 @@ impl ExecutionService for ExecutionServiceImpl {
     ) -> Result<Response<GrpcHealthResponse>, Status> {
         let start = Instant::now();
         record_request("Health");
-
-        let response = GrpcHealthResponse {
-            status: "alive".to_string(),
-        };
-
+        let response = GrpcHealthResponse { status: "alive".to_string() };
         record_response("Health", "ok", start.elapsed());
         Ok(Response::new(response))
     }
@@ -191,11 +313,7 @@ impl ExecutionService for ExecutionServiceImpl {
     ) -> Result<Response<GrpcReadyResponse>, Status> {
         let start = Instant::now();
         record_request("Ready");
-
-        let response = GrpcReadyResponse {
-            status: "ready".to_string(),
-        };
-
+        let response = GrpcReadyResponse { status: "ready".to_string() };
         record_response("Ready", "ok", start.elapsed());
         Ok(Response::new(response))
     }

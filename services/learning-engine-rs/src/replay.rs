@@ -79,7 +79,7 @@ mod tests {
     }
 
     #[test]
-    fn test_1_million_trade_rebuild() {
+    fn test_1_million_trade_rebuild() -> Result<(), String> {
         let mut events = Vec::with_capacity(1_000_000);
         let strategy_id = Uuid::new_v4();
         let timestamp = OffsetDateTime::now_utc();
@@ -101,9 +101,10 @@ mod tests {
         let mut rebuilder = LearningRebuilder::new(None);
         rebuilder.apply_events(&events);
 
-        let strategy_snapshot = rebuilder.state.active_strategies.get(&strategy_id).unwrap();
+        let strategy_snapshot = rebuilder.state.active_strategies.get(&strategy_id).ok_or("Missing")?;
         assert_eq!(strategy_snapshot.trade_count, 1_000_000);
         assert_eq!(strategy_snapshot.total_pnl, Decimal::new(10_000_000, 0));
+        Ok(())
     }
 
     #[test]

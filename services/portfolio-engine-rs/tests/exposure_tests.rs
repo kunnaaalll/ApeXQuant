@@ -2,7 +2,6 @@ use portfolio_engine::exposure::currency::Currency;
 use portfolio_engine::exposure::events::ExposureEvent;
 use portfolio_engine::exposure::registry::ExposureRegistry;
 use portfolio_engine::exposure::sector::Sector;
-use portfolio_engine::exposure::snapshot::ExposureSnapshotFrequency;
 use portfolio_engine::exposure::state::ExposureState;
 use proptest::prelude::*;
 use rust_decimal::prelude::FromPrimitive;
@@ -29,7 +28,7 @@ fn test_synthetic_currency_decomposition() {
 
     registry.dispatch(event).unwrap();
 
-    let state = registry.get_state();
+    let state = registry.get_state().unwrap();
 
     // Verify EUR Exposure
     let eur = state.currencies.get(&Currency::EUR).unwrap();
@@ -81,7 +80,7 @@ fn test_concentration_detection() {
         risk_amount: Decimal::from(200),
     }).unwrap();
 
-    let state = registry.get_state();
+    let state = registry.get_state().unwrap();
     let concentrations = state.assess_concentration();
 
     // Check USD Short detection (total short USD is 110_000, threshold is 100_000)
@@ -100,7 +99,7 @@ fn test_concentration_detection() {
         risk_amount: Decimal::from(5000),
     }).unwrap();
 
-    let state2 = registry.get_state();
+    let state2 = registry.get_state().unwrap();
     let concentrations2 = state2.assess_concentration();
     assert!(concentrations2.iter().any(|c| c.description.contains("High Risk-on concentration")));
 }

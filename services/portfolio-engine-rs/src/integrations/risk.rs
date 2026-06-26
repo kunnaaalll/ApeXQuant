@@ -9,7 +9,20 @@ pub struct RiskAssessment {
     pub status: String,
 }
 
-pub struct RiskClient;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RiskInterventionEvent {
+    pub account_id: String,
+    pub action: String,
+    pub reason: String,
+    pub timestamp: i64,
+}
+
+use apex_protos::risk::risk_engine_client::RiskEngineClient;
+use tonic::transport::Channel;
+
+pub struct RiskClient {
+    client: Option<RiskEngineClient<Channel>>,
+}
 
 impl Default for RiskClient {
     fn default() -> Self {
@@ -19,10 +32,20 @@ impl Default for RiskClient {
 
 impl RiskClient {
     pub fn new() -> Self {
-        Self
+        Self { client: None }
     }
 
-    pub async fn fetch_risk_assessment(&self, _account_id: &str) -> Result<RiskAssessment, String> {
+    pub async fn connect(url: String) -> Result<Self, String> {
+        let client = RiskEngineClient::connect(url)
+            .await
+            .map_err(|e| format!("Failed to connect to risk engine: {}", e))?;
+        Ok(Self { client: Some(client) })
+    }
+
+    pub async fn fetch_risk_assessment(&mut self, _account_id: &str) -> Result<RiskAssessment, String> {
+        if let Some(_client) = &mut self.client {
+            // TODO: call RiskEngine
+        }
         // Placeholder for querying the external risk engine
         Ok(RiskAssessment {
             account_id: "ACC-001".to_string(),

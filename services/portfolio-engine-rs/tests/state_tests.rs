@@ -1,4 +1,3 @@
-use portfolio_engine::portfolio::errors::PortfolioError;
 use portfolio_engine::portfolio::events::PortfolioEvent;
 use portfolio_engine::portfolio::state::PortfolioState;
 use proptest::prelude::*;

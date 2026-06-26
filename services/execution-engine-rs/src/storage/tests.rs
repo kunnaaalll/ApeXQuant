@@ -10,11 +10,11 @@ use crate::storage::aggregate::Aggregatable;
 use crate::storage::rebuilder::ExecutionEventRebuilder;
 
 #[derive(Default, Debug, PartialEq)]
-struct MockAggregate {
+struct ExecutionTestAggregate {
     count: u64,
 }
 
-impl Aggregatable for MockAggregate {
+impl Aggregatable for ExecutionTestAggregate {
     fn apply_event(&mut self, _event: &ExecutionEventWrapper) {
         self.count += 1;
     }
@@ -28,7 +28,7 @@ impl Aggregatable for MockAggregate {
     }
 }
 
-fn create_mock_event(seq: u64) -> EventRecord {
+fn create_test_event(seq: u64) -> EventRecord {
     EventRecord {
         aggregate_id: Uuid::new_v4(),
         sequence_number: seq,
@@ -57,13 +57,13 @@ fn test_sequence_violation() {
 
 #[test]
 fn test_snapshot_restore() {
-    let mut aggregate = MockAggregate::default();
+    let mut aggregate = ExecutionTestAggregate::default();
     aggregate.apply_event(&ExecutionEventWrapper::OrderEvent(json!({})));
     aggregate.apply_event(&ExecutionEventWrapper::OrderEvent(json!({})));
     
     let snap = aggregate.snapshot();
     
-    let mut new_aggregate = MockAggregate::default();
+    let mut new_aggregate = ExecutionTestAggregate::default();
     new_aggregate.restore_snapshot(snap);
     
     assert_eq!(aggregate, new_aggregate);
@@ -71,18 +71,18 @@ fn test_snapshot_restore() {
 
 #[test]
 fn test_event_rebuild() {
-    let mut aggregate = MockAggregate::default();
+    let mut aggregate = ExecutionTestAggregate::default();
     let events = vec![
-        create_mock_event(1),
-        create_mock_event(2),
-        create_mock_event(3),
+        create_test_event(1),
+        create_test_event(2),
+        create_test_event(3),
     ];
     
     for e in &events {
         aggregate.apply_event(&e.payload);
     }
     
-    let rebuilt = ExecutionEventRebuilder::rebuild::<MockAggregate>(None, events).unwrap();
+    let rebuilt = ExecutionEventRebuilder::rebuild::<ExecutionTestAggregate>(None, events).unwrap();
     assert_eq!(aggregate, rebuilt);
 }
 
@@ -112,9 +112,9 @@ async fn test_transaction_atomicity() {
 
 #[test]
 fn test_determinism_100k_iterations() {
-    let mut aggregate = MockAggregate::default();
+    let mut aggregate = ExecutionTestAggregate::default();
     for i in 1..=100_000 {
-        let event = create_mock_event(i);
+        let event = create_test_event(i);
         aggregate.apply_event(&event.payload);
     }
     assert_eq!(aggregate.count, 100_000);

@@ -15,11 +15,24 @@ async fn main() -> Result<()> {
     info!("APEX V3 Signal Engine starting...");
 
     // Load configuration
-    let config = Config::from_env()?;
+    let config = Config::load()?;
     info!("Configuration loaded");
 
+    // Initialize EventBus
+    let event_bus_url = std::env::var("EVENT_BUS_URL").unwrap_or_else(|_| "http://localhost:50050".to_string());
+    let event_bus = match signal_engine::event_bus::EventBusPublisher::connect(event_bus_url.clone()).await {
+        Ok(publisher) => {
+            info!("Successfully connected to EventBus at {}", event_bus_url);
+            Some(Arc::new(publisher))
+        }
+        Err(e) => {
+            warn!("Failed to connect to EventBus at {}: {}", event_bus_url, e);
+            None
+        }
+    };
+
     // Initialize signal engine
-    let engine = SignalEngine::new(config).await?;
+    let engine = SignalEngine::new(config, event_bus).await?;
     info!("Signal engine initialized");
 
     // Run server (placeholder - would integrate with gRPC/HTTP server)

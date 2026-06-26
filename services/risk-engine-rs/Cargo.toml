@@ -34,6 +34,7 @@ chrono = { version = "0.4", features = ["serde"] }
 apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }
 tokio-stream = "0.1"
 tower = { version = "0.4", features = ["util"] }
+ring = { workspace = true }
 
 
 # Service-specific

@@ -96,6 +96,10 @@ impl QualityEngine {
         average_liquidity: Decimal,
         is_feed_healthy: bool,
         sequence_gaps: u32,
+        current_volatility: Decimal,
+        average_volatility: Decimal,
+        current_participation: Decimal,
+        average_participation: Decimal,
     ) -> Result<MarketQualityMetrics, &'static str> {
         
         // Ensure no zero division
@@ -140,10 +144,37 @@ impl QualityEngine {
 
         let feed_score = if is_feed_healthy { 100 } else { 0 };
 
-        // For this deterministic mock, we will just use 100 for participation and vol quality 
-        // to pass tests unless more inputs are provided.
-        let vol_score = 80;
-        let part_score = 80;
+        let vol_ratio = if average_volatility.is_zero() {
+            Decimal::ONE
+        } else {
+            current_volatility / average_volatility
+        };
+
+        let vol_score = if vol_ratio > Decimal::from(3) {
+            20 // Flash crash or extreme spike
+        } else if vol_ratio > Decimal::from(2) {
+            50
+        } else if vol_ratio > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO) {
+            100 // Healthy normal volatility
+        } else {
+            40 // Dead market
+        };
+
+        let part_ratio = if average_participation.is_zero() {
+            Decimal::ONE
+        } else {
+            current_participation / average_participation
+        };
+
+        let part_score = if part_ratio > Decimal::from(2) {
+            100
+        } else if part_ratio > Decimal::ONE {
+            80
+        } else if part_ratio > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO) {
+            50
+        } else {
+            20
+        };
 
         let overall = ((spread_score as u16 + liq_score as u16 + seq_score as u16 + feed_score as u16 + vol_score as u16 + part_score as u16) / 6) as u8;
 

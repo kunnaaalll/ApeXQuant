@@ -41,8 +41,8 @@ impl TimeframeBuffer {
     }
 
     /// Get all candles in the buffer
-    pub fn get_candles(&self) -> &[Candle] {
-        self.candles.make_contiguous()
+    pub fn get_candles(&self) -> Vec<Candle> {
+        self.candles.iter().cloned().collect()
     }
 
     /// Get the most recent N candles

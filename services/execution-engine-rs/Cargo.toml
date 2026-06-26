@@ -39,6 +39,10 @@ sqlx = { workspace = true, features = ["postgres", "runtime-tokio-rustls", "macr
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 rust_decimal_macros = "1.40.0"
 async-trait.workspace = true
+ring.workspace = true
+config.workspace = true
+tokio-tungstenite.workspace = true
+hex = "0.4.3"
 
 [dev-dependencies]
 tokio-test.workspace = true

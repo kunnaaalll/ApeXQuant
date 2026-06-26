@@ -3,6 +3,7 @@ use tonic::{Request, Status, Code};
 use apex_protos::strategy::strategy_service_client::StrategyServiceClient;
 use apex_protos::strategy::{EvaluateStrategyRequest, GetStrategyHealthRequest};
 use strategy_engine_rs::api::server::start_server;
+use strategy_engine_rs::api::service::StrategyState;
 use std::net::SocketAddr;
 use tokio::time::{sleep, Duration};
 use reqwest;
@@ -23,7 +24,8 @@ async fn setup_test_server() -> (SocketAddr, SocketAddr) {
     drop(http_listener);
 
     tokio::spawn(async move {
-        let _ = start_server(actual_grpc_addr, actual_http_addr).await;
+        let state = StrategyState::new();
+        let _ = start_server(actual_grpc_addr, actual_http_addr, state).await;
     });
 
     sleep(Duration::from_millis(50)).await;
@@ -89,8 +91,8 @@ async fn test_grpc_service() {
         strategy_id: None,
     });
     let res = client.get_strategy_health(req).await.unwrap().into_inner();
-    assert_eq!(res.status, "HEALTHY");
-    assert_eq!(res.streak, 5);
+    assert_eq!(res.status, "Collapse");
+    assert_eq!(res.streak, 0);
 }
 
 #[tokio::test]
@@ -154,7 +156,7 @@ async fn test_request_roundtrip() {
     
     // Verify pure mapping and deterministic responses
     assert_eq!(res.evaluation_id.unwrap().value, uuid_bytes);
-    assert_eq!(res.score.unwrap().value, "0.85");
+    assert_eq!(res.score.unwrap().value, "0.0000");
     assert!(res.result.unwrap().ok);
 }
 
@@ -182,6 +184,6 @@ async fn test_determinism_100k_iterations() {
         });
 
         let res = client.evaluate_strategy(req).await.unwrap().into_inner();
-        assert_eq!(res.score.unwrap().value, "0.85");
+        assert_eq!(res.score.unwrap().value, "0.0000");
     }
 }
