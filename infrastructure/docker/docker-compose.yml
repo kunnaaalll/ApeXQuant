@@ -29,6 +29,7 @@ x-typescript-service: &ts-defaults
   build:
     context: ../..
     dockerfile: infrastructure/docker/Dockerfile.typescript
+    target: production
   environment:
     - NODE_ENV=production
     - LOG_LEVEL=info
@@ -141,6 +142,48 @@ services:
       retries: 3
       start_period: 30s
 
+  market-data-engine:
+    <<: *rust-defaults
+    container_name: apex-market-data-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: market-data-engine-rs
+    environment:
+      - SERVICE_NAME=market-data-engine
+      - SERVICE_PORT=8089
+      - RUST_LOG=info,market_data_engine=debug
+      - SHADOW_MODE=true
+      - ALLOWED_SYMBOLS=EURUSD,GBPUSD,XAUUSD,BTCUSDT
+      - BINANCE_TESTNET_API_KEY=${BINANCE_TESTNET_API_KEY}
+      - BINANCE_TESTNET_API_SECRET=${BINANCE_TESTNET_API_SECRET}
+    ports:
+      - "8089:8089"
+    depends_on:
+      event-bus:
+        condition: service_healthy
+
+  strategy-engine:
+    <<: *rust-defaults
+    container_name: apex-strategy-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: strategy-engine-rs
+    environment:
+      - SERVICE_NAME=strategy-engine
+      - SERVICE_PORT=8090
+      - RUST_LOG=info,strategy_engine=debug
+      - SHADOW_MODE=true
+      - ALLOWED_SYMBOLS=EURUSD,GBPUSD,XAUUSD,BTCUSDT
+    ports:
+      - "8090:8090"
+    depends_on:
+      event-bus:
+        condition: service_healthy
+
   signal-engine:
     <<: *rust-defaults
     container_name: apex-signal-engine
@@ -171,6 +214,7 @@ services:
       - SERVICE_NAME=risk-engine
       - SERVICE_PORT=8082
       - RUST_LOG=info,risk_engine=debug
+      - MAX_RISK_PER_TRADE=0.005
     ports:
       - "8082:8082"
     depends_on:
@@ -190,6 +234,10 @@ services:
       - SERVICE_PORT=8083
       - RUST_LOG=info,execution_engine=debug
       - MT5_BRIDGE_URL=${MT5_BRIDGE_URL}
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER}
+      - SHADOW_MODE=true
     ports:
       - "8083:8083"
     depends_on:
@@ -453,6 +501,8 @@ services:
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.typescript
       target: builder
+      args:
+        APP: api
     command: pnpm db:migrate
     environment:
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3

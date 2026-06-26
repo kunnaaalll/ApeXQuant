@@ -1,0 +1,27 @@
+{
+  "title": "APEX V3 Execution Dashboard",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Order Latency",
+      "targets": [{"expr": "apex_execution_latency_ms"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Slippage",
+      "targets": [{"expr": "apex_execution_slippage"}]
+    },
+    {
+      "type": "stat",
+      "title": "Fill Quality",
+      "targets": [{"expr": "apex_execution_fill_quality"}]
+    },
+    {
+      "type": "stat",
+      "title": "Broker Health",
+      "targets": [{"expr": "apex_broker_health_status"}]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["execution", "apex-v3"]
+}

@@ -1,0 +1,37 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range $name, $svc := .Values.rustServices }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: apex-{{ $name }}
+  labels:
+    app: apex-{{ $name }}
+spec:
+  selector:
+    matchLabels:
+      app: apex-{{ $name }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ $.Values.serviceMonitor.interval }}
+{{- end }}
+
+{{- range $name, $svc := .Values.nodeServices }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: apex-{{ $name }}
+  labels:
+    app: apex-{{ $name }}
+spec:
+  selector:
+    matchLabels:
+      app: apex-{{ $name }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ $.Values.serviceMonitor.interval }}
+{{- end }}
+{{- end }}

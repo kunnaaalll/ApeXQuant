@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install cargo-chef for dependency caching
-RUN cargo install cargo-chef && rm -rf /usr/local/cargo/registry
+RUN cargo install cargo-chef --version 0.1.67 --locked && rm -rf /usr/local/cargo/registry
 
 WORKDIR /app
 
@@ -39,16 +39,25 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Copy source code
 COPY shared/apex-protos ./shared/apex-protos
 COPY services/${SERVICE}/src ./services/${SERVICE}/src
-COPY services/${SERVICE}/build.rs ./services/${SERVICE}/
+COPY services/${SERVICE}/build.r[s] ./services/${SERVICE}/
 COPY shared/protobuf ./shared/protobuf
 
 # Build the service
 WORKDIR /app/services/${SERVICE}
 RUN cargo build --release
 
-# Strip binary for smaller size
-RUN strip /app/target/release/service-binary || \
-    strip /app/target/release/${SERVICE}
+# Locate and strip binary for smaller size
+RUN set -ex; \
+    BIN_DASH=/app/target/release/${SERVICE}; \
+    BIN_UNDER=/app/target/release/$(echo ${SERVICE} | tr '-' '_'); \
+    if [ -f "$BIN_DASH" ]; then \
+        cp "$BIN_DASH" /app/service-binary; \
+    elif [ -f "$BIN_UNDER" ]; then \
+        cp "$BIN_UNDER" /app/service-binary; \
+    else \
+        echo "Could not find binary for ${SERVICE}"; exit 1; \
+    fi; \
+    strip /app/service-binary
 
 # ---------------- Runtime Stage ----------------
 FROM debian:bookworm-slim AS production
@@ -70,10 +79,7 @@ RUN groupadd -r apex && useradd -r -g apex -s /sbin/nologin -M apex
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder \
-    /app/target/release/service-binary \
-    /app/target/release/${SERVICE} \
-    /app/service
+COPY --from=builder /app/service-binary /app/service
 
 # Copy protos if needed at runtime
 COPY --from=builder /app/shared/protobuf ./shared/protobuf

@@ -1,0 +1,98 @@
+global:
+  image:
+    repository: apex-registry.local
+    tag: latest
+    pullPolicy: IfNotPresent
+  otelExporterEndpoint: "http://apex-jaeger-collector:4317"
+  redisUrl: "redis://apex-redis-cluster:6379"
+  # This should be overridden by a secret in production
+  databaseUrl: "postgres://apex:apex_password@apex-postgresql-ha-pgpool:5432/apex_v3"
+
+postgresql-ha:
+  enabled: true
+  postgresql:
+    password: "apex_password"
+    database: "apex_v3"
+    username: "apex"
+  pgpool:
+    adminPassword: "admin_password"
+
+redis-cluster:
+  enabled: true
+  password: "redis_password"
+
+rustServices:
+  event-bus:
+    port: 8080
+    replicas: 2
+    logLevel: "info,event_bus=debug"
+  market-data-engine:
+    port: 8089
+    replicas: 2
+    logLevel: "info,market_data_engine=debug"
+  strategy-engine:
+    port: 8090
+    replicas: 2
+    logLevel: "info,strategy_engine=debug"
+  signal-engine:
+    port: 8081
+    replicas: 2
+    logLevel: "info,signal_engine=debug"
+  risk-engine:
+    port: 8082
+    replicas: 2
+    logLevel: "info,risk_engine=debug"
+  execution-engine:
+    port: 8083
+    replicas: 2
+    logLevel: "info,execution_engine=debug"
+  position-engine:
+    port: 8084
+    replicas: 2
+    logLevel: "info,position_engine=debug"
+  portfolio-engine:
+    port: 8085
+    replicas: 2
+    logLevel: "info,portfolio_engine=debug"
+  analytics-engine:
+    port: 8086
+    replicas: 2
+    logLevel: "info,analytics_engine=debug"
+  learning-engine:
+    port: 8087
+    replicas: 1 # Needs volume, keep at 1 for simple deployment
+    logLevel: "info,learning_engine=debug"
+  backtester:
+    port: 8088
+    replicas: 1
+    logLevel: "info,backtester=debug"
+
+nodeServices:
+  api:
+    port: 3000
+    replicas: 2
+    env:
+      CORS_ORIGINS: "http://localhost:3001,http://dashboard:3000"
+  dashboard:
+    port: 3000
+    replicas: 2
+    env:
+      API_URL: "http://apex-api:3000"
+  orchestrator:
+    port: 3000
+    replicas: 2
+  ai-council:
+    port: 3000
+    replicas: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+serviceMonitor:
+  enabled: true
+  interval: 15s

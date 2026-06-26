@@ -1,0 +1,32 @@
+{
+  "title": "APEX V3 Trading Dashboard",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "PnL",
+      "targets": [{"expr": "apex_portfolio_pnl"}]
+    },
+    {
+      "type": "stat",
+      "title": "Winrate",
+      "targets": [{"expr": "apex_strategy_winrate"}]
+    },
+    {
+      "type": "stat",
+      "title": "Open Trades",
+      "targets": [{"expr": "apex_portfolio_open_trades"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Drawdown",
+      "targets": [{"expr": "apex_portfolio_drawdown"}]
+    },
+    {
+      "type": "heatmap",
+      "title": "Portfolio Heat",
+      "targets": [{"expr": "apex_portfolio_asset_exposure"}]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["trading", "apex-v3"]
+}

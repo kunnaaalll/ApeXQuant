@@ -1,0 +1,37 @@
+{
+  "title": "APEX V3 Infrastructure Dashboard",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "CPU Usage",
+      "targets": [{"expr": "process_cpu_seconds_total"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Usage",
+      "targets": [{"expr": "process_resident_memory_bytes"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "targets": [{"expr": "apex_event_bus_queue_depth"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Replay Lag",
+      "targets": [{"expr": "apex_replay_lag_ms"}]
+    },
+    {
+      "type": "timeseries",
+      "title": "Event Lag",
+      "targets": [{"expr": "apex_event_lag_ms"}]
+    },
+    {
+      "type": "stat",
+      "title": "Restart Count",
+      "targets": [{"expr": "sum(increase(process_start_time_seconds[24h]))"}]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["infrastructure", "apex-v3"]
+}

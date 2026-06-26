@@ -1,0 +1,33 @@
+{{- range $name, $svc := .Values.rustServices }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apex-{{ $name }}
+  labels:
+    app: apex-{{ $name }}
+spec:
+  ports:
+    - port: {{ $svc.port }}
+      targetPort: http
+      name: http
+  selector:
+    app: apex-{{ $name }}
+{{- end }}
+
+{{- range $name, $svc := .Values.nodeServices }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apex-{{ $name }}
+  labels:
+    app: apex-{{ $name }}
+spec:
+  ports:
+    - port: {{ $svc.port }}
+      targetPort: http
+      name: http
+  selector:
+    app: apex-{{ $name }}
+{{- end }}

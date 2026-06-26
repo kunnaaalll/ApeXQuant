@@ -1,0 +1,27 @@
+{
+  "title": "APEX V3 Certification Dashboard",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Replay Fidelity",
+      "targets": [{"expr": "apex_replay_fidelity_score"}]
+    },
+    {
+      "type": "stat",
+      "title": "Drift Score",
+      "targets": [{"expr": "apex_portfolio_drift_score"}]
+    },
+    {
+      "type": "stat",
+      "title": "Recovery Success",
+      "targets": [{"expr": "apex_recovery_success_rate"}]
+    },
+    {
+      "type": "stat",
+      "title": "Shadow Certification State",
+      "targets": [{"expr": "apex_shadow_certification_state"}]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["certification", "apex-v3"]
+}
