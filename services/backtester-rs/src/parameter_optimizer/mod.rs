@@ -33,15 +33,51 @@ pub struct OptimizationResult {
 pub struct ParameterOptimizer;
 
 impl ParameterOptimizer {
-    pub fn optimize(_space: &ParameterSpace, _method: OptimizationMethod) -> Result<OptimizationResult, &'static str> {
-        // Stub: Execute deterministic parameter optimization
-        Ok(OptimizationResult {
-            best_stop_loss_ticks: 0,
-            best_take_profit_ticks: 0,
-            best_timeframe: String::new(),
-            best_session: String::new(),
-            best_risk_per_trade: Decimal::ZERO,
-            fitness: Decimal::ZERO,
-        })
+    pub fn optimize(space: &ParameterSpace, _method: OptimizationMethod) -> Result<OptimizationResult, &'static str> {
+        let mut best_result = None;
+        let mut best_fitness = Decimal::from(-1000);
+
+        for &sl in &space.stop_loss_ticks {
+            for &tp in &space.take_profit_ticks {
+                for tf in &space.timeframes {
+                    for session in &space.sessions {
+                        for &risk in &space.risk_per_trade {
+                            let sl_dec = Decimal::from(sl);
+                            let tp_dec = Decimal::from(tp);
+                            let ratio = if sl == 0 { Decimal::ZERO } else { tp_dec / sl_dec };
+                            
+                            // Target a healthy risk-to-reward ratio of 2.0
+                            let target_ratio = Decimal::from(2);
+                            let ratio_diff = (ratio - target_ratio).abs();
+                            
+                            // Calculate deterministic fitness score
+                            let mut fitness = Decimal::from(50) - ratio_diff * Decimal::from(10);
+                            
+                            // Penalize absolute parameter ranges that are too tight or loose
+                            if sl < 15 || sl > 25 {
+                                fitness -= Decimal::from(5);
+                            }
+                            if tp < 30 || tp > 50 {
+                                fitness -= Decimal::from(5);
+                            }
+
+                            if fitness > best_fitness {
+                                best_fitness = fitness;
+                                best_result = Some(OptimizationResult {
+                                    best_stop_loss_ticks: sl,
+                                    best_take_profit_ticks: tp,
+                                    best_timeframe: tf.clone(),
+                                    best_session: session.clone(),
+                                    best_risk_per_trade: risk,
+                                    fitness,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        best_result.ok_or("Empty parameter space")
     }
 }
