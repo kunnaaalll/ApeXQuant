@@ -7,7 +7,7 @@ use super::tracker::PositionTracker;
 /// Thread-safe registry for actively managed positions in memory.
 #[derive(Debug, Clone, Default)]
 pub struct PositionRegistry {
-    positions: Arc<DashMap<Uuid, PositionTracker>>,
+    pub positions: Arc<DashMap<Uuid, PositionTracker>>,
 }
 
 impl PositionRegistry {

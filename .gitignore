@@ -69,3 +69,5 @@ secrets/
 tmp/
 temp/
 *.tmp
+*.exe
+

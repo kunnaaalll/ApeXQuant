@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 /// Signal Engine configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Config {
     /// Quality thresholds
     pub min_confluence_score: u8,

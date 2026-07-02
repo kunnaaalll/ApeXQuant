@@ -31,11 +31,20 @@ impl EventStore {
                 correlation_id VARCHAR(255),
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
+            "#
+        ).execute(&self.pool).await.context("Failed to create events table")?;
 
-            CREATE INDEX IF NOT EXISTS idx_events_topic_time ON events (topic, occurred_at);
-            CREATE INDEX IF NOT EXISTS idx_events_source ON events (source);
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_events_dedup ON events (deduplication_key) WHERE deduplication_key IS NOT NULL;
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_events_topic_time ON events (topic, occurred_at);")
+            .execute(&self.pool).await.context("Failed to create topic index")?;
 
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_events_source ON events (source);")
+            .execute(&self.pool).await.context("Failed to create source index")?;
+
+        sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_events_dedup ON events (deduplication_key) WHERE deduplication_key IS NOT NULL;")
+            .execute(&self.pool).await.context("Failed to create dedup index")?;
+
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS subscriber_offsets (
                 consumer_group VARCHAR(255) NOT NULL,
                 topic VARCHAR(255) NOT NULL,
@@ -44,7 +53,11 @@ impl EventStore {
                 updated_at TIMESTAMPTZ DEFAULT NOW(),
                 PRIMARY KEY (consumer_group, topic)
             );
+            "#
+        ).execute(&self.pool).await.context("Failed to create subscriber_offsets table")?;
 
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS dead_letter_queue (
                 id UUID PRIMARY KEY,
                 event_id UUID,
@@ -60,7 +73,7 @@ impl EventStore {
         )
         .execute(&self.pool)
         .await
-        .context("Failed to initialize event store schema")?;
+        .context("Failed to create DLQ table")?;
 
         Ok(())
     }

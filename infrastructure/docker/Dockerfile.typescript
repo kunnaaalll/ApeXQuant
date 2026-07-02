@@ -15,9 +15,9 @@ RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
-# Copy workspace files
+# Copy workspace config files
 COPY package.json pnpm-workspace.yaml turbo.json tsconfig.json ./
 COPY apps/${APP}/package.json ./apps/${APP}/
 COPY shared/contracts/package.json ./shared/contracts/
@@ -37,7 +37,7 @@ ENV APP=${APP}
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -66,7 +66,7 @@ ENV PORT=3000
 WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 # Install only production dependencies
 RUN apk add --no-cache --virtual .build-deps \
@@ -109,7 +109,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
 # Start application
 CMD ["node", "apps/${APP}/dist/index.js"]
 
-# ---------------- Development Stage (optional) ----------------
+# ---------------- Development Stage ----------------
 FROM node:${NODE_VERSION}-alpine AS development
 
 ARG APP
@@ -117,10 +117,20 @@ ENV APP=${APP}
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
+# Copy workspace config files first for better caching
+COPY package.json pnpm-workspace.yaml turbo.json tsconfig.json ./
+COPY apps/${APP}/package.json ./apps/${APP}/
+COPY shared/contracts/package.json ./shared/contracts/
+COPY shared/events/package.json ./shared/events/
+COPY storage/postgres/package.json ./storage/postgres/
+COPY storage/redis/package.json ./storage/redis/
+
+# Install dependencies with filter to avoid pulling everything
+RUN pnpm install --no-frozen-lockfile
+
+# Copy source code
 COPY . .
-
-RUN pnpm install
 
 CMD ["pnpm", "dev", "--filter=@apex-v3/${APP}"]

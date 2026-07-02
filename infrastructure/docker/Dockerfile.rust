@@ -4,9 +4,16 @@
 # Multi-stage build for optimized production image
 
 ARG RUST_VERSION=1.88
+ARG SERVICE
 
 # ---------------- Chef Base Stage ----------------
 FROM rust:${RUST_VERSION}-slim-bookworm AS chef
+
+# Cargo network resilience
+ENV CARGO_HTTP_TIMEOUT=600 \
+    CARGO_HTTP_MULTIPLEXING=false \
+    CARGO_NET_RETRY=10 \
+    CARGO_BUILD_JOBS=2
 
 # Install cargo-chef for dependency caching
 RUN cargo install cargo-chef --version 0.1.67 --locked && rm -rf /usr/local/cargo/registry
@@ -21,7 +28,6 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ---------------- Builder Stage ----------------
 FROM chef AS builder
 
-ENV CARGO_BUILD_JOBS=2
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -45,6 +51,9 @@ ARG SERVICE
 ENV SERVICE=${SERVICE}
 WORKDIR /app/services/${SERVICE}
 RUN cargo build --release
+
+# Go back to /app for the binary search
+WORKDIR /app
 
 # Locate and strip binary for smaller size
 # SERVICE is the directory name (e.g. event-bus-rs), but [[bin]] names strip the -rs suffix

@@ -7,7 +7,7 @@
     "REDIS_URL",
     "KAFKA_BROKERS"
   ],
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build", "^proto:generate"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],

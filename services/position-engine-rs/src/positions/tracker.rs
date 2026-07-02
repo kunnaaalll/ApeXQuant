@@ -10,6 +10,7 @@ use super::state::PositionState;
 pub struct PositionTracker {
     pub position_id: Uuid,
     pub symbol: String,
+    pub side: String, // "buy" or "sell"
     pub state: PositionState,
 
     // Core sizing metrics
@@ -41,6 +42,7 @@ impl PositionTracker {
     pub fn new(
         position_id: Uuid,
         symbol: String,
+        side: String,
         initial_size: Decimal,
         initial_entry_price: Decimal,
     ) -> Self {
@@ -48,6 +50,7 @@ impl PositionTracker {
         Self {
             position_id,
             symbol,
+            side,
             state: PositionState::Opening,
             initial_size,
             current_size: initial_size,

@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
     }
     
     // Keep engine running
-    // std::future::pending::<()>().await;
+    std::future::pending::<()>().await;
     
     tracing::info!("Learning Engine shutting down.");
     Ok(())

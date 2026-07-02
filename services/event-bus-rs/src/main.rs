@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
     let sequencer = SequenceManager::new(pool.clone());
     let service_impl = EventBusServiceImpl::new(store, sequencer);
     
-    let addr = "[::]:50051".parse()?;
+    let addr = "[::]:50050".parse()?;
     
     tracing::info!("APEX V3 Event Bus starting on {}", addr);
 

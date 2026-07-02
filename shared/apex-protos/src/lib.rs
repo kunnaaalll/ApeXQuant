@@ -33,6 +33,10 @@ pub mod learning {
 pub mod strategy {
     include!("generated/apex.strategy.rs");
 }
+pub mod position {
+    include!("generated/apex.position.rs");
+}
+
 
 /// Placeholder until protobufs are generated
 pub const VERSION: &str = "3.0.0";

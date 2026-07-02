@@ -26,6 +26,9 @@ time.workspace = true
 rust_decimal.workspace = true
 dashmap.workspace = true
 metrics.workspace = true
+reqwest.workspace = true
+tokio-stream = { version = "0.1" }
+tracing-subscriber.workspace = true
 
 # Local dependencies
 apex-protos = { path = "../../shared/apex-protos" }
