@@ -23,7 +23,7 @@ edition = "2021"
 authors = ["APEX Team <team@apex.trading>"]
 license = "UNLICENSED"
 repository = "https://github.com/apex-trading/apex-v3"
-rust-version = "1.78"
+rust-version = "1.85"
 
 [workspace.dependencies]
 # Core runtime
@@ -103,7 +103,7 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.8", features = ["v4", "v7", "serde"] }
 
 # Error Handling
-anyhow = { version = "1.0",  }
+anyhow = { version = "1.0" }
 thiserror = "1.0"
 
 # Validation

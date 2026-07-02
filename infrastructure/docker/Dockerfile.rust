@@ -3,14 +3,25 @@
 # ============================================
 # Multi-stage build for optimized production image
 
-ARG RUST_VERSION=1.78
-ARG SERVICE
+ARG RUST_VERSION=1.88
+
+# ---------------- Chef Base Stage ----------------
+FROM rust:${RUST_VERSION}-slim-bookworm AS chef
+
+# Install cargo-chef for dependency caching
+RUN cargo install cargo-chef --version 0.1.67 --locked && rm -rf /usr/local/cargo/registry
+
+WORKDIR /app
+
+# ---------------- Planner Stage ----------------
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
 # ---------------- Builder Stage ----------------
-FROM rust:${RUST_VERSION}-slim-bookworm AS builder
+FROM chef AS builder
 
-ARG SERVICE
-ENV SERVICE=${SERVICE}
+ENV CARGO_BUILD_JOBS=2
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,42 +31,41 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install cargo-chef for dependency caching
-RUN cargo install cargo-chef --version 0.1.67 --locked && rm -rf /usr/local/cargo/registry
-
-WORKDIR /app
-
-# Create recipe for dependencies
-COPY Cargo.toml Cargo.lock ./
-COPY services/${SERVICE}/Cargo.toml ./services/${SERVICE}/
-COPY shared/apex-protos/Cargo.toml ./shared/apex-protos/
-
-# Prepare cargo-chef recipe
-RUN cargo chef prepare --recipe-path recipe.json
+# Copy recipe from planner
+COPY --from=planner /app/recipe.json recipe.json
 
 # Build dependencies (cached layer)
 RUN cargo chef cook --release --recipe-path recipe.json
 
-# Copy source code
-COPY shared/apex-protos ./shared/apex-protos
-COPY services/${SERVICE}/src ./services/${SERVICE}/src
-COPY services/${SERVICE}/build.r[s] ./services/${SERVICE}/
-COPY shared/protobuf ./shared/protobuf
+# Copy all source code
+COPY . .
 
 # Build the service
+ARG SERVICE
+ENV SERVICE=${SERVICE}
 WORKDIR /app/services/${SERVICE}
 RUN cargo build --release
 
 # Locate and strip binary for smaller size
+# SERVICE is the directory name (e.g. event-bus-rs), but [[bin]] names strip the -rs suffix
 RUN set -ex; \
     BIN_DASH=/app/target/release/${SERVICE}; \
     BIN_UNDER=/app/target/release/$(echo ${SERVICE} | tr '-' '_'); \
+    BIN_NO_RS=/app/target/release/$(echo ${SERVICE} | sed 's/-rs$//'); \
+    BIN_NO_RS_UNDER=/app/target/release/$(echo ${SERVICE} | sed 's/-rs$//' | tr '-' '_'); \
     if [ -f "$BIN_DASH" ]; then \
         cp "$BIN_DASH" /app/service-binary; \
     elif [ -f "$BIN_UNDER" ]; then \
         cp "$BIN_UNDER" /app/service-binary; \
+    elif [ -f "$BIN_NO_RS" ]; then \
+        cp "$BIN_NO_RS" /app/service-binary; \
+    elif [ -f "$BIN_NO_RS_UNDER" ]; then \
+        cp "$BIN_NO_RS_UNDER" /app/service-binary; \
     else \
-        echo "Could not find binary for ${SERVICE}"; exit 1; \
+        echo "Could not find binary for ${SERVICE}"; \
+        echo "Searched: $BIN_DASH $BIN_UNDER $BIN_NO_RS $BIN_NO_RS_UNDER"; \
+        ls -la /app/target/release/ | head -30; \
+        exit 1; \
     fi; \
     strip /app/service-binary
 
