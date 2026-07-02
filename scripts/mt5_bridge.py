@@ -406,7 +406,10 @@ def modify_position_stops(ticket: str, req: StopModifyRequest):
 @app.get("/signals")
 def get_live_signals():
     ensure_initialized()
-    symbols = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD", "NZDUSD", "XAUUSD", "BTCUSD"]
+    symbols = [
+        "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD",
+        "EURGBP", "EURJPY", "GBPJPY", "XAUUSD", "BTCUSD", "US30"
+    ]
     signals = []
     
     for sym in symbols:

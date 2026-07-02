@@ -25,7 +25,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Initializing Simulation Workspace...");
 
     let start_time = OffsetDateTime::now_utc();
-    let symbols = vec!["EURUSD", "USDCHF", "AUDUSD", "USDCAD", "NZDUSD", "XAUUSD"];
+    let symbols = vec![
+        "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD",
+        "EURGBP", "EURJPY", "GBPJPY", "XAUUSD", "BTCUSD", "US30"
+    ];
     
     info!("Loading historical tick databases for symbols: {:?}", symbols);
     let start_load = Instant::now();

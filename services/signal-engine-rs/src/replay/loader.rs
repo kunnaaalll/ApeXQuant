@@ -177,7 +177,10 @@ impl DatasetLoader {
         candles_per_scenario: usize,
     ) -> GoldenDataset {
         let mut dataset = GoldenDataset::new(name.to_string());
-        let symbols = vec!["EURUSD", "GBPUSD", "USDJPY", "USDCHF"];
+        let symbols = vec![
+            "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCAD", "USDCHF", "NZDUSD",
+            "EURGBP", "EURJPY", "GBPJPY", "XAUUSD", "BTCUSD", "US30"
+        ];
         let timeframes = vec!["M15", "H1", "H4"];
         let categories = vec![
             ScenarioCategory::TrendingUp,
