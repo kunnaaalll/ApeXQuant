@@ -1,5 +1,5 @@
 use crate::connection_supervisor::ConnectionState;
-use crate::broker_connectivity::{AccountState, PositionState, OrderState};
+use crate::brokers::broker::{AccountState, PositionState, OrderState};
 
 #[derive(Debug, Clone)]
 pub struct BrokerSnapshot {

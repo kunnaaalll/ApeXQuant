@@ -34,6 +34,7 @@ apex-protos = { path = "../../shared/apex-protos" }
 
 # Service-specific
 polars = { version = "0.40", features = ["performant"] }
+tracing-subscriber = "0.3"
 
 [dev-dependencies]
 tokio-test.workspace = true

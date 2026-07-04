@@ -12,6 +12,10 @@ impl PgStore {
         Self { pool }
     }
 
+    pub fn pool(&self) -> &Pool<Postgres> {
+        &self.pool
+    }
+
     pub async fn begin_transaction(&self) -> Result<Transaction<'_, Postgres>, StorageError> {
         Ok(self.pool.begin().await?)
     }

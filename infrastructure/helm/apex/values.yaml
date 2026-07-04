@@ -5,21 +5,34 @@ global:
     pullPolicy: IfNotPresent
   otelExporterEndpoint: "http://apex-jaeger-collector:4317"
   redisUrl: "redis://apex-redis-cluster:6379"
-  # This should be overridden by a secret in production
-  databaseUrl: "postgres://apex:apex_password@apex-postgresql-ha-pgpool:5432/apex_v3"
+  # Database URL is sourced from the 'apex-db-credentials' Kubernetes Secret at runtime.
+  # Set the secret: kubectl create secret generic apex-db-credentials \
+  #   --from-literal=database-url='postgres://apex:<PASSWORD>@apex-postgresql-ha-pgpool:5432/apex_v3'
+  databaseUrlSecretName: "apex-db-credentials"
+  databaseUrlSecretKey: "database-url"
 
 postgresql-ha:
   enabled: true
   postgresql:
-    password: "apex_password"
+    # Password sourced from Kubernetes Secret 'apex-db-credentials' → key 'postgresql-password'
+    # Create with: kubectl create secret generic apex-db-credentials \
+    #   --from-literal=postgresql-password='<PASSWORD>'
+    existingSecret: "apex-db-credentials"
+    existingSecretKey: "postgresql-password"
     database: "apex_v3"
     username: "apex"
   pgpool:
-    adminPassword: "admin_password"
+    # Admin password sourced from Kubernetes Secret 'apex-db-credentials' → key 'pgpool-admin-password'
+    adminPasswordSecret: "apex-db-credentials"
+    adminPasswordSecretKey: "pgpool-admin-password"
 
 redis-cluster:
   enabled: true
-  password: "redis_password"
+  # Password sourced from Kubernetes Secret 'apex-redis-credentials' → key 'redis-password'
+  # Create with: kubectl create secret generic apex-redis-credentials \
+  #   --from-literal=redis-password='<PASSWORD>'
+  existingSecret: "apex-redis-credentials"
+  existingSecretPasswordKey: "redis-password"
 
 rustServices:
   event-bus:
@@ -60,7 +73,7 @@ rustServices:
     logLevel: "info,analytics_engine=debug"
   learning-engine:
     port: 8087
-    replicas: 1 # Needs volume, keep at 1 for simple deployment
+    replicas: 1
     logLevel: "info,learning_engine=debug"
   backtester:
     port: 8088

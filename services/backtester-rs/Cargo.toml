@@ -38,6 +38,10 @@ apex-protos = { path = "../../shared/apex-protos" }
 polars = { version = "0.40", features = ["performant", "dtype-datetime", "parquet"] }
 parquet = "52.0"
 crossbeam-channel = "0.5"
+rand = "0.8"
+rand_chacha = "0.3"
+statrs.workspace = true
+itertools.workspace = true
 
 [dev-dependencies]
 tokio-test.workspace = true

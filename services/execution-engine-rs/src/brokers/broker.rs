@@ -1,8 +1,12 @@
-use super::errors::BrokerError;
+pub use super::errors::BrokerError;
 use super::health::BrokerHealth;
 use super::requests::{ClosePositionRequest, OrderCancelRequest, OrderModifyRequest, OrderSubmitRequest};
 use super::responses::{AccountInfo, ClosePositionResponse, OpenPosition, OrderCancelResponse, OrderModifyResponse, OrderSubmitResponse, PendingOrder, SymbolInfo};
 use async_trait::async_trait;
+
+pub type AccountState = AccountInfo;
+pub type OrderState = PendingOrder;
+pub type PositionState = OpenPosition;
 
 #[async_trait]
 pub trait BrokerAdapter: Send + Sync {

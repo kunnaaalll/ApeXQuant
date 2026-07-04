@@ -1,19 +1,21 @@
-use crate::broker_connectivity::AccountState;
+use crate::brokers::broker::AccountState;
+use rust_decimal::Decimal;
+use rust_decimal::prelude::ToPrimitive;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AccountDrift {
     None,
-    Warning { field: String, diff: f64 },
-    Critical { field: String, diff: f64 },
+    Warning { field: String, diff: Decimal },
+    Critical { field: String, diff: Decimal },
 }
 
 pub struct DriftDetector {
-    warning_threshold: f64,
-    critical_threshold: f64,
+    warning_threshold: Decimal,
+    critical_threshold: Decimal,
 }
 
 impl DriftDetector {
-    pub fn new(warning_threshold: f64, critical_threshold: f64) -> Self {
+    pub fn new(warning_threshold: Decimal, critical_threshold: Decimal) -> Self {
         Self {
             warning_threshold,
             critical_threshold,
@@ -25,13 +27,13 @@ impl DriftDetector {
 
         self.check_field("balance", local.balance, broker.balance, &mut drifts);
         self.check_field("equity", local.equity, broker.equity, &mut drifts);
-        self.check_field("margin", local.margin, broker.margin, &mut drifts);
+        self.check_field("margin_level", local.margin_level, broker.margin_level, &mut drifts);
         self.check_field("free_margin", local.free_margin, broker.free_margin, &mut drifts);
 
         drifts
     }
 
-    fn check_field(&self, name: &str, local_val: f64, broker_val: f64, drifts: &mut Vec<AccountDrift>) {
+    fn check_field(&self, name: &str, local_val: Decimal, broker_val: Decimal, drifts: &mut Vec<AccountDrift>) {
         let diff = (local_val - broker_val).abs();
         if diff > self.critical_threshold {
             drifts.push(AccountDrift::Critical { field: name.to_string(), diff });

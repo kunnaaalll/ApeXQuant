@@ -1,7 +1,7 @@
 use crate::connection_supervisor::ConnectionSupervisor;
 use crate::connection_supervisor::ConnectionState;
 use crate::order_reconciliation::{ReconciliationEngine, ReconciliationState, MismatchDetector};
-use crate::broker_connectivity::OrderState;
+use crate::brokers::broker::OrderState;
 use crate::position_recovery::RecoveryEngine;
 
 #[test]
@@ -48,7 +48,7 @@ fn test_1m_reconciliation_comparisons() {
 #[tokio::test]
 async fn test_100k_recovery_cycles() {
     let engine = RecoveryEngine::new();
-    use crate::broker_connectivity::{Mt5Adapter, BrokerAdapter};
+    use crate::brokers::broker::{Mt5Adapter, BrokerAdapter};
     
     let mut broker = Mt5Adapter::new();
     broker.login().await.unwrap();

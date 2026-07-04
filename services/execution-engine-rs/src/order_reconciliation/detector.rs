@@ -1,11 +1,12 @@
-use crate::broker_connectivity::OrderState;
+use crate::brokers::broker::OrderState;
 use std::collections::HashMap;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ReconciliationIssue {
     MissingOrder(String),
     DuplicateFill(String),
-    QuantityMismatch { id: String, local: f64, broker: f64 },
+    QuantityMismatch { id: String, local: Decimal, broker: Decimal },
     StatusMismatch { id: String, local_open: bool, broker_open: bool },
 }
 
@@ -33,35 +34,42 @@ impl MismatchDetector {
     pub fn detect(&self, local_orders: &[OrderState], broker_orders: &[OrderState]) -> Vec<ReconciliationIssue> {
         let mut issues = Vec::new();
         let mut broker_map: HashMap<String, &OrderState> = broker_orders.iter()
-            .map(|o| (o.id.clone(), o))
+            .map(|o| (o.ticket.clone(), o))
             .collect();
+            
+        let tolerance = Decimal::new(1, 6);
 
         for local in local_orders {
-            if let Some(broker) = broker_map.remove(&local.id) {
-                if (local.volume - broker.volume).abs() > 1e-6 {
+            if let Some(broker) = broker_map.remove(&local.ticket) {
+                if (local.volume - broker.volume).abs() > tolerance {
                     issues.push(ReconciliationIssue::QuantityMismatch {
-                        id: local.id.clone(),
+                        id: local.ticket.clone(),
                         local: local.volume,
                         broker: broker.volume,
                     });
                 }
-                if local.is_open != broker.is_open {
+                
+                let local_is_open = local.status != "CLOSED" && local.status != "CANCELED";
+                let broker_is_open = broker.status != "CLOSED" && broker.status != "CANCELED";
+                
+                if local_is_open != broker_is_open {
                     issues.push(ReconciliationIssue::StatusMismatch {
-                        id: local.id.clone(),
-                        local_open: local.is_open,
-                        broker_open: broker.is_open,
+                        id: local.ticket.clone(),
+                        local_open: local_is_open,
+                        broker_open: broker_is_open,
                     });
                 }
             } else {
-                if local.is_open {
-                    issues.push(ReconciliationIssue::MissingOrder(local.id.clone()));
+                let local_is_open = local.status != "CLOSED" && local.status != "CANCELED";
+                if local_is_open {
+                    issues.push(ReconciliationIssue::MissingOrder(local.ticket.clone()));
                 }
             }
         }
 
         // Remaining broker orders are missing locally
         for (_, broker) in broker_map {
-            issues.push(ReconciliationIssue::MissingOrder(broker.id.clone()));
+            issues.push(ReconciliationIssue::MissingOrder(broker.ticket.clone()));
         }
 
         issues

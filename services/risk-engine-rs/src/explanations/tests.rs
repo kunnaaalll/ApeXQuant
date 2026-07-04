@@ -21,7 +21,7 @@ fn get_healthy_inputs() -> RiskInputs {
 fn test_explanation_has_no_empty_fields() {
     let inputs = get_healthy_inputs();
     let narrative =
-        generate_narrative(&inputs, TradeAdmissionPolicy::Allow, "Because".to_string());
+        generate_narrative(&inputs, None, TradeAdmissionPolicy::Allow, "Because".to_string());
 
     let explanation = narrative.explanation;
     assert!(!explanation.why.is_empty());

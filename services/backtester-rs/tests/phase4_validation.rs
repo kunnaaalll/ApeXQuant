@@ -98,9 +98,21 @@ fn test_correlation_simulation() {
 
 #[test]
 fn test_portfolio_stress() {
+    let snapshot = backtester::portfolio_stress::PortfolioSnapshot {
+        equity: Decimal::new(100_000, 0),
+        open_exposure: Decimal::new(500_000, 0),
+        avg_spread_cost: Decimal::new(5, 0),
+        avg_atr: Decimal::new(20, 0),
+        active_positions: 5,
+        avg_position_pnl: Decimal::new(200, 0),
+        avg_fill_cost: Decimal::new(8, 0),
+        daily_fills: 10,
+        avg_correlation: Decimal::new(75, 2), // 0.75
+        ruin_threshold: Decimal::new(70_000, 0),
+    };
     let metrics = PortfolioStressTester::run_scenario(
-        &StressScenario::CorrelatedFailures,
-        Decimal::from_str("100000").unwrap(),
+        &StressScenario::CorrelatedLosses,
+        &snapshot,
     );
     assert!(metrics.is_ok());
 }

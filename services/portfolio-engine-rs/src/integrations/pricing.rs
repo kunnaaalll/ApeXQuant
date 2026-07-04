@@ -1,30 +1,25 @@
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use tonic::transport::Channel;
+use apex_protos::analytics::analytics_engine_client::AnalyticsEngineClient;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PricingTick {
-    pub symbol: String,
-    pub bid: Decimal,
-    pub ask: Decimal,
-    pub timestamp: u64,
+pub struct PricingClient {
+    pub client: Option<AnalyticsEngineClient<Channel>>,
 }
 
-pub struct PricingClient;
+impl PricingClient {
+    pub async fn connect(url: String) -> Result<Self, String> {
+        let client = AnalyticsEngineClient::connect(url)
+            .await
+            .map_err(|e| format!("Failed to connect to pricing/analytics service: {}", e))?;
+        Ok(Self { client: Some(client) })
+    }
+
+    pub fn new() -> Self {
+        Self { client: None }
+    }
+}
 
 impl Default for PricingClient {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl PricingClient {
-    pub fn new() -> Self {
-        Self
-    }
-
-    pub async fn fetch_latest_prices(&self, _symbols: &[String]) -> Result<HashMap<String, PricingTick>, String> {
-        // Placeholder for grpc/http client call
-        Ok(HashMap::new())
     }
 }

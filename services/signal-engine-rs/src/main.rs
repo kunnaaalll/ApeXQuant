@@ -32,21 +32,26 @@ async fn main() -> Result<()> {
     };
 
     // Initialize signal engine
-    let engine = SignalEngine::new(config, event_bus).await?;
+    let engine = Arc::new(SignalEngine::new(config, event_bus).await?);
     info!("Signal engine initialized");
 
-    // Run server (placeholder - would integrate with gRPC/HTTP server)
-    info!("Starting signal engine server...");
+    // Run server
+    let addr = "0.0.0.0:50051".parse().map_err(|e: std::net::AddrParseError| signal_engine::SignalEngineError::Validation(e.to_string()))?;
+    let server_fut = signal_engine::api::server::start_server(engine.clone(), addr);
 
-    // Wait for shutdown signal
-    match signal::ctrl_c().await {
-        Ok(()) => {
+
+    // Wait for shutdown signal or server exit
+    tokio::select! {
+        res = server_fut => {
+            if let Err(e) = res {
+                warn!("gRPC server exited with error: {:?}", e);
+            }
+        }
+        _ = signal::ctrl_c() => {
             info!("Shutdown signal received, stopping...");
         }
-        Err(e) => {
-            warn!("Failed to listen for shutdown signal: {}", e);
-        }
     }
+
 
     info!("APEX Signal Engine stopped");
     Ok(())

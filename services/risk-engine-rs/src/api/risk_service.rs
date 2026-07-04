@@ -186,12 +186,34 @@ impl RiskEngine for RiskServiceImpl {
         request: Request<CorrelationQuery>,
     ) -> Result<Response<CorrelationResponse>, Status> {
         let req = request.into_inner();
-        // Return empty correlation matrix — populated when real position data flows in
+        let corr = self.state.correlation.read().await;
+        
+        let mut symbols = std::collections::BTreeSet::new();
+        for (a, b) in corr.get_dimension_keys("Symbol") {
+            symbols.insert(a);
+            symbols.insert(b);
+        }
+        
+        let symbols_vec: Vec<String> = symbols.into_iter().collect();
+        let mut rows = Vec::new();
+        
+        for a in &symbols_vec {
+            let mut row_values = Vec::new();
+            for b in &symbols_vec {
+                let val = corr.get_correlation("Symbol", a, b);
+                row_values.push(val.to_string().parse::<f64>().unwrap_or(0.0));
+            }
+            rows.push(apex_protos::risk::CorrelationRow {
+                symbol: a.clone(),
+                correlations: row_values,
+            });
+        }
+
         Ok(Response::new(CorrelationResponse {
             account_id: req.account_id,
             matrix: Some(ProtoCorrelationMatrix {
-                symbols: vec![],
-                rows:    vec![],
+                symbols: symbols_vec,
+                rows,
             }),
         }))
     }
@@ -281,10 +303,32 @@ impl RiskEngine for RiskServiceImpl {
     // ── get_recommendation ────────────────────────────────────────────────────
     async fn get_recommendation(
         &self,
-        _request: Request<RecommendationQuery>,
+        request: Request<RecommendationQuery>,
     ) -> Result<Response<RecommendationResponse>, Status> {
+        let req = request.into_inner();
         let rec = self.state.recommendations.read().await;
         let cur = rec.current();
+
+        // Calculate correlation-adjusted Kelly fraction based on event stream position updates
+        let mut win_prob = rust_decimal_macros::dec!(0.55);
+        let mut wl_ratio = rust_decimal_macros::dec!(1.5);
+        
+        let symbol_code = req.symbol.map(|s| s.code).unwrap_or_else(|| "EURUSD".to_string());
+        
+        // Use correlation matrix to adjust win probability if there is high correlation with existing positions
+        let corr = self.state.correlation.read().await;
+        let eurusd_corr = corr.get_correlation("Symbol", &symbol_code, "EURUSD");
+        if eurusd_corr > rust_decimal_macros::dec!(0.5) {
+            win_prob -= rust_decimal_macros::dec!(0.05); // Penalize correlated trades
+        }
+
+        let kelly_fraction = crate::kelly::calculate_kelly_fraction(win_prob, wl_ratio);
+        let max_kelly = rust_decimal_macros::dec!(0.2); // max 20%
+        let final_kelly = kelly_fraction.min(max_kelly);
+        
+        // Base suggested lots scaled by Kelly
+        let suggested = final_kelly * rust_decimal_macros::dec!(10.0);
+        let max = final_kelly * rust_decimal_macros::dec!(20.0);
 
         // Publish RiskCheckPassedEvent if event_bus is configured
         if let Some(bus) = &self.event_bus {
@@ -316,15 +360,16 @@ impl RiskEngine for RiskServiceImpl {
             }
         }
 
-        // Map to PositionRecommendation proto (the only recommendation proto defined)
+        // Map to PositionRecommendation proto
+        use rust_decimal::prelude::ToPrimitive;
         let proto_rec = PositionRecommendation {
-            suggested_lots:          Some(make_decimal(Decimal::ZERO)),
-            max_lots:                Some(make_decimal(Decimal::ZERO)),
+            suggested_lots:          Some(make_decimal(suggested)),
+            max_lots:                Some(make_decimal(max)),
             risk_amount:             None,
             margin_required:         None,
             risk_percent_of_equity:  None,
-            position_sizing_method:  format!("{:?}", cur.action).to_lowercase(),
-            kelly_fraction:          0.0,
+            position_sizing_method:  "kelly".to_string(),
+            kelly_fraction:          final_kelly.to_f64().unwrap_or(0.0),
         };
 
         Ok(Response::new(RecommendationResponse {

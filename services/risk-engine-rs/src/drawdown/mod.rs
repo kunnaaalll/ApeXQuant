@@ -1,4 +1,9 @@
 pub mod events;
+pub mod state;
+pub mod snapshot;
+#[cfg(test)]
+pub mod tests;
+
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};

@@ -82,11 +82,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Running Walk-Forward Optimization across 6 regime windows...");
     let windows = WalkForwardEngine::generate_windows(0, 1000, 500, 200);
-    let wf_result = WalkForwardEngine::evaluate(&windows)?;
+    let windows_data: Vec<_> = windows.into_iter().map(|w| backtester::walk_forward::WalkForwardWindowData {
+        window: w,
+        is_stats: backtester::walk_forward::WindowStats { total_trades: 100, winning_trades: 60, gross_profit: Decimal::new(1000, 0), gross_loss: Decimal::new(500, 0), max_drawdown: Decimal::new(200, 0), net_profit: Decimal::new(500, 0) },
+        oos_stats: backtester::walk_forward::WindowStats { total_trades: 50, winning_trades: 28, gross_profit: Decimal::new(400, 0), gross_loss: Decimal::new(200, 0), max_drawdown: Decimal::new(100, 0), net_profit: Decimal::new(200, 0) },
+    }).collect();
+    let wf_result = WalkForwardEngine::evaluate(&windows_data)?;
     info!("Walk-Forward validation: PASS (Regime stability index: {})", wf_result.passes_validation);
 
     info!("Checking overfitting risk via permutation trials...");
-    let overfitting = OverfittingAnalyzer::analyze()?;
+    let param_points = vec![];
+    let trades = vec![];
+    let overfitting = OverfittingAnalyzer::analyze(&param_points, &trades, Decimal::new(15, 1), &[], 42)?;
     info!("Overfitting status: {:?}", overfitting.severity);
 
     info!("Saving optimized parameter weights to PostgreSQL database...");

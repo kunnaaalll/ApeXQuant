@@ -1,105 +1,148 @@
-# APEX V3 System-Wide Quantitative Codebase Audit
+# APEX V3 — FINAL INSTITUTIONAL RELEASE AUDIT (ZERO TRUST)
 
-We performed a comprehensive audit of all Rust engines and TypeScript microservices to identify hardcoded values, dummy stubs, and simulated/mock data layers. 
-
-## Executive Summary
-
-While the system's pipeline, dockerization, protobuf messages, and database schemas are structurally sound, the majority of the mathematical model calculations and service logic are currently composed of **placeholder stubs** or **simplified mathematical models**. 
-
-Below is the service-by-service breakdown of mock layers and the pending work required to elevate them to production grade.
+This audit was conducted by the Principal Staff Engineer, Quantitative Architect, Rust Auditor, Distributed Systems Engineer, and Institutional Trading Systems Reviewer. Our objective is to verify code production readiness under a Zero Trust methodology.
 
 ---
 
-## Detailed Service Audit
+## 1. Executive Summary
 
-### 1. Backtester Engine (`backtester-rs`)
-* **File Links**: [main.rs](file:///d:/Development/ApexQuant/services/backtester-rs/src/main.rs), [walk_forward/mod.rs](file:///d:/Development/ApexQuant/services/backtester-rs/src/walk_forward/mod.rs), [overfitting/mod.rs](file:///d:/Development/ApexQuant/services/backtester-rs/src/overfitting/mod.rs), [portfolio_stress/mod.rs](file:///d:/Development/ApexQuant/services/backtester-rs/src/portfolio_stress/mod.rs), [payout_simulation/mod.rs](file:///d:/Development/ApexQuant/services/backtester-rs/src/payout_simulation/mod.rs)
-* **Mocks / Stubs Found**:
-  * **Tick Data**: `main.rs` generates 3.25 million sequential synthetic ticks in an inline memory loop for EURUSD, BTCUSD, US30, etc.
-  * **Walk-Forward Validation**: Segmentation is dynamic, but the `evaluate` function returns hardcoded scores (e.g. 82% stability, 78% robustness).
-  * **Overfitting Analyzer**: `OverfittingAnalyzer::analyze` returns a hardcoded `Healthy` severity with zero scores.
-  * **Auxiliary Modules**: `monte_carlo`, `portfolio_stress`, `payout_simulation`, `capital_rotation`, and `account_allocator` are empty functions returning static defaults (zeros or empty vectors).
-* **Pending Work**:
-  * Implement a Database/CSV Tick Reader to load real historical trading files.
-  * Connect `overfitting/mod.rs` to run actual statistical permutation trials (e.g. Monte Carlo re-shuffling of returns) to calculate true p-values for overfitting.
-  * Implement mathematical formulations for Monte Carlo trials and stressful scenarios in `portfolio_stress`.
+While the system's pipeline, dockerization, protobuf messages, and database schemas are structurally sound, the majority of the mathematical model calculations, execution logic, risk controls, and service integrations are currently composed of **placeholder stubs**, **mock objects**, or **literally empty 0-byte source files** that compile as empty submodules.
+
+Most alarmingly, the **Execution Engine** is architecturally bypassed: order routing to the MT5 and Binance adapters is completely absent in the gRPC layer, which instead runs an in-memory shadow pipeline that publishes fake broker fills. Furthermore, **75 source code files** in core modules (Risk, Signal, Strategy, and Performance) are entirely empty (0 bytes).
 
 ---
 
-### 2. Portfolio Engine (`portfolio-engine-rs`)
-* **File Links**: [portfolio_optimizer.rs](file:///d:/Development/ApexQuant/services/portfolio-engine-rs/src/optimization/portfolio_optimizer.rs), [risk.rs](file:///d:/Development/ApexQuant/services/portfolio-engine-rs/src/integrations/risk.rs), [execution.rs](file:///d:/Development/ApexQuant/services/portfolio-engine-rs/src/integrations/execution.rs)
-* **Mocks / Stubs Found**:
-  * **Markowitz Optimization**: `portfolio_optimizer.rs` does not run Mean-Variance Optimization; it divides weight equally among all active assets inside constraints and returns expected return/volatility as `Decimal::ZERO`.
-  * **gRPC Client Mocks**: Both `RiskClient` and `ExecutionClient` establish connection channels, but their action calls (`fetch_risk_assessment`, `submit_order`) bypass the channel and return hardcoded objects (e.g., status `SAFE`, status `FILLED` with `ORD-1234`).
-* **Pending Work**:
-  * Implement quadratic programming or matrix operations in Rust (using libraries like `nalgebra` which is already in `Cargo.toml`) to calculate the actual maximum Sharpe ratio portfolio.
-  * Connect gRPC requests to call the protobuf-defined `RiskEngine` and `ExecutionEngine` APIs instead of bypassing them.
+## 2. Major Issues
+
+### [MAJOR ISSUE 1] Core Crate Submodules are Empty 0-byte Placeholder Files
+A total of **75 source files** in core crates compile as empty submodules. Any mathematical logic, filters, metrics, risk guards, or classifications they are supposed to perform are completely absent.
+* **Risk Engine (`risk-engine-rs`)**: The entire `position_sizing` folder, `guards` folder, `sessions` folder, and key analysis files like `volatility.rs`, `confidence.rs`, and `daily_limits.rs` are empty.
+* **Strategy Engine (`strategy-engine-rs`)**: Core risk detection submodules such as `overfit_detector.rs`, `collapse_detector.rs`, and `alternate_history.rs` are empty.
+* **Performance Engine (`performance-engine-rs`)**: The entire crate is hollow—every single module (metrics, snapshots, psychology, setup, sltp, rr, storage, api, performance, drawdown) is empty.
+* **Signal Engine (`signal-engine-rs`)**: Core signal filtering modules (`session.rs`, `regime.rs`, `duplicates.rs`, `quality.rs`) are empty.
+
+### [MAJOR ISSUE 2] Execution Engine Bypasses Broker Adapters with Virtual Fills
+The production gRPC service in `services/execution-engine-rs/src/api/service.rs`:
+* Bypasses the `Mt5Adapter` and `BinanceAdapter` during `submit_order` calls.
+* Publishes a simulated `ExecutionOrderSubmittedEvent` and `ExecutionOrderFilledEvent` with a hardcoded order ID `"order-123"`, price `"100.0"`, volume `"100.0"`, and broker execution ID `"virtual_shadow_fill"`.
+* Bypasses actual broker queries in `get_order_state`, `get_position_state`, `get_liquidity_profile`, `get_slippage_metrics`, `get_latency_metrics`, and `get_microstructure_score`, returning static/zeroed responses.
+* **Architectural Gap**: The gRPC server initialization in `start_api_servers` does not receive or register the adapters, making it physically impossible for the gRPC thread to route requests to actual brokers.
+
+### [MAJOR ISSUE 3] Event Bus Replay, Acknowledgements, and DLQ are Mocks
+* **Dead Letter Queue (`event-bus-rs/src/delivery/dlq.rs`)**: `DeadLetterQueueManager` is stubbed out. `move_to_dlq` and `replay_from_dlq` simply return `Ok(())`.
+* **Replay Engine (`event-bus-rs/src/replay/engine.rs`)**: Spawning tasks inside `replay_by_topic` and `replay_by_time_range` are empty and do not query the database.
+* **Stream Delivery (`event-bus-rs/src/server/grpc_service.rs`)**: gRPC `subscribe` only pipes live messages from an in-memory broadcast channel. Requests starting with historical offsets are ignored. gRPC `ack` has a comment `// We'd update offset here. We need the topic and occurred_at` but performs no database updates.
+
+### [MAJOR ISSUE 4] AI Engine Models and Optimizers are Hollow Stubs
+* **Parameter Optimization (`ai-engine-rs/src/parameter_optimization/mod.rs`)**: GridSearch, GeneticSearch, ConstraintSearch, and BayesianSearch return the minimum bounds of the parameter space with empty sensitive/overfitting metadata.
+* **Research Priority (`ai-engine-rs/src/research_orchestrator/mod.rs`)**: `calculate_priority` returns a hardcoded Decimal value of `50`.
+* **Adversarial Testing (`ai-engine-rs/src/adversarial_testing/mod.rs`)**: `inject_failure_conditions` returns a hardcoded mock report with 75% survivability and 25% drawdown.
 
 ---
 
-### 3. Position Engine (`position-engine-rs`)
-* **File Links**: [scale_in.rs](file:///d:/Development/ApexQuant/services/position-engine-rs/src/management/scale_in.rs), [metrics.rs](file:///d:/Development/ApexQuant/services/position-engine-rs/src/pnl/metrics.rs), [momentum.rs](file:///d:/Development/ApexQuant/services/position-engine-rs/src/health/momentum.rs)
-* **Mocks / Stubs Found**:
-  * **Scale-In Sizing**: `ScaleInEngine` evaluates whether to scale in, but sets the additional size to a hardcoded `Decimal::new(10, 0)` (10 units).
-  * **Performance Metrics**: `PnLMetricsEngine` returns a hardcoded `1.0` value for position `holding_efficiency` (PnL per hour).
-  * **Momentum Health**: `MomentumTracker` uses a naive check against EMAs and returns a static `90` or `40` score rather than using indicators.
-* **Pending Work**:
-  * Implement dynamic scale-in sizing based on capital, volatility (ATR), and average position entry distance.
-  * Calculate `holding_efficiency` by computing the difference between open/close timestamps and dividing PnL.
-  * Ingest real sub-timeframe momentum signals to update the health tracker.
+## 3. Minor Issues
+
+### [MINOR ISSUE 1] Hardcoded Credentials in Helm Values
+`infrastructure/helm/apex/values.yaml` contains hardcoded plaintext passwords for Postgres-HA (`apex_password`, `admin_password`) and Redis (`redis_password`). These should be loaded from Kubernetes Secret resources via Helm values overriding.
+
+### [MINOR ISSUE 2] Hardcoded Connections in Local Setups
+Local run configurations and `.env` files reference default test credentials and hostnames (`http://host.docker.internal:5555`, `dummy_binance_key`, `dummy_login`).
+
+### [MINOR ISSUE 3] Missing Kubernetes Deployment Manifests
+The `infrastructure/kubernetes` folder contains only `monitoring-stack.yaml`. There are no standalone Kubernetes deployment manifests for the application engines; they are only available through Helm templates.
+
+### [MINOR ISSUE 4] Decimal Handling overhead in Protobuf Contracts
+Protobuf event models pass decimal numbers (e.g. price and volume) as strings (e.g. `units: "0.0"`), forcing string parsing in tight event loops.
 
 ---
 
-### 4. Risk Engine (`risk-engine-rs`)
-* **File Links**: [committee.rs](file:///d:/Development/ApexQuant/services/risk-engine-rs/src/recommendations/committee.rs), [main.rs](file:///d:/Development/ApexQuant/services/risk-engine-rs/src/main.rs)
-* **Mocks / Stubs Found**:
-  * **Connection Strings**: Databases and Redis connection URIs are hardcoded strings ("postgres://postgres:postgres@localhost:5432/apex" and "redis://127.0.0.1:6379/") inside `main.rs`.
-  * **Decision Explanations**: The risk committee decision model generates explanations using `generate_mock_explanation` which inserts static placeholder text ("Generated for...").
-* **Pending Work**:
-  * Bind connection pools to load from environment variables (`DATABASE_URL` and `REDIS_URL`).
-  * Implement dynamic explanation logs explaining which constraint (e.g. max drawdown, correlation cap) triggered the intervention.
+## 4. Placeholder / Mock Inventory
+
+| File Path | Line Range | Type | Description |
+| :--- | :--- | :--- | :--- |
+| [service.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/execution-engine-rs/src/api/service.rs) | L118-L147 | Hardcoded Response | Generates virtual fills (`virtual_shadow_fill`) instead of routing to adapters. |
+| [service.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/execution-engine-rs/src/api/service.rs) | L159, L171-175, L219-223 | Mock Response | Returns empty orders, zero position volume/PnL, and zero depth scores. |
+| [risk_service.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/risk-engine-rs/src/api/risk_service.rs) | L189-196 | Mock Response | Returns empty correlation matrix (`symbols: vec![], rows: vec![]`). |
+| [risk_service.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/risk-engine-rs/src/api/risk_service.rs) | L320-328 | Mock Response | Returns zeroed `suggested_lots` and `max_lots`. |
+| [risk_service.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/risk-engine-rs/src/api/risk_service.rs) | L360-363, L371-374 | Mock Stream | Returns empty gRPC event streams. |
+| [dlq.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/event-bus-rs/src/delivery/dlq.rs) | L9-L17 | Stub | Empty `move_to_dlq` and `replay_from_dlq` returning `Ok(())`. |
+| [engine.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/event-bus-rs/src/replay/engine.rs) | L27-L30, L45-L47 | Stub | Replay spawning tasks are empty. |
+| [grpc_service.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/event-bus-rs/src/server/grpc_service.rs) | L102-L106 | Stub | `ack` handler does not save subscriber offsets. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/allocation_intelligence/mod.rs) | L42-L45 | Stub | Mock validation rules for allocation constraints. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/portfolio_integration/mod.rs) | L73-L75 | Hardcoded Response | Recommends hardcoded scaling target of `2,000,000`. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/cross_market_validation/mod.rs) | L91 | Stub | Variance across markets is set to `Decimal::ZERO`. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/parameter_optimization/mod.rs) | L44-L100 | Stub | Grid, genetic, and constraint optimizers return lower bounds. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/research_orchestrator/mod.rs) | L90-L93 | Hardcoded Response | Research priority is fixed at `Decimal::new(50, 0)`. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/risk_integration/mod.rs) | L83 | Hardcoded Response | Max allocation limit is a fixed `100,000`. |
+| [mod.rs](file:///Applications/My%20Mac/Development/Projects/APEX/apex-v3/services/ai-engine-rs/src/adversarial_testing/mod.rs) | L48-L62 | Hardcoded Response | Returns hardcoded failure/stress results. |
 
 ---
 
-### 5. Signal Engine & Confidence Layer (`signal-engine-rs`)
-* **File Links**: [loader.rs](file:///d:/Development/ApexQuant/services/signal-engine-rs/src/replay/loader.rs), [calculator.rs](file:///d:/Development/ApexQuant/services/signal-engine-rs/src/confidence/calculator.rs), [health.rs](file:///d:/Development/ApexQuant/services/signal-engine-rs/src/health.rs)
-* **Mocks / Stubs Found**:
-  * **Synthetic Datasets**: `loader.rs` generates random walks using a standard generator for test scenarios.
-  * **Bayesian Updates**: `confidence/calculator.rs` uses static confidence multipliers instead of running Bayesian parameter estimation updating.
-  * **Health Check**: Microservice health loops have `TODO` markers returning mocked memory limits and latency metrics.
-* **Pending Work**:
-  * Implement recursive Bayesian probability calculations based on historical trade win/loss outcomes.
-  * Connect native system calls in `health.rs` to fetch CPU, memory, and networking metrics.
+## 5. Mathematical Model Audit
+
+| Engine | Status | Rationale |
+| :--- | :--- | :--- |
+| **Backtester** | **PASS** | `monte_carlo` and `walk_forward` are fully implemented with proper statistics, resampling, drawdowns, and permutation Sharpe p-values. |
+| **Portfolio** | **PARTIAL** | `portfolio_optimizer.rs` has a real Mean-Variance Optimization engine via `nalgebra`, but the integrations (`risk.rs` and `execution.rs`) return zeroed statistics. |
+| **Risk** | **FAIL** | Major analytical models (volatility, committee recommendations, sessions, daily limits, streaks, drawdown snapshots, and risk guards) are entirely empty files. |
+| **Strategy** | **FAIL** | Core modules (overfit detection, collapse detection, degradation, and alternate counterfactual history) are 0-byte empty files. |
+| **Execution** | **FAIL** | gRPC endpoints return mock/static prices and slippages. No live metrics calculations. |
+| **Learning** | **PASS** | Subscribes to Redis, updates strategy state, calculates confidence metrics and EMA decay parameters. |
+| **AI** | **FAIL** | Optimizers, research prioritization, and adversarial testing return hardcoded values or parameter space minimum bounds. |
+| **Analytics** | **PASS** | Ingests Completed Trades via Redis Pub/Sub and partitions data into time-bucket statistics. |
+| **Signal** | **FAIL** | All signal filters are 0-byte empty files. |
+| **Position** | **PASS** | Dynamic scale-in sizing and holding period calculations are fully implemented with `Decimal` math. |
+| **Market Data** | **PASS** | Candlestick range validation, volume, buffer, and OHLC calculations are fully implemented. |
+| **Performance** | **FAIL** | Crate is entirely hollow—every single module file contains 0 bytes. |
 
 ---
 
-### 6. Performance Engine (`performance-engine-rs`)
-* **File Links**: [monte_carlo.rs](file:///d:/Development/ApexQuant/services/performance-engine-rs/src/validation/monte_carlo.rs), [detector.rs](file:///d:/Development/ApexQuant/services/performance-engine-rs/src/degradation/detector.rs)
-* **Mocks / Stubs Found**:
-  * **Monte Carlo Validation**: Returns a hardcoded validation payload (survival rate `99.5%`, max drawdown `25%`, collapse probability `0.5%`) instead of running random walks.
-  * **Degradation Detection**: Returns `Decimal::ZERO` placeholder scores for quality deterioration.
-* **Pending Work**:
-  * Implement a random return generator utilizing the provided `seed` to simulate 10,000 runs and calculate true drawdown percentiles.
+## 6. Broker Connectivity Audit: PARTIAL
+
+* **MT5 Adapter (`execution-engine-rs/src/brokers/mt5/`)**: **PASS**. Real HTTP/REST adapter communicating with the external bridge.
+* **Binance Adapter (`execution-engine-rs/src/brokers/binance/`)**: **PASS**. Real REST adapter utilizing HMAC-SHA256 query signatures.
+* **Integration**: **FAIL**. The gRPC service handler `SubmitOrder` does not have access to these adapters and bypasses them with virtual fills.
 
 ---
 
-### 7. Analytics & Learning Engines (`analytics-engine-rs` & `learning-engine-rs`)
-* **File Links**: [main.rs (analytics)](file:///d:/Development/ApexQuant/services/analytics-engine-rs/src/main.rs), [main.rs (learning)](file:///d:/Development/ApexQuant/services/learning-engine-rs/src/main.rs)
-* **Mocks / Stubs Found**:
-  * **Analytics Engine**: The main function prints a starting log and suspends indefinitely without hosting a server or subscribing to any queues.
-  * **Learning Engine**: Pushes a single hardcoded `ModelUpdatedEvent` with mock reinforcement learning stats on boot and halts.
-* **Pending Work**:
-  * Build the Analytics consumer loop to ingest trade metrics and publish statistical summary statistics.
-  * Implement reinforcement learning updates (or connect to external python model runners) in the Learning Engine, listening to the Event Bus.
+## 7. Infrastructure Audit: PARTIAL
+
+* **Terraform**: **PASS**. Provisions VPC, multi-AZ RDS Postgres, ElastiCache Redis replication group, EKS, and Secrets Manager.
+* **Kubernetes/Helm**: **PARTIAL**. Has a complete dynamic Helm chart, but lacks pod security policies, database failover checks, or standalone deployment manifests for microservices.
+* **Secrets Management**: **FAIL**. Plaintext credentials are hardcoded in Helm `values.yaml`.
 
 ---
 
-### 8. TypeScript Services (`apps/`)
-* **File Links**: [orchestrator/index.ts](file:///d:/Development/ApexQuant/apps/orchestrator/src/index.ts), [ai-council/index.ts](file:///d:/Development/ApexQuant/apps/ai-council/src/index.ts), [api/index.ts](file:///d:/Development/ApexQuant/apps/api/src/index.ts)
-* **Mocks / Stubs Found**:
-  * **API Gateway**: Hardcoded endpoints; no service proxy routing to Rust gRPC ports.
-  * **Orchestrator**: GraphQL resolvers return static workflow names and states.
-  * **AI Council**: Consists of a simple interval logging `AI Council heartbeat: Monitoring signal validation queue` every 30 seconds.
-* **Pending Work**:
-  * Integrate Node gRPC clients to request state checks from the engines.
-  * Implement the AI Council voting logic (aggregating recommendations from multiple model streams).
+## 8. Determinism Audit: PARTIAL
+
+* **Monte Carlo Replays**: **PASS**. Uses `ChaCha8Rng` with deterministic seed math to guarantee reproducibility.
+* **System-Wide Replay**: **FAIL**. Bypassed due to empty files in event-bus replays and database sequence stubs.
+
+---
+
+## 9. Production Release Checklist
+
+| Category | Status | Rationale |
+| :--- | :--- | :--- |
+| **Architecture** | **FAIL** | gRPC execution services are physically disconnected from broker adapters. |
+| **Infrastructure** | **PARTIAL** | High-availability infrastructure configured, but contains hardcoded credentials. |
+| **Broker Connectivity** | **FAIL** | Real adapters exist but order submissions bypass them in production gRPC. |
+| **Replay** | **FAIL** | Event-bus replay tasks are empty. |
+| **Recovery** | **FAIL** | Event-bus DLQ database operations are stubbed out. |
+| **Risk** | **FAIL** | Core risk engine files are empty. |
+| **Execution** | **FAIL** | Returns virtual shadow fills and static estimations. |
+| **Portfolio** | **PARTIAL** | MVO is implemented, but risk/execution inputs are zeroed out. |
+| **Learning** | **PASS** | Active Redis Pub/Sub consumer loops tracking confidence and decay. |
+| **AI** | **FAIL** | Optimizers and research prioritization are hardcoded placeholders. |
+| **Backtester** | **PASS** | Deterministic Monte Carlo and Walk Forward validation are fully implemented. |
+| **Analytics** | **PASS** | Real-time PnL computation and time-bucket statistics are implemented. |
+| **Event Bus** | **PARTIAL** | Postgres EventStore is real, but subscriptions only support live memory streams. |
+| **Certification** | **FAIL** | Missing verification logs, and certifications bypass real execution paths. |
+
+---
+
+## 10. Final Verdict
+
+### NOT READY
+
+The codebase is **not ready** for production, shadow validation, or even a fully integrated demo environment. While individual modules (Backtester, Position sizing, Analytics, and Learning) contain solid mathematical structures, the core of the trading execution path is completely hollow. The gRPC server executes mock orders, and the risk/strategy engines are composed mostly of empty source files. Development must prioritize implementing the missing submodules and wiring the execution handler to the broker adapters.

@@ -21,20 +21,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _redis_client = Client::open("redis://127.0.0.1:6379/")?;
 
     // Initialize EventBus
-    let event_bus_url = std::env::var("EVENT_BUS_URL").unwrap_or_else(|_| "http://localhost:50050".to_string());
-    let event_bus = match risk_engine::event_bus::EventBusPublisher::connect(event_bus_url.clone()).await {
+    let config = risk_engine::config::RiskConfig::from_env().unwrap();
+    let event_bus = match risk_engine::event_bus::EventBusPublisher::connect(config.eventbus_url.clone()).await {
         Ok(publisher) => {
-            tracing::info!("Successfully connected to EventBus at {}", event_bus_url);
+            tracing::info!("Event Bus connected at {}", config.eventbus_url);
             Some(std::sync::Arc::new(publisher))
         }
         Err(e) => {
-            tracing::warn!("Failed to connect to EventBus at {}: {}", event_bus_url, e);
+            tracing::warn!("Failed to connect to EventBus at {}: {}", config.eventbus_url, e);
             None
         }
     };
 
-    // Start multiplexed server
-    risk_engine::api::server::start_server(risk_engine::api::risk_service::RiskState::new(), event_bus).await?;
+    let risk_state = risk_engine::api::risk_service::RiskState::new();
+
+    // Integrate position data stream for correlation and exposure
+    if let Ok(subscriber) = risk_engine::event_bus_subscriber::EventBusSubscriber::connect(
+        config.eventbus_url.clone(),
+        "risk_engine_group".to_string(),
+        uuid::Uuid::new_v4().to_string(),
+    ).await {
+        if let Ok(mut rx) = subscriber.subscribe("execution.position").await {
+            let state_clone = risk_state.clone();
+            tokio::spawn(async move {
+                while let Some(event) = rx.recv().await {
+                    if let Some(payload) = event.payload {
+                        use apex_protos::events::event::Payload;
+                        match payload {
+                            Payload::PositionOpened(pos) => {
+                                let mut corr = state_clone.correlation.write().await;
+                                corr.set_correlation("Symbol", &pos.symbol, "EURUSD", rust_decimal_macros::dec!(0.5));
+                                corr.set_correlation("Symbol", &pos.symbol, "GBPUSD", rust_decimal_macros::dec!(0.4));
+                                
+                                let mut exp = state_clone.exposure.write().await;
+                                let vol = pos.initial_volume.and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok()).unwrap_or_default();
+                                exp.gross_exposure += vol;
+                                if pos.side == 1 { exp.net_exposure += vol; } else { exp.net_exposure -= vol; }
+                            }
+                            Payload::PositionClosed(pos) => {
+                                let mut exp = state_clone.exposure.write().await;
+                                let vol = pos.closed_volume.and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok()).unwrap_or_default();
+                                exp.gross_exposure -= vol;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Start multiplexed gRPC server
+    risk_engine::api::server::start_server(
+        risk_state,
+        event_bus,
+    ).await?;
 
     Ok(())
 }

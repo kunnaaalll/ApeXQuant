@@ -21,7 +21,6 @@ pub mod execution_risk;
 pub mod shadow;
 pub mod storage;
 
-pub mod broker_connectivity;
 pub mod connection_supervisor;
 pub mod order_reconciliation;
 pub mod position_recovery;

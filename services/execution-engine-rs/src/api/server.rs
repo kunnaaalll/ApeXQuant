@@ -12,7 +12,14 @@ use crate::api::readiness::readiness_handler;
 use crate::api::middleware::build_middleware_stack;
 use crate::api::auth::auth_interceptor;
 
-pub async fn start_api_servers(grpc_port: u16, http_port: u16, event_bus: Option<Arc<EventBusPublisher>>) -> (JoinHandle<Result<(), tonic::transport::Error>>, JoinHandle<Result<(), std::io::Error>>) {
+pub async fn start_api_servers(
+    grpc_port: u16,
+    http_port: u16,
+    event_bus: Option<Arc<EventBusPublisher>>,
+    mt5_adapter: Arc<crate::brokers::mt5::adapter::Mt5Adapter>,
+    binance_adapter: Arc<crate::brokers::binance::adapter::BinanceAdapter>,
+    pg_store: Option<Arc<crate::storage::pg_store::PgStore>>,
+) -> (JoinHandle<Result<(), tonic::transport::Error>>, JoinHandle<Result<(), std::io::Error>>) {
     let axum_app = Router::new()
         .route("/health", get(health_handler))
         .route("/ready", get(readiness_handler));
@@ -24,7 +31,11 @@ pub async fn start_api_servers(grpc_port: u16, http_port: u16, event_bus: Option
     });
 
     let grpc_addr = SocketAddr::from(([0, 0, 0, 0], grpc_port));
-    let execution_service = ExecutionServiceServer::with_interceptor(ExecutionServiceImpl::new(event_bus), auth_interceptor);
+    let execution_service = ExecutionServiceServer::with_interceptor(
+        ExecutionServiceImpl::new(event_bus, mt5_adapter, binance_adapter, pg_store),
+        auth_interceptor,
+    );
+
     
     let grpc_handle = tokio::spawn(async move {
         TonicServer::builder()

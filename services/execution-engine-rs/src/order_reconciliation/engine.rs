@@ -1,4 +1,4 @@
-use crate::broker_connectivity::OrderState;
+use crate::brokers::broker::OrderState;
 use super::detector::{MismatchDetector, ReconciliationIssue};
 
 #[derive(Debug, Clone, PartialEq)]

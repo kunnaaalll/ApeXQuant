@@ -1,23 +1,25 @@
-use serde::{Deserialize, Serialize};
+use tonic::transport::Channel;
+use apex_protos::analytics::analytics_engine_client::AnalyticsEngineClient;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MarketRegimeEvent {
-    pub symbol: String,
-    pub regime: String,
-    pub confidence: f32,
-    pub timestamp: i64,
+pub struct MarketDataClient {
+    pub client: Option<AnalyticsEngineClient<Channel>>,
 }
 
-pub struct MarketDataClient;
+impl MarketDataClient {
+    pub async fn connect(url: String) -> Result<Self, String> {
+        let client = AnalyticsEngineClient::connect(url)
+            .await
+            .map_err(|e| format!("Failed to connect to market data service: {}", e))?;
+        Ok(Self { client: Some(client) })
+    }
+
+    pub fn new() -> Self {
+        Self { client: None }
+    }
+}
 
 impl Default for MarketDataClient {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl MarketDataClient {
-    pub fn new() -> Self {
-        Self
     }
 }

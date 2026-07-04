@@ -57,18 +57,43 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    // Step 5: Start reconciliation and background loops
+    // Step 5: Initialize PgStore
+    info!("Connecting to PostgreSQL database...");
+    let pg_pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.postgres_url)
+        .await;
+
+    let pg_store = match pg_pool {
+        Ok(pool) => {
+            info!("PostgreSQL connected successfully");
+            Some(Arc::new(execution_engine::storage::pg_store::PgStore::new(pool)))
+        }
+        Err(e) => {
+            error!("PostgreSQL connection failed: {:?}", e);
+            None
+        }
+    };
+
+    // Step 6: Start reconciliation and background loops
     let supervisor = BrokerSupervisor::new(Arc::clone(&mt5_adapter), Arc::clone(&binance_adapter));
     supervisor.spawn_heartbeat_loop(config.heartbeat_interval_secs);
     supervisor.spawn_health_loop(config.health_check_interval_secs);
     supervisor.spawn_reconciliation_loop(config.reconciliation_interval_secs);
 
-    // Step 6: Start gRPC server
+    // Step 7: Start gRPC server
     info!(
         "Starting API servers (gRPC: {}, HTTP: {})...",
         config.grpc_port, config.http_port
     );
-    let (grpc_handle, http_handle) = start_api_servers(config.grpc_port, config.http_port, event_bus.clone()).await;
+    let (grpc_handle, http_handle) = start_api_servers(
+        config.grpc_port,
+        config.http_port,
+        event_bus.clone(),
+        Arc::clone(&mt5_adapter),
+        Arc::clone(&binance_adapter),
+        pg_store,
+    ).await;
 
     // Step 7: Publish readiness
     readiness::set_ready(true);

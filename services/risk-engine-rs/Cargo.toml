@@ -28,7 +28,9 @@ dashmap.workspace = true
 metrics.workspace = true
 axum = "0.6"
 metrics-exporter-prometheus.workspace = true
+prometheus = { version = "0.13", features = ["process"] }
 chrono = { version = "0.4", features = ["serde"] }
+
 
 # Local dependencies
 apex-protos = { version = "3.0.0", path = "../../shared/apex-protos" }

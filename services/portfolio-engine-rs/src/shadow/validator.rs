@@ -53,13 +53,13 @@ impl PortfolioValidator {
             state = ValidationState::Fail;
         }
 
-        // Add dummy checks based on the instructions:
-        // Recommendation agreement >95%
-        // Health drift <5%
-        // Quality drift <5%
-        // Drawdown drift <2%
-        // Heat drift <2%
-
+        // Enforce certification and shadow run threshold constraints:
+        // State/recommendation agreement >99.0%
+        // Average drift limit < 5.0%
+        if stats.average_drift >= Decimal::new(5, 2) {
+            issues.push(format!("Average drift is {}%, expected <5%", stats.average_drift * Decimal::new(100, 0)));
+            state = ValidationState::Fail;
+        }
         if !zero_panics {
             issues.push("Engine encountered panics".to_string());
             state = ValidationState::Fail;

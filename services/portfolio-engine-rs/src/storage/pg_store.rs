@@ -15,6 +15,44 @@ impl PostgresPortfolioStore {
         Self { pool }
     }
 
+    /// Initialize tables in PostgreSQL
+    pub async fn init_tables(&self) -> Result<()> {
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS portfolio_events (
+                id UUID PRIMARY KEY,
+                aggregate_id VARCHAR(255) NOT NULL,
+                version BIGINT NOT NULL,
+                event_type VARCHAR(100) NOT NULL,
+                payload JSONB NOT NULL,
+                timestamp TIMESTAMPTZ NOT NULL,
+                metadata JSONB,
+                UNIQUE (aggregate_id, version)
+            );
+            "#
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS portfolio_snapshots (
+                id UUID PRIMARY KEY,
+                aggregate_id VARCHAR(255) NOT NULL,
+                version BIGINT NOT NULL,
+                snapshot_type VARCHAR(100) NOT NULL,
+                frequency VARCHAR(50) NOT NULL,
+                payload JSONB NOT NULL,
+                timestamp TIMESTAMPTZ NOT NULL
+            );
+            "#
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
     /// Begin a new transaction for atomicity
     pub async fn begin_transaction(&self) -> Result<Transaction<'_, Postgres>> {
         let tx = self.pool.begin().await?;

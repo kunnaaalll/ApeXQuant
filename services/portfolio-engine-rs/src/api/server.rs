@@ -4,13 +4,22 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use tonic::transport::Server as TonicServer;
 use tracing::{info, error};
+use sqlx::PgPool;
 
 use crate::api::portfolio_service::PortfolioServiceImpl;
 use crate::health::api::{health_routes, HealthState};
 use crate::interceptors::logging::logging_interceptor;
 use crate::event_bus::EventBusPublisher;
+use crate::portfolio::registry::PortfolioRegistry;
+use crate::storage::repository::PortfolioRepository;
 
-pub async fn start_server(addr: SocketAddr, event_bus: Option<Arc<EventBusPublisher>>) -> anyhow::Result<()> {
+pub async fn start_server(
+    addr: SocketAddr,
+    event_bus: Option<Arc<EventBusPublisher>>,
+    pool: PgPool,
+    registry: PortfolioRegistry,
+    repository: PortfolioRepository,
+) -> anyhow::Result<()> {
     let health_state = Arc::new(HealthState {
         active_tasks: AtomicUsize::new(0),
     });
@@ -19,7 +28,7 @@ pub async fn start_server(addr: SocketAddr, event_bus: Option<Arc<EventBusPublis
 
     let grpc_router = TonicServer::builder()
         .add_service(apex_protos::portfolio::portfolio_engine_server::PortfolioEngineServer::with_interceptor(
-            PortfolioServiceImpl::new(event_bus),
+            PortfolioServiceImpl::new(event_bus, pool, registry, repository),
             logging_interceptor,
         ))
         .into_router();

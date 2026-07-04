@@ -462,5 +462,197 @@ def get_live_signals():
         
     return signals
 
+
+# ============================================================
+# Phase 12 — Additional endpoints
+# ============================================================
+
+class TradeRecord(BaseModel):
+    ticket: str
+    symbol: str
+    side: str
+    volume: float
+    entry_price: float
+    close_price: float
+    pnl: float
+    swap: float
+    commission: float
+    open_time: int
+    close_time: int
+    duration_secs: int
+
+@app.get("/history", response_model=List[TradeRecord])
+def get_trade_history(limit: int = 1000):
+    """Return closed trades from MT5 history. Required for Stage 7 broker reconciliation."""
+    ensure_initialized()
+    import datetime
+    # Fetch last 30 days of history
+    now_dt = datetime.datetime.now()
+    from_dt = now_dt - datetime.timedelta(days=30)
+    deals = mt5.history_deals_get(from_dt, now_dt)
+    if deals is None:
+        return []
+
+    result = []
+    # MT5 deals: each fill is a deal. We pair IN/OUT deals by position_id.
+    # For simplicity we return each closed OUT deal as a trade record.
+    for d in deals:
+        if d.entry != mt5.DEAL_ENTRY_OUT:
+            continue
+        side = "Buy" if d.type == mt5.DEAL_TYPE_SELL else "Sell"  # OUT deal type is opposite of position side
+        result.append(TradeRecord(
+            ticket=str(d.ticket),
+            symbol=d.symbol,
+            side=side,
+            volume=float(d.volume),
+            entry_price=float(d.price),
+            close_price=float(d.price),
+            pnl=float(d.profit),
+            swap=float(d.swap),
+            commission=float(d.commission),
+            open_time=int(d.time),
+            close_time=int(d.time),
+            duration_secs=0
+        ))
+        if len(result) >= limit:
+            break
+
+    return result
+
+
+@app.get("/health/full")
+def full_health_check():
+    """Comprehensive health check — terminal info, connection state, account snapshot. Stage 1 & Stage 7."""
+    try:
+        ensure_initialized()
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "mt5_initialized": False,
+            "terminal_info": None,
+            "account_info": None
+        }
+
+    terminal_info = mt5.terminal_info()
+    account_info = mt5.account_info()
+
+    terminal_dict = None
+    if terminal_info is not None:
+        terminal_dict = {
+            "build": terminal_info.build,
+            "connected": terminal_info.connected,
+            "trade_allowed": terminal_info.trade_allowed,
+            "community_account": terminal_info.community_account,
+            "dlls_allowed": terminal_info.dlls_allowed,
+            "retransmission": terminal_info.retransmission,
+        }
+
+    account_dict = None
+    if account_info is not None:
+        account_dict = {
+            "login": account_info.login,
+            "server": account_info.server,
+            "balance": float(account_info.balance),
+            "equity": float(account_info.equity),
+            "margin": float(account_info.margin),
+            "margin_free": float(account_info.margin_free),
+            "margin_level": float(account_info.margin_level),
+            "leverage": int(account_info.leverage),
+            "currency": account_info.currency,
+            "trade_mode": account_info.trade_mode,  # 0=real, 1=demo, 2=contest
+        }
+
+    overall = "healthy" if (terminal_info is not None and terminal_info.connected) else "degraded"
+
+    return {
+        "status": overall,
+        "mt5_initialized": True,
+        "terminal_info": terminal_dict,
+        "account_info": account_dict,
+        "last_error": str(mt5.last_error())
+    }
+
+
+class PendingOrderModifyRequest(BaseModel):
+    price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    volume: Optional[float] = None
+
+
+@app.put("/orders/{ticket}")
+def modify_pending_order(ticket: str, req: PendingOrderModifyRequest):
+    """Modify a pending (limit/stop) order's price, SL, TP. Stage 3 execution validation."""
+    ensure_initialized()
+    raw_orders = mt5.orders_get(ticket=int(ticket))
+    if not raw_orders or len(raw_orders) == 0:
+        raise HTTPException(status_code=404, detail=f"Pending order {ticket} not found")
+
+    order = raw_orders[0]
+
+    trade_req = {
+        "action": mt5.TRADE_ACTION_MODIFY,
+        "order": int(ticket),
+        "price": float(req.price) if req.price is not None else float(order.price_open),
+        "sl": float(req.stop_loss) if req.stop_loss is not None else float(order.sl),
+        "tp": float(req.take_profit) if req.take_profit is not None else float(order.tp),
+        "type_time": mt5.ORDER_TIME_GTC,
+    }
+    if req.volume is not None:
+        trade_req["volume"] = float(req.volume)
+
+    result = mt5.order_send(trade_req)
+    if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+        err_msg = mt5.last_error() if result is None else f"Retcode: {result.retcode}, Comment: {result.comment}"
+        raise HTTPException(status_code=500, detail=f"Order modification failed: {err_msg}")
+
+    return {"status": "modified", "ticket": ticket}
+
+
+@app.delete("/orders/{ticket}")
+def cancel_pending_order(ticket: str):
+    """Cancel a pending (limit/stop) order by ticket. Stage 3 execution validation."""
+    ensure_initialized()
+    raw_orders = mt5.orders_get(ticket=int(ticket))
+    if not raw_orders or len(raw_orders) == 0:
+        raise HTTPException(status_code=404, detail=f"Pending order {ticket} not found")
+
+    trade_req = {
+        "action": mt5.TRADE_ACTION_REMOVE,
+        "order": int(ticket),
+    }
+
+    result = mt5.order_send(trade_req)
+    if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+        err_msg = mt5.last_error() if result is None else f"Retcode: {result.retcode}, Comment: {result.comment}"
+        raise HTTPException(status_code=500, detail=f"Order cancellation failed: {err_msg}")
+
+    return {"status": "cancelled", "ticket": ticket}
+
+
+@app.get("/stats")
+def get_bridge_stats():
+    """Return aggregate stats for Phase 12 monitoring dashboard."""
+    ensure_initialized()
+    positions = mt5.positions_get() or []
+    orders = mt5.orders_get() or []
+    account = mt5.account_info()
+    terminal = mt5.terminal_info()
+    return {
+        "open_positions": len(positions),
+        "pending_orders": len(orders),
+        "balance": float(account.balance) if account else None,
+        "equity": float(account.equity) if account else None,
+        "margin": float(account.margin) if account else None,
+        "free_margin": float(account.margin_free) if account else None,
+        "margin_level": float(account.margin_level) if account else None,
+        "connected": terminal.connected if terminal else False,
+        "trade_allowed": terminal.trade_allowed if terminal else False,
+        "floating_pnl": sum(float(p.profit) for p in positions),
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

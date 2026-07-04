@@ -175,4 +175,99 @@ impl EventStore {
         
         Ok(row)
     }
+
+    pub async fn load_events_by_topic(&self, topics: &[String], after_time: DateTime<Utc>) -> Result<Vec<Event>> {
+        use sqlx::Row;
+        
+        let records = sqlx::query(
+            r#"
+            SELECT payload
+            FROM events
+            WHERE topic = ANY($1) AND occurred_at > $2
+            ORDER BY occurred_at ASC
+            "#
+        )
+        .bind(topics)
+        .bind(after_time)
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to load events by topic")?;
+
+        let mut events = Vec::with_capacity(records.len());
+        for r in records {
+            let payload: Vec<u8> = r.get("payload");
+            let event = prost::Message::decode(&payload[..])?;
+            events.push(event);
+        }
+
+        Ok(events)
+    }
+
+    pub async fn get_event(&self, event_id: uuid::Uuid) -> Result<Option<Event>> {
+        use sqlx::Row;
+        let row: Option<Vec<u8>> = sqlx::query_scalar(
+            "SELECT payload FROM events WHERE id = $1"
+        )
+        .bind(event_id)
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to get event")?;
+
+        match row {
+            Some(payload) => {
+                let event = prost::Message::decode(&payload[..])?;
+                Ok(Some(event))
+            }
+            None => Ok(None),
+        }
+    }
+
+    pub async fn move_to_dlq(
+        &self,
+        consumer_group: &str,
+        topic: &str,
+        event_id: Option<uuid::Uuid>,
+        payload: &[u8],
+        reason: &str,
+        error_details: &str,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO dead_letter_queue (id, event_id, consumer_group, topic, payload, reason, error_details)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#
+        )
+        .bind(uuid::Uuid::new_v4())
+        .bind(event_id)
+        .bind(consumer_group)
+        .bind(topic)
+        .bind(payload)
+        .bind(reason)
+        .bind(error_details)
+        .execute(&self.pool)
+        .await
+        .context("Failed to insert into DLQ")?;
+        Ok(())
+    }
+
+    /// Fetch a single DLQ entry payload by ID, for replay
+    pub async fn fetch_from_dlq(&self, dlq_id: uuid::Uuid) -> Result<Option<(Vec<u8>, String)>> {
+        use sqlx::Row;
+        let row = sqlx::query(
+            "SELECT payload, topic FROM dead_letter_queue WHERE id = $1 LIMIT 1"
+        )
+        .bind(dlq_id)
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to fetch DLQ entry")?;
+
+        Ok(row.map(|r| {
+            let payload: Vec<u8> = r.get("payload");
+            let topic: String = r.get("topic");
+            (payload, topic)
+        }))
+    }
 }
+
+
+

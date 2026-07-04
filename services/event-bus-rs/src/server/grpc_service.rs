@@ -71,11 +71,35 @@ impl EventBusService for EventBusServiceImpl {
         let (tx, rx) = mpsc::channel(100);
         let mut rx_broadcast = self.broadcaster.subscribe();
         
+        let consumer_group = req.consumer_group.clone();
         let topics = req.topics.clone();
+        let store = self.store.clone();
+        
+        let mut start_time = Utc::now();
+        
+        if !consumer_group.is_empty() {
+            let mut min_time: Option<sqlx::types::chrono::DateTime<Utc>> = None;
+            for topic in &topics {
+                if let Ok(Some((_, occurred_at))) = store.get_subscriber_offset(&consumer_group, topic).await {
+                    min_time = Some(match min_time {
+                        Some(t) => if occurred_at < t { occurred_at } else { t },
+                        None => occurred_at,
+                    });
+                }
+            }
+            if let Some(t) = min_time {
+                start_time = t;
+            } else {
+                start_time = calculate_start_time(&req.start_from);
+            }
+        } else {
+            start_time = calculate_start_time(&req.start_from);
+        }
         
         tokio::spawn(async move {
-            while let Ok(event) = rx_broadcast.recv().await {
-                if topics.contains(&event.topic) {
+            // 1. Replay historical events
+            if let Ok(historical_events) = store.load_events_by_topic(&topics, start_time).await {
+                for event in historical_events {
                     let batch = EventBatch {
                         events: vec![event],
                         next_position: String::new(),
@@ -83,7 +107,28 @@ impl EventBusService for EventBusServiceImpl {
                         total_available: 1,
                     };
                     if tx.send(Ok(batch)).await.is_err() {
-                        break;
+                        return;
+                    }
+                }
+            }
+
+            // 2. Stream live events
+            while let Ok(event) = rx_broadcast.recv().await {
+                if topics.contains(&event.topic) {
+                    let occurred_dt = event.occurred_at.as_ref()
+                        .map(|t| sqlx::types::chrono::DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default())
+                        .unwrap_or_else(|| Utc::now());
+                    
+                    if occurred_dt > start_time {
+                        let batch = EventBatch {
+                            events: vec![event],
+                            next_position: String::new(),
+                            has_more: false,
+                            total_available: 1,
+                        };
+                        if tx.send(Ok(batch)).await.is_err() {
+                            break;
+                        }
                     }
                 }
             }
@@ -97,22 +142,66 @@ impl EventBusService for EventBusServiceImpl {
         request: Request<AckRequest>,
     ) -> Result<Response<AckResponse>, Status> {
         let req = request.into_inner();
+        let consumer_group = req.consumer_group.clone();
+        
+        let mut acknowledged = 0;
+        let mut failed = 0;
+        let mut moved_to_dlq = 0;
 
-        // We assume req.event_ids are valid UUIDs that were successfully processed.
-        if let Some(last_id_str) = req.event_ids.last() {
-            if let Ok(last_id) = uuid::Uuid::from_str(last_id_str) {
-                // We'd update offset here. We need the topic and occurred_at
+        if !consumer_group.is_empty() {
+            // Process successful acknowledgments
+            for id_str in &req.event_ids {
+                if let Ok(event_id) = uuid::Uuid::from_str(id_str) {
+                    if let Ok(Some(event)) = self.store.get_event(event_id).await {
+                        let occurred_dt = event.occurred_at.as_ref()
+                            .map(|t| sqlx::types::chrono::DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default())
+                            .unwrap_or_else(|| Utc::now());
+                        
+                        if self.store.update_subscriber_offset(&consumer_group, &event.topic, event_id, occurred_dt).await.is_ok() {
+                            acknowledged += 1;
+                        } else {
+                            failed += 1;
+                        }
+                    } else {
+                        failed += 1;
+                    }
+                } else {
+                    failed += 1;
+                }
+            }
+
+            // Process failed messages -> send to DLQ
+            for entry in &req.failed {
+                if let Ok(event_id) = uuid::Uuid::from_str(&entry.event_id) {
+                    let mut payload_bytes = vec![];
+                    let mut topic = "unknown".to_string();
+                    if let Ok(Some(event)) = self.store.get_event(event_id).await {
+                        topic = event.topic.clone();
+                        let _ = prost::Message::encode(&event, &mut payload_bytes);
+                    }
+
+                    if self.store.move_to_dlq(
+                        &consumer_group,
+                        &topic,
+                        Some(event_id),
+                        &payload_bytes,
+                        &entry.reason,
+                        &entry.error.as_ref().map(|e| e.message.clone()).unwrap_or_default()
+                    ).await.is_ok() {
+                        moved_to_dlq += 1;
+                    }
+                }
             }
         }
-        
+
         Ok(Response::new(AckResponse {
             result: Some(apex_protos::common::Result {
                 ok: true,
                 error: None,
             }),
-            acknowledged: req.event_ids.len() as u32,
-            failed: req.failed.len() as u32,
-            moved_to_dlq: 0, // This could map to DLQ logic for req.failed
+            acknowledged,
+            failed,
+            moved_to_dlq,
         }))
     }
 
@@ -144,3 +233,29 @@ impl EventBusService for EventBusServiceImpl {
         }))
     }
 }
+
+fn calculate_start_time(pos: &Option<apex_protos::events::StreamPosition>) -> sqlx::types::chrono::DateTime<Utc> {
+    use apex_protos::events::StartPosition;
+    let from_enum = pos.as_ref()
+        .and_then(|p| p.position.as_ref())
+        .map(|p| match p {
+            apex_protos::events::stream_position::Position::From(val) => *val,
+            _ => 0,
+        })
+        .unwrap_or(0);
+
+    let now = Utc::now();
+    if from_enum == StartPosition::Earliest as i32 {
+        sqlx::types::chrono::DateTime::<Utc>::from_timestamp(0, 0).unwrap_or(now)
+    } else if from_enum == StartPosition::NowMinusHour as i32 {
+        now - chrono::Duration::hours(1)
+    } else if from_enum == StartPosition::NowMinusDay as i32 {
+        now - chrono::Duration::days(1)
+    } else if from_enum == StartPosition::NowMinusWeek as i32 {
+        now - chrono::Duration::weeks(1)
+    } else {
+        now
+    }
+}
+
+
