@@ -76,17 +76,25 @@ class SubmitResponse(BaseModel):
 
 # Helper to guarantee MT5 connection is active
 def ensure_initialized():
-    if not mt5.initialize():
-        # Try once more
+    login_id = os.getenv("MT5_LOGIN")
+    password = os.getenv("MT5_PASSWORD")
+    server = os.getenv("MT5_SERVER")
+    
+    if login_id and password and server:
+        if not mt5.initialize(login=int(login_id), password=password, server=server):
+            if not mt5.initialize(login=int(login_id), password=password, server=server):
+                raise HTTPException(status_code=503, detail=f"MT5 terminal connection & login failed: {mt5.last_error()}")
+    else:
         if not mt5.initialize():
-            raise HTTPException(status_code=503, detail=f"MT5 terminal connection failed: {mt5.last_error()}")
+            if not mt5.initialize():
+                raise HTTPException(status_code=503, detail=f"MT5 terminal connection failed: {mt5.last_error()}")
 
 @app.on_event("startup")
 def startup_event():
     print("MT5 Bridge Gateway booting up...")
     try:
         ensure_initialized()
-        print("MetaTrader 5 initialized successfully.")
+        print("MetaTrader 5 initialized and auto-logged in successfully.")
     except Exception as e:
         print(f"Warning: could not connect to MT5 during boot: {e}")
 
