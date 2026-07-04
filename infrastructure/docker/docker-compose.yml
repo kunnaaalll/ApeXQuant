@@ -118,6 +118,21 @@ services:
       - postgres
     restart: unless-stopped
 
+  mt5-bridge:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.mt5_wine
+    container_name: apex-mt5-bridge
+    ports:
+      - "8000:8000"
+    environment:
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER}
+    networks:
+      - apex-network
+    restart: unless-stopped
+
   # ==================== RUST SERVICES ====================
   # Event Bus must start first as other services depend on it
 
@@ -233,7 +248,7 @@ services:
       - SERVICE_NAME=execution-engine
       - SERVICE_PORT=8083
       - RUST_LOG=info,execution_engine=debug
-      - MT5_BRIDGE_URL=${MT5_BRIDGE_URL}
+      - MT5_BRIDGE_URL=http://mt5-bridge:8000
       - MT5_LOGIN=${MT5_LOGIN}
       - MT5_PASSWORD=${MT5_PASSWORD}
       - MT5_SERVER=${MT5_SERVER}

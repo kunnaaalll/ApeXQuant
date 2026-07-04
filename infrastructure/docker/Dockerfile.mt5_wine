@@ -1,0 +1,54 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV WINEARCH=win64
+ENV WINEPREFIX=/root/.wine
+ENV WINESYNC=1
+ENV PYTHON_VERSION=3.10.11
+
+# Install required system packages, Xvfb, and Wine
+RUN dpkg --add-architecture i386 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wine64 wine32 \
+        xvfb \
+        cabextract \
+        wget \
+        curl \
+        unzip \
+        gnupg \
+        ca-certificates \
+        winbind && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup Wine environment (creates default prefix)
+RUN xvfb-run -a wineboot --init && \
+    while pgrep wineserver > /dev/null; do sleep 1; done
+
+# Download and install Windows Python inside Wine
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-amd64.exe -O /tmp/python-installer.exe && \
+    xvfb-run -a wine /tmp/python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 && \
+    while pgrep wineserver > /dev/null; do sleep 1; done && \
+    rm /tmp/python-installer.exe
+
+# Upgrade pip and install MetaTrader5 and FastAPI requirements
+# Note: Path to Python might vary, usually C:\Program Files\Python310\python.exe
+RUN xvfb-run -a wine cmd /c "python -m pip install --upgrade pip" && \
+    xvfb-run -a wine cmd /c "python -m pip install MetaTrader5 fastapi uvicorn pydantic" && \
+    while pgrep wineserver > /dev/null; do sleep 1; done
+
+# Download MT5 installer (Note: MT5 setup downloads payload at runtime, so it requires internet on first run)
+RUN wget https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O /tmp/mt5setup.exe && \
+    xvfb-run -a wine /tmp/mt5setup.exe /auto && \
+    while pgrep wineserver > /dev/null; do sleep 1; done && \
+    rm /tmp/mt5setup.exe
+
+WORKDIR /app
+COPY scripts/mt5_bridge.py /app/mt5_bridge.py
+COPY scripts/mt5_bridge_entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/entrypoint.sh"]
