@@ -11,6 +11,7 @@ x-rust-service: &rust-defaults
     - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     - REDIS_URL=redis://redis:6379
     - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+    - EVENT_BUS_URL=http://event-bus:50050
   depends_on:
     redis:
       condition: service_healthy
@@ -34,6 +35,7 @@ x-typescript-service: &ts-defaults
     - NODE_ENV=production
     - LOG_LEVEL=info
     - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+    - EVENT_BUS_URL=http://event-bus:50050
   depends_on:
     redis:
       condition: service_healthy
