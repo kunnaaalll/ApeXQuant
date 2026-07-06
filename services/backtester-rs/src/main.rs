@@ -91,8 +91,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Walk-Forward validation: PASS (Regime stability index: {})", wf_result.passes_validation);
 
     info!("Checking overfitting risk via permutation trials...");
-    let param_points = vec![];
-    let trades = vec![];
+    let param_points = vec![
+        backtester::overfitting::ParameterPoint {
+            sharpe: Decimal::new(18, 1),
+            params_normalized: vec![Decimal::new(3, 1), Decimal::new(5, 1)],
+        },
+        backtester::overfitting::ParameterPoint {
+            sharpe: Decimal::new(12, 1),
+            params_normalized: vec![Decimal::new(5, 1), Decimal::new(8, 1)],
+        },
+    ];
+    let trades = vec![
+        backtester::overfitting::OATrade { pnl: Decimal::new(150, 2) },
+        backtester::overfitting::OATrade { pnl: Decimal::new(-50, 2) },
+        backtester::overfitting::OATrade { pnl: Decimal::new(300, 2) },
+        backtester::overfitting::OATrade { pnl: Decimal::new(-100, 2) },
+        backtester::overfitting::OATrade { pnl: Decimal::new(200, 2) },
+    ];
     let overfitting = OverfittingAnalyzer::analyze(&param_points, &trades, Decimal::new(15, 1), &[], 42)?;
     info!("Overfitting status: {:?}", overfitting.severity);
 
