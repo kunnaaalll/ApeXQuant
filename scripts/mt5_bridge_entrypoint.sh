@@ -28,7 +28,6 @@ else
     echo "Mount a pre-configured Wine prefix volume to skip this."
 fi
 
-echo "Starting FastAPI bridge (native Linux Python3)..."
-# The MetaTrader5 Python package connects to the MT5 terminal via localhost socket.
-# This runs as a native Linux process — no Wine needed for the bridge itself.
-exec python3 /app/mt5_bridge.py
+echo "Starting FastAPI bridge (Wine python.exe — MetaTrader5 requires Windows IPC)..."
+# MetaTrader5 is a Windows-only C extension — must run inside Wine alongside terminal64.exe
+exec wine 'C:\Python310\python.exe' /app/mt5_bridge.py
