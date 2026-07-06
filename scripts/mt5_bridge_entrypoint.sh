@@ -6,6 +6,7 @@ export WINEPREFIX="${WINEPREFIX:-/root/.mt5}"
 export DISPLAY=:99
 
 echo "Starting Xvfb..."
+rm -f /tmp/.X99-lock
 Xvfb :99 -screen 0 1024x768x16 &
 XVFB_PID=$!
 
