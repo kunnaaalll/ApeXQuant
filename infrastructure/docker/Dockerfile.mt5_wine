@@ -27,7 +27,7 @@ RUN xvfb-run -a sh -c "wineboot --init && wineserver -w"
 
 # Download and install Windows Python inside Wine
 RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-amd64.exe -O /tmp/python-installer.exe && \
-    xvfb-run -a sh -c "wine /tmp/python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 && wineserver -w" && \
+    (xvfb-run -a sh -c "wine /tmp/python-installer.exe /quiet InstallAllUsers=0 Include_launcher=0 PrependPath=1 Include_test=0 /log C:\\python_install.log && wineserver -w" || (cat /root/.wine/drive_c/python_install.log && false)) && \
     rm /tmp/python-installer.exe
 
 # Upgrade pip and install MetaTrader5 and FastAPI requirements
