@@ -18,7 +18,8 @@ RUN dpkg --add-architecture i386 && \
         bc wget curl ca-certificates gnupg \
         xvfb \
         winbind \
-        unzip && \
+        unzip \
+        cabextract && \
     # ── Add official WineHQ repo for Ubuntu 22.04 (jammy) ──────────────────
     mkdir -pm755 /etc/apt/keyrings && \
     wget -qO - https://dl.winehq.org/wine-builds/winehq.key \
@@ -39,6 +40,11 @@ RUN set -e; \
     echo "=== Initializing Wine ==="; \
     wineboot --init; \
     winecfg -v win10; \
+    \
+    echo "=== Installing native UCRT via winetricks ==="; \
+    wget -q https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks -O /usr/local/bin/winetricks; \
+    chmod +x /usr/local/bin/winetricks; \
+    winetricks -q vcrun2015; \
     \
     echo "=== Installing Python Embeddable ZIP ==="; \
     wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip" -O /tmp/python-embed.zip; \
