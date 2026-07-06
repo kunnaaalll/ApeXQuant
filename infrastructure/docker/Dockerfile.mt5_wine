@@ -26,8 +26,10 @@ RUN dpkg --add-architecture i386 && \
 RUN xvfb-run -a sh -c "wineboot --init && wineserver -w"
 
 # Download and install Windows Python inside Wine
+# NOTE: InstallAllUsers=1 is required for Wine - per-user installs (=0) fail silently
+#       /log path uses forward slashes which Wine maps correctly from C:/...
 RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-amd64.exe -O /tmp/python-installer.exe && \
-    (xvfb-run -a sh -c "wine /tmp/python-installer.exe /quiet InstallAllUsers=0 Include_launcher=0 PrependPath=1 Include_test=0 /log C:\\python_install.log && wineserver -w" || (cat /root/.wine/drive_c/python_install.log && false)) && \
+    (xvfb-run -a sh -c "wine /tmp/python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 /log C:/python_install.log && wineserver -w" || (cat /root/.wine/drive_c/python_install.log 2>/dev/null || echo 'No install log found'; false)) && \
     rm /tmp/python-installer.exe
 
 # Upgrade pip and install MetaTrader5 and FastAPI requirements
