@@ -5,6 +5,8 @@ ENV WINEARCH=win64
 ENV WINEPREFIX=/root/.wine
 ENV WINESYNC=1
 ENV PYTHON_VERSION=3.10.11
+# Explicit Windows path to embeddable Python inside Wine's C: drive
+ENV WINE_PYTHON="C:\\Python310\\python.exe"
 
 # Install required system packages, Xvfb, and Wine
 RUN dpkg --add-architecture i386 && \
@@ -25,16 +27,26 @@ RUN dpkg --add-architecture i386 && \
 # Setup Wine environment (creates default prefix)
 RUN xvfb-run -a sh -c "wineboot --init && wineserver -w"
 
-# Download and install Windows Python inside Wine
-# NOTE: InstallAllUsers=1 is required for Wine - per-user installs (=0) fail silently
-#       /log path uses forward slashes which Wine maps correctly from C:/...
-RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-amd64.exe -O /tmp/python-installer.exe && \
-    (xvfb-run -a sh -c "wine /tmp/python-installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 /log C:/python_install.log && wineserver -w" || (cat /root/.wine/drive_c/python_install.log 2>/dev/null || echo 'No install log found'; false)) && \
-    rm /tmp/python-installer.exe
+# Install Python using the EMBEDDABLE ZIP (no installer needed — avoids Wine MSI/bootstrapper failures)
+# The embeddable package is just a zip of Python binaries, extracted directly into Wine's C: drive.
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip \
+        -O /tmp/python-embed.zip && \
+    mkdir -p "${WINEPREFIX}/drive_c/Python310" && \
+    unzip /tmp/python-embed.zip -d "${WINEPREFIX}/drive_c/Python310" && \
+    rm /tmp/python-embed.zip && \
+    # Enable site-packages so pip-installed packages are importable
+    echo "import site" >> "${WINEPREFIX}/drive_c/Python310/python310._pth"
 
-# Upgrade pip and install MetaTrader5 and FastAPI requirements
-# Note: Path to Python might vary, usually C:\Program Files\Python310\python.exe
-RUN xvfb-run -a sh -c "wine cmd /c \"python -m pip install --upgrade pip\" && wine cmd /c \"python -m pip install MetaTrader5 fastapi uvicorn pydantic\" && wineserver -w"
+# Bootstrap pip using get-pip.py (embeddable Python ships without pip)
+RUN wget https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
+    xvfb-run -a sh -c "wine '${WINE_PYTHON}' /tmp/get-pip.py && wineserver -w" && \
+    rm /tmp/get-pip.py
+
+# Install MetaTrader5 and FastAPI requirements via Wine Python
+RUN xvfb-run -a sh -c "\
+    wine '${WINE_PYTHON}' -m pip install --upgrade pip && \
+    wine '${WINE_PYTHON}' -m pip install MetaTrader5 fastapi uvicorn pydantic && \
+    wineserver -w"
 
 # Download MT5 installer (Note: MT5 setup downloads payload at runtime, so it requires internet on first run)
 RUN wget https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O /tmp/mt5setup.exe && \
