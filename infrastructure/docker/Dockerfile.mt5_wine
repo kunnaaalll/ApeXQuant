@@ -30,8 +30,8 @@ RUN dpkg --add-architecture i386 && \
 
 # ── 2. Init Wine prefix + set Windows version to Win11 ──────────────────────
 # Official mt5linux.sh: WINEPREFIX=~/.mt5 winecfg -v=win11
-RUN xvfb-run -a sh -c "wineboot --init && wineserver -w"
-RUN xvfb-run -a sh -c "winecfg -v win11 && wineserver -w"
+RUN xvfb-run -a sh -c "wineboot --init"
+RUN xvfb-run -a sh -c "winecfg -v win11"
 
 # ── 3. Install Windows Python via EMBEDDABLE ZIP (no installer needed) ───────
 # The embeddable zip is just files — no MSI/bootstrapper, no Wine installer issues.
@@ -50,27 +50,23 @@ RUN wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON
 
 # ── 4. Bootstrap pip inside Wine Python ─────────────────────────────────────
 RUN wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
-    xvfb-run -a sh -c \
-        "wine 'C:\\Python310\\python.exe' /tmp/get-pip.py && wineserver -w" && \
+    xvfb-run -a sh -c "wine 'C:\\Python310\\python.exe' /tmp/get-pip.py" && \
     rm /tmp/get-pip.py
 
 # ── 5. Install bridge dependencies inside Wine Python ────────────────────────
-RUN xvfb-run -a sh -c \
-    "wine 'C:\\Python310\\python.exe' -m pip install --no-cache-dir \
-        MetaTrader5 fastapi uvicorn pydantic && \
-     wineserver -w"
+RUN xvfb-run -a sh -c "wine 'C:\\Python310\\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic"
 
 # ── 6. Install WebView2 Runtime (required by MT5 — from official mt5linux.sh) ─
 RUN wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/f2910a1e-e5a6-4f17-b52d-7faf525d17f8/MicrosoftEdgeWebview2Setup.exe" \
         -O /tmp/webview2.exe && \
-    xvfb-run -a sh -c "wine /tmp/webview2.exe /silent /install && wineserver -w" && \
+    xvfb-run -a sh -c "wine /tmp/webview2.exe /silent /install" && \
     rm /tmp/webview2.exe
 
 # ── 7. Install MetaTrader 5 terminal ─────────────────────────────────────────
 # mt5setup.exe installs the terminal into the Wine prefix (/auto = silent install).
 RUN wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" \
         -O /tmp/mt5setup.exe && \
-    xvfb-run -a sh -c "wine /tmp/mt5setup.exe /auto && wineserver -w" && \
+    xvfb-run -a sh -c "wine /tmp/mt5setup.exe /auto" && \
     rm /tmp/mt5setup.exe
 
 # ── 8. App setup ──────────────────────────────────────────────────────────────
