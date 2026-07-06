@@ -179,6 +179,7 @@ services:
       - BINANCE_TESTNET_API_SECRET=${BINANCE_TESTNET_API_SECRET}
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8089:8089"
     depends_on:
@@ -201,6 +202,7 @@ services:
       - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8090:8090"
     depends_on:
@@ -221,6 +223,7 @@ services:
       - RUST_LOG=info,signal_engine=debug
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8081:8081"
     depends_on:
@@ -242,6 +245,7 @@ services:
       - MAX_RISK_PER_TRADE=0.005
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8082:8082"
     depends_on:
@@ -267,6 +271,7 @@ services:
       - SHADOW_MODE=false
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8083:8083"
     depends_on:
@@ -287,6 +292,7 @@ services:
       - RUST_LOG=info,position_engine=debug
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8084:8084"
     depends_on:
@@ -307,6 +313,7 @@ services:
       - RUST_LOG=info,portfolio_engine=debug
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8085:8085"
     depends_on:
@@ -327,6 +334,7 @@ services:
       - RUST_LOG=info,analytics_engine=debug
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8086:8086"
     depends_on:
@@ -348,6 +356,7 @@ services:
       - AI_MODEL_PATH=/models
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8087:8087"
     depends_on:
@@ -370,6 +379,7 @@ services:
       - RUST_LOG=info,backtester=debug
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8088:8088"
     depends_on:
@@ -427,6 +437,7 @@ services:
     environment:
       - PORT=3000
       - SERVICE_NAME=orchestrator
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "3002:3000"
     depends_on:
@@ -449,6 +460,7 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "3003:3000"
     extra_hosts:
