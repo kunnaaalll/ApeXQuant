@@ -7,6 +7,7 @@ ENV WINEPREFIX=/root/.mt5
 ENV WINEARCH=win64
 ENV DISPLAY=:99
 ENV PYTHON_VERSION=3.10.11
+ENV WINEDLLOVERRIDES="mscoree,mshtml="
 
 # ── 1. System packages + WineHQ staging (official MetaQuotes requirement) ───
 # MetaQuotes' own mt5linux.sh explicitly installs winehq-staging, not Ubuntu's wine.
