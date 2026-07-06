@@ -15,6 +15,6 @@ build/
 docs/
 golden_dataset/
 infrastructure/monitoring/
-scripts/
+
 infrastructure/docker/volumes/
 
