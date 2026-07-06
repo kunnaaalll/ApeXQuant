@@ -1,58 +1,58 @@
 FROM ubuntu:22.04
 
+# ── Build-time config ────────────────────────────────────────────────────────
 ENV DEBIAN_FRONTEND=noninteractive
+# Official MetaQuotes Linux install uses a dedicated prefix at ~/.mt5
+ENV WINEPREFIX=/root/.mt5
 ENV WINEARCH=win64
-ENV WINEPREFIX=/root/.wine
-ENV WINESYNC=1
-ENV PYTHON_VERSION=3.10.11
-# Explicit Windows path to embeddable Python inside Wine's C: drive
-ENV WINE_PYTHON="C:\\Python310\\python.exe"
+ENV DISPLAY=:99
 
-# Install required system packages, Xvfb, and Wine
+# ── 1. System packages ───────────────────────────────────────────────────────
+# Install prerequisites + WineHQ staging from the official WineHQ repo.
+# MetaQuotes' own mt5linux.sh installs winehq-staging (not the Ubuntu wine package).
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        wine wine64 wine32 \
+        bc wget curl ca-certificates gnupg \
         xvfb \
-        cabextract \
-        wget \
-        curl \
-        unzip \
-        gnupg \
-        ca-certificates \
-        winbind && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        winbind \
+        # Native Python3 for the FastAPI bridge (NOT running inside Wine)
+        python3 python3-pip && \
+    # ── Add official WineHQ staging repository (Ubuntu 22.04 / jammy) ──
+    mkdir -pm755 /etc/apt/keyrings && \
+    wget -qO - https://dl.winehq.org/wine-builds/winehq.key \
+        | gpg --dearmor -o /etc/apt/keyrings/winehq-archive.key && \
+    wget -NP /etc/apt/sources.list.d/ \
+        https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
+    apt-get update && \
+    apt-get install -y --install-recommends winehq-staging && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Setup Wine environment (creates default prefix)
-RUN xvfb-run -a sh -c "wineboot --init && wineserver -w"
+# ── 2. Install Python bridge dependencies (native Linux, not Wine) ───────────
+# The MetaTrader5 Python package connects to the MT5 terminal via a local socket.
+RUN pip3 install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic
 
-# Install Python using the EMBEDDABLE ZIP (no installer needed — avoids Wine MSI/bootstrapper failures)
-# The embeddable package is just a zip of Python binaries, extracted directly into Wine's C: drive.
-RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip \
-        -O /tmp/python-embed.zip && \
-    mkdir -p "${WINEPREFIX}/drive_c/Python310" && \
-    unzip /tmp/python-embed.zip -d "${WINEPREFIX}/drive_c/Python310" && \
-    rm /tmp/python-embed.zip && \
-    # Enable site-packages so pip-installed packages are importable
-    echo "import site" >> "${WINEPREFIX}/drive_c/Python310/python310._pth"
+# ── 3. Init Wine prefix and set Windows version to Win11 ────────────────────
+# Official mt5linux.sh does: WINEPREFIX=~/.mt5 winecfg -v=win11
+RUN xvfb-run -a sh -c "wineboot --init && wineserver -w" && \
+    xvfb-run -a sh -c "winecfg -v win11 && wineserver -w"
 
-# Bootstrap pip using get-pip.py (embeddable Python ships without pip)
-RUN wget https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
-    xvfb-run -a sh -c "wine '${WINE_PYTHON}' /tmp/get-pip.py && wineserver -w" && \
-    rm /tmp/get-pip.py
+# ── 4. Install WebView2 Runtime (required by MT5) ───────────────────────────
+# Official mt5linux.sh installs this before MT5.
+RUN wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/f2910a1e-e5a6-4f17-b52d-7faf525d17f8/MicrosoftEdgeWebview2Setup.exe" \
+        -O /tmp/webview2.exe && \
+    xvfb-run -a sh -c "wine /tmp/webview2.exe /silent /install && wineserver -w" && \
+    rm /tmp/webview2.exe
 
-# Install MetaTrader5 and FastAPI requirements via Wine Python
-RUN xvfb-run -a sh -c "\
-    wine '${WINE_PYTHON}' -m pip install --upgrade pip && \
-    wine '${WINE_PYTHON}' -m pip install MetaTrader5 fastapi uvicorn pydantic && \
-    wineserver -w"
-
-# Download MT5 installer (Note: MT5 setup downloads payload at runtime, so it requires internet on first run)
-RUN wget https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O /tmp/mt5setup.exe && \
+# ── 5. Install MetaTrader 5 terminal ────────────────────────────────────────
+# mt5setup.exe is a self-contained installer that installs the terminal into
+# the Wine prefix. The /auto flag performs a silent install.
+RUN wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" \
+        -O /tmp/mt5setup.exe && \
     xvfb-run -a sh -c "wine /tmp/mt5setup.exe /auto && wineserver -w" && \
     rm /tmp/mt5setup.exe
 
+# ── 6. App setup ─────────────────────────────────────────────────────────────
 WORKDIR /app
 COPY scripts/mt5_bridge.py /app/mt5_bridge.py
 COPY scripts/mt5_bridge_entrypoint.sh /app/entrypoint.sh
