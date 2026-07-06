@@ -33,50 +33,51 @@ RUN dpkg --add-architecture i386 && \
 # We do this in a single RUN block with a persistent background Xvfb server.
 # xvfb-run causes premature X11 teardowns when Windows background processes fork.
 # If wineboot is interrupted, cryptographic DLLs fail to initialize (breaking Python).
-RUN Xvfb :99 -screen 0 1024x768x16 & XVFB_PID=$! && sleep 2 && \
+RUN set -e; \
+    Xvfb :99 -screen 0 1024x768x16 & XVFB_PID=$!; \
+    sleep 2; \
+    echo "=== Initializing Wine ==="; \
+    wineboot --init; \
+    winecfg -v win10; \
     \
-    echo "=== Initializing Wine ===" && \
-    wineboot --init && \
-    winecfg -v win10 && \
+    echo "=== Installing Python Embeddable ZIP ==="; \
+    wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip" -O /tmp/python-embed.zip; \
+    unzip -q /tmp/python-embed.zip -d "${WINEPREFIX}/drive_c/Python310"; \
+    rm /tmp/python-embed.zip; \
+    sed -i 's/^#import site/import site/' "${WINEPREFIX}/drive_c/Python310/python310._pth"; \
+    grep -q "^import site" "${WINEPREFIX}/drive_c/Python310/python310._pth" || echo "import site" >> "${WINEPREFIX}/drive_c/Python310/python310._pth"; \
     \
-    echo "=== Installing Python Embeddable ZIP ===" && \
-    wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip" -O /tmp/python-embed.zip && \
-    unzip -q /tmp/python-embed.zip -d "${WINEPREFIX}/drive_c/Python310" && \
-    rm /tmp/python-embed.zip && \
-    sed -i 's/^#import site/import site/' "${WINEPREFIX}/drive_c/Python310/python310._pth" && \
-    grep -q "^import site" "${WINEPREFIX}/drive_c/Python310/python310._pth" || echo "import site" >> "${WINEPREFIX}/drive_c/Python310/python310._pth" && \
+    echo "=== Bootstrapping pip ==="; \
+    wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py; \
+    wine 'C:\Python310\python.exe' /tmp/get-pip.py; \
+    rm /tmp/get-pip.py; \
     \
-    echo "=== Bootstrapping pip ===" && \
-    wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
-    wine 'C:\Python310\python.exe' /tmp/get-pip.py && \
-    rm /tmp/get-pip.py && \
+    echo "=== Installing Python dependencies ==="; \
+    wine 'C:\Python310\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic; \
     \
-    echo "=== Installing Python dependencies ===" && \
-    wine 'C:\Python310\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic && \
+    echo "=== Installing WebView2 ==="; \
+    wget -qL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -O /tmp/webview2.exe; \
+    wine /tmp/webview2.exe /silent /install; \
+    rm /tmp/webview2.exe; \
     \
-    echo "=== Installing WebView2 ===" && \
-    wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/c91bc4bf-42f0-4fa9-b88d-2a819cdeee93/MicrosoftEdgeWebView2RuntimeInstallerX64.exe" -O /tmp/webview2.exe && \
-    wine /tmp/webview2.exe /silent /install && \
-    rm /tmp/webview2.exe && \
-    \
-    echo "=== Installing MT5 ===" && \
-    wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe && \
-    { wine /tmp/mt5setup.exe /auto & } && \
-    echo "Waiting for MT5 to finish installing..." && \
-    TIMEOUT=300 && ELAPSED=0 && \
+    echo "=== Installing MT5 ==="; \
+    wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe; \
+    { wine /tmp/mt5setup.exe /auto & }; \
+    echo "Waiting for MT5 to finish installing..."; \
+    TIMEOUT=300; ELAPSED=0; \
     while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ] && [ $ELAPSED -lt $TIMEOUT ]; do \
         sleep 5; \
         ELAPSED=$((ELAPSED+5)); \
-    done && \
+    done; \
     if [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ]; then \
-        echo "ERROR: MT5 installation timed out or failed." && exit 1; \
-    fi && \
-    echo "MT5 installed! Waiting 15s for finalization..." && \
-    sleep 15 && \
-    rm /tmp/mt5setup.exe && \
+        echo "ERROR: MT5 installation timed out or failed."; exit 1; \
+    fi; \
+    echo "MT5 installed! Waiting 15s for finalization..."; \
+    sleep 15; \
+    rm /tmp/mt5setup.exe; \
     \
-    echo "=== Shutting down Wine and X11 ===" && \
-    wineserver -k && \
+    echo "=== Shutting down Wine and X11 ==="; \
+    wineserver -k || true; \
     kill $XVFB_PID || true
 
 # ── 8. App setup ──────────────────────────────────────────────────────────────
