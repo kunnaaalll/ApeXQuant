@@ -14,44 +14,37 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 2. EVENT BUS — Events store (core replay source)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS events (
-    id              BIGSERIAL PRIMARY KEY,
-    event_id        UUID        NOT NULL DEFAULT gen_random_uuid(),
-    topic           TEXT        NOT NULL,
-    event_type      TEXT        NOT NULL,
-    source_service  TEXT        NOT NULL,
-    correlation_id  TEXT,
-    causation_id    TEXT,
-    dedup_key       TEXT,
-    payload         BYTEA       NOT NULL,      -- protobuf-encoded Event
-    payload_hash    TEXT        NOT NULL DEFAULT '',
-    occurred_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    published_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    sequence_number BIGINT      NOT NULL DEFAULT 0,
-    CONSTRAINT events_dedup_key_unique UNIQUE (dedup_key)
-        DEFERRABLE INITIALLY DEFERRED
+    id UUID PRIMARY KEY,
+    event_type VARCHAR(255) NOT NULL,
+    source VARCHAR(255) NOT NULL,
+    topic VARCHAR(255) NOT NULL,
+    occurred_at TIMESTAMPTZ NOT NULL,
+    published_at TIMESTAMPTZ NOT NULL,
+    payload BYTEA NOT NULL,
+    payload_hash BYTEA NOT NULL,
+    deduplication_key VARCHAR(255),
+    causation_id VARCHAR(255),
+    correlation_id VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_events_topic         ON events (topic, occurred_at ASC);
-CREATE INDEX IF NOT EXISTS idx_events_event_type    ON events (event_type, occurred_at ASC);
-CREATE INDEX IF NOT EXISTS idx_events_occurred_at   ON events (occurred_at ASC);
-CREATE INDEX IF NOT EXISTS idx_events_correlation   ON events (correlation_id);
+CREATE INDEX IF NOT EXISTS idx_events_topic_time ON events (topic, occurred_at);
+CREATE INDEX IF NOT EXISTS idx_events_source ON events (source);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_dedup ON events (deduplication_key) WHERE deduplication_key IS NOT NULL;
 
 -- ============================================================
 -- 3. EVENT BUS — Dead Letter Queue
 -- ============================================================
-CREATE TABLE IF NOT EXISTS event_dlq (
-    id              BIGSERIAL PRIMARY KEY,
-    original_id     BIGINT      REFERENCES events(id) ON DELETE SET NULL,
-    topic           TEXT        NOT NULL,
-    event_type      TEXT        NOT NULL,
-    payload         BYTEA       NOT NULL,
-    failure_reason  TEXT,
-    retry_count     INT         NOT NULL DEFAULT 0,
-    last_retry_at   TIMESTAMPTZ,
-    moved_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    resolved        BOOLEAN     NOT NULL DEFAULT FALSE,
-    resolved_at     TIMESTAMPTZ
+CREATE TABLE IF NOT EXISTS dead_letter_queue (
+    id UUID PRIMARY KEY,
+    event_id UUID,
+    consumer_group VARCHAR(255) NOT NULL,
+    topic VARCHAR(255) NOT NULL,
+    payload BYTEA NOT NULL,
+    reason TEXT NOT NULL,
+    error_details TEXT,
+    failed_at TIMESTAMPTZ DEFAULT NOW(),
+    retry_count INT DEFAULT 0
 );
-CREATE INDEX IF NOT EXISTS idx_dlq_resolved ON event_dlq (resolved, moved_at);
 
 -- ============================================================
 -- 4. MARKET DATA — Ticks
