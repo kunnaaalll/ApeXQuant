@@ -56,18 +56,32 @@ RUN wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
 # ── 5. Install bridge dependencies inside Wine Python ────────────────────────
 RUN xvfb-run -a sh -c "wine 'C:\\Python310\\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic"
 
-# ── 6. Install WebView2 Runtime (required by MT5 — from official mt5linux.sh) ─
-RUN wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/f2910a1e-e5a6-4f17-b52d-7faf525d17f8/MicrosoftEdgeWebview2Setup.exe" \
-        -O /tmp/webview2.exe && \
-    xvfb-run -a sh -c "wine /tmp/webview2.exe /silent /install" && \
-    rm /tmp/webview2.exe
-
-# ── 7. Install MetaTrader 5 terminal ─────────────────────────────────────────
-# mt5setup.exe installs the terminal into the Wine prefix (/auto = silent install).
-RUN wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" \
-        -O /tmp/mt5setup.exe && \
-    xvfb-run -a sh -c "wine /tmp/mt5setup.exe /auto" && \
-    rm /tmp/mt5setup.exe
+# ── 6. Install WebView2 & MT5 (Combined to preserve X11 session) ──────────────
+# Microsoft installers fork into the background and exit immediately. 
+# Using xvfb-run tears down the X server too early, crashing the installers.
+# We run Xvfb persistently, wait for MT5 to finish installing, then forcefully 
+# kill the wineserver to prevent infinite hangs from background updater services.
+RUN Xvfb :99 -screen 0 1024x768x16 & \
+    XVFB_PID=$! && \
+    sleep 2 && \
+    wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/f2910a1e-e5a6-4f17-b52d-7faf525d17f8/MicrosoftEdgeWebview2Setup.exe" -O /tmp/webview2.exe && \
+    echo "Installing WebView2..." && \
+    wine /tmp/webview2.exe /silent /install && \
+    # Give WebView2 some time to extract and install in the background
+    sleep 30 && \
+    wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe && \
+    echo "Installing MT5..." && \
+    wine /tmp/mt5setup.exe /auto && \
+    echo "Waiting for MT5 to finish installing..." && \
+    # Poll until MT5 creates its main executable
+    while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ]; do \
+        sleep 5; \
+    done && \
+    echo "MT5 installed! Waiting 15s for finalization..." && \
+    sleep 15 && \
+    wineserver -k && \
+    kill $XVFB_PID || true && \
+    rm /tmp/webview2.exe /tmp/mt5setup.exe
 
 # ── 8. App setup ──────────────────────────────────────────────────────────────
 WORKDIR /app
