@@ -148,6 +148,8 @@ services:
       - SERVICE_NAME=event-bus
       - SERVICE_PORT=8080
       - RUST_LOG=info,event_bus=debug
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8080:8080"
     healthcheck:
@@ -169,10 +171,12 @@ services:
       - SERVICE_NAME=market-data-engine
       - SERVICE_PORT=8089
       - RUST_LOG=info,market_data_engine=debug
-      - SHADOW_MODE=true
+      - SHADOW_MODE=false
       - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
       - BINANCE_TESTNET_API_KEY=${BINANCE_TESTNET_API_KEY}
       - BINANCE_TESTNET_API_SECRET=${BINANCE_TESTNET_API_SECRET}
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8089:8089"
     depends_on:
@@ -191,8 +195,10 @@ services:
       - SERVICE_NAME=strategy-engine
       - SERVICE_PORT=8090
       - RUST_LOG=info,strategy_engine=debug
-      - SHADOW_MODE=true
+      - SHADOW_MODE=false
       - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8090:8090"
     depends_on:
@@ -211,6 +217,8 @@ services:
       - SERVICE_NAME=signal-engine
       - SERVICE_PORT=8081
       - RUST_LOG=info,signal_engine=debug
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8081:8081"
     depends_on:
@@ -230,6 +238,8 @@ services:
       - SERVICE_PORT=8082
       - RUST_LOG=info,risk_engine=debug
       - MAX_RISK_PER_TRADE=0.005
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8082:8082"
     depends_on:
@@ -252,7 +262,9 @@ services:
       - MT5_LOGIN=${MT5_LOGIN}
       - MT5_PASSWORD=${MT5_PASSWORD}
       - MT5_SERVER=${MT5_SERVER}
-      - SHADOW_MODE=true
+      - SHADOW_MODE=false
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8083:8083"
     depends_on:
@@ -271,6 +283,8 @@ services:
       - SERVICE_NAME=position-engine
       - SERVICE_PORT=8084
       - RUST_LOG=info,position_engine=debug
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8084:8084"
     depends_on:
@@ -289,6 +303,8 @@ services:
       - SERVICE_NAME=portfolio-engine
       - SERVICE_PORT=8085
       - RUST_LOG=info,portfolio_engine=debug
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8085:8085"
     depends_on:
@@ -307,6 +323,8 @@ services:
       - SERVICE_NAME=analytics-engine
       - SERVICE_PORT=8086
       - RUST_LOG=info,analytics_engine=debug
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8086:8086"
     depends_on:
@@ -326,6 +344,8 @@ services:
       - SERVICE_PORT=8087
       - RUST_LOG=info,learning_engine=debug
       - AI_MODEL_PATH=/models
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8087:8087"
     depends_on:
@@ -346,6 +366,8 @@ services:
       - SERVICE_NAME=backtester
       - SERVICE_PORT=8088
       - RUST_LOG=info,backtester=debug
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
     ports:
       - "8088:8088"
     depends_on:
