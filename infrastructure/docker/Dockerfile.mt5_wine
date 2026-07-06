@@ -24,7 +24,7 @@ RUN dpkg --add-architecture i386 && \
     wget -NP /etc/apt/sources.list.d/ \
         https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
     apt-get update && \
-    apt-get install -y --install-recommends winehq-staging && \
+    apt-get install -y --install-recommends winehq-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ── 2. Init Wine prefix + set Windows version to Win11 ──────────────────────
