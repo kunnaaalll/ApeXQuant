@@ -36,7 +36,7 @@ RUN Xvfb :99 -screen 0 1024x768x16 & XVFB_PID=$! && sleep 2 && \
     \
     echo "=== Initializing Wine ===" && \
     wineboot --init && \
-    winecfg -v win11 && \
+    winecfg -v win10 && \
     \
     echo "=== Installing Python Embeddable ZIP ===" && \
     wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip" -O /tmp/python-embed.zip && \
@@ -54,14 +54,13 @@ RUN Xvfb :99 -screen 0 1024x768x16 & XVFB_PID=$! && sleep 2 && \
     wine 'C:\Python310\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic && \
     \
     echo "=== Installing WebView2 ===" && \
-    wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/f2910a1e-e5a6-4f17-b52d-7faf525d17f8/MicrosoftEdgeWebview2Setup.exe" -O /tmp/webview2.exe && \
+    wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/c91bc4bf-42f0-4fa9-b88d-2a819cdeee93/MicrosoftEdgeWebView2RuntimeInstallerX64.exe" -O /tmp/webview2.exe && \
     wine /tmp/webview2.exe /silent /install && \
-    sleep 30 && \
     rm /tmp/webview2.exe && \
     \
     echo "=== Installing MT5 ===" && \
     wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe && \
-    wine /tmp/mt5setup.exe /auto && \
+    wine /tmp/mt5setup.exe /auto & \
     echo "Waiting for MT5 to finish installing..." && \
     TIMEOUT=300 && ELAPSED=0 && \
     while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ] && [ $ELAPSED -lt $TIMEOUT ]; do \
