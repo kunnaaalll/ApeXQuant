@@ -55,11 +55,7 @@ RUN set -e; \
     echo "=== Installing Python dependencies ==="; \
     wine 'C:\Python310\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic; \
     \
-    echo "=== Installing WebView2 ==="; \
-    wget -qL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -O /tmp/webview2.exe; \
-    wine /tmp/webview2.exe /silent /install; \
-    rm /tmp/webview2.exe; \
-    \
+
     echo "=== Installing MT5 ==="; \
     wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe; \
     { wine /tmp/mt5setup.exe /auto & }; \
