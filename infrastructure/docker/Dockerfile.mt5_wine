@@ -28,60 +28,49 @@ RUN dpkg --add-architecture i386 && \
     apt-get install -y --install-recommends winehq-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ── 2. Init Wine prefix + set Windows version to Win11 ──────────────────────
-# Official mt5linux.sh: WINEPREFIX=~/.mt5 winecfg -v=win11
-RUN xvfb-run -a sh -c "wineboot --init"
-RUN xvfb-run -a sh -c "winecfg -v win11"
-
-# ── 3. Install Windows Python via EMBEDDABLE ZIP (no installer needed) ───────
-# The embeddable zip is just files — no MSI/bootstrapper, no Wine installer issues.
-# mt5_bridge.py uses `import MetaTrader5` which is a Windows-only C extension
-# that talks to terminal64.exe via Windows named pipes — so Python MUST run in Wine.
-RUN wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip" \
-        -O /tmp/python-embed.zip && \
+# ── 2. Initialize Wine, Python, and MT5 in a single X11 session ─────────────
+# We do this in a single RUN block with a persistent background Xvfb server.
+# xvfb-run causes premature X11 teardowns when Windows background processes fork.
+# If wineboot is interrupted, cryptographic DLLs fail to initialize (breaking Python).
+RUN Xvfb :99 -screen 0 1024x768x16 & XVFB_PID=$! && sleep 2 && \
+    \
+    echo "=== Initializing Wine ===" && \
+    wineboot --init && \
+    winecfg -v win11 && \
+    \
+    echo "=== Installing Python Embeddable ZIP ===" && \
+    wget -q "https://www.python.org/ftp/python/${PYTHON_VERSION}/python-${PYTHON_VERSION}-embed-amd64.zip" -O /tmp/python-embed.zip && \
     unzip -q /tmp/python-embed.zip -d "${WINEPREFIX}/drive_c/Python310" && \
     rm /tmp/python-embed.zip && \
-    # Uncomment 'import site' in the ._pth file so pip packages are importable.
-    # The line exists but is commented out by default in the embeddable package.
     sed -i 's/^#import site/import site/' "${WINEPREFIX}/drive_c/Python310/python310._pth" && \
-    # If sed didn't find the commented line, append it (safety fallback)
-    grep -q "^import site" "${WINEPREFIX}/drive_c/Python310/python310._pth" || \
-        echo "import site" >> "${WINEPREFIX}/drive_c/Python310/python310._pth"
-
-# ── 4. Bootstrap pip inside Wine Python ─────────────────────────────────────
-RUN wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
-    xvfb-run -a sh -c "wine 'C:\\Python310\\python.exe' /tmp/get-pip.py" && \
-    rm /tmp/get-pip.py
-
-# ── 5. Install bridge dependencies inside Wine Python ────────────────────────
-RUN xvfb-run -a sh -c "wine 'C:\\Python310\\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic"
-
-# ── 6. Install WebView2 & MT5 (Combined to preserve X11 session) ──────────────
-# Microsoft installers fork into the background and exit immediately. 
-# Using xvfb-run tears down the X server too early, crashing the installers.
-# We run Xvfb persistently, wait for MT5 to finish installing, then forcefully 
-# kill the wineserver to prevent infinite hangs from background updater services.
-RUN Xvfb :99 -screen 0 1024x768x16 & \
-    XVFB_PID=$! && \
-    sleep 2 && \
+    grep -q "^import site" "${WINEPREFIX}/drive_c/Python310/python310._pth" || echo "import site" >> "${WINEPREFIX}/drive_c/Python310/python310._pth" && \
+    \
+    echo "=== Bootstrapping pip ===" && \
+    wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py && \
+    wine 'C:\Python310\python.exe' /tmp/get-pip.py && \
+    rm /tmp/get-pip.py && \
+    \
+    echo "=== Installing Python dependencies ===" && \
+    wine 'C:\Python310\python.exe' -m pip install --no-cache-dir MetaTrader5 fastapi uvicorn pydantic && \
+    \
+    echo "=== Installing WebView2 ===" && \
     wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/f2910a1e-e5a6-4f17-b52d-7faf525d17f8/MicrosoftEdgeWebview2Setup.exe" -O /tmp/webview2.exe && \
-    echo "Installing WebView2..." && \
     wine /tmp/webview2.exe /silent /install && \
-    # Give WebView2 some time to extract and install in the background
     sleep 30 && \
+    rm /tmp/webview2.exe && \
+    \
+    echo "=== Installing MT5 ===" && \
     wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe && \
-    echo "Installing MT5..." && \
     wine /tmp/mt5setup.exe /auto && \
     echo "Waiting for MT5 to finish installing..." && \
-    # Poll until MT5 creates its main executable
-    while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ]; do \
-        sleep 5; \
-    done && \
+    while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ]; do sleep 5; done && \
     echo "MT5 installed! Waiting 15s for finalization..." && \
     sleep 15 && \
+    rm /tmp/mt5setup.exe && \
+    \
+    echo "=== Shutting down Wine and X11 ===" && \
     wineserver -k && \
-    kill $XVFB_PID || true && \
-    rm /tmp/webview2.exe /tmp/mt5setup.exe
+    kill $XVFB_PID || true
 
 # ── 8. App setup ──────────────────────────────────────────────────────────────
 WORKDIR /app
