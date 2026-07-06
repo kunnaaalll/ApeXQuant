@@ -63,7 +63,14 @@ RUN Xvfb :99 -screen 0 1024x768x16 & XVFB_PID=$! && sleep 2 && \
     wget -q "https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe" -O /tmp/mt5setup.exe && \
     wine /tmp/mt5setup.exe /auto && \
     echo "Waiting for MT5 to finish installing..." && \
-    while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ]; do sleep 5; done && \
+    TIMEOUT=300 && ELAPSED=0 && \
+    while [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ] && [ $ELAPSED -lt $TIMEOUT ]; do \
+        sleep 5; \
+        ELAPSED=$((ELAPSED+5)); \
+    done && \
+    if [ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" ]; then \
+        echo "ERROR: MT5 installation timed out or failed." && exit 1; \
+    fi && \
     echo "MT5 installed! Waiting 15s for finalization..." && \
     sleep 15 && \
     rm /tmp/mt5setup.exe && \
