@@ -532,12 +532,12 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3002
+      - GF_SERVER_ROOT_URL=http://localhost:3004
     volumes:
       - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana-data:/var/lib/grafana
     ports:
-      - "3002:3000"
+      - "3004:3000"
     networks:
       - apex-network
     depends_on:
