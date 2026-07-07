@@ -22,7 +22,7 @@ pub struct RiskConfig {
     pub redis_url: String,
     /// Broker gateway URL (env: BROKER_URL)
     pub broker_url: String,
-    /// Event bus gRPC URL (env: EVENTBUS_URL)
+    /// Event bus gRPC URL (env: EVENT_BUS_URL)
     pub eventbus_url: String,
     /// Maximum PostgreSQL connection pool size (env: DB_MAX_CONNECTIONS, default: 10)
     pub db_max_connections: u32,
@@ -40,7 +40,7 @@ impl RiskConfig {
         let database_url = required_var("DATABASE_URL")?;
         let redis_url = required_var("REDIS_URL")?;
         let broker_url = required_var("BROKER_URL")?;
-        let eventbus_url = required_var("EVENTBUS_URL")?;
+        let eventbus_url = required_var("EVENT_BUS_URL")?;
 
         let db_max_connections = optional_var("DB_MAX_CONNECTIONS")
             .map(|v| v.parse::<u32>().map_err(|e| ConfigError::InvalidValue("DB_MAX_CONNECTIONS".to_string(), e.to_string())))
