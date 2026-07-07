@@ -219,13 +219,20 @@ services:
         SERVICE: signal-engine-rs
     environment:
       - SERVICE_NAME=signal-engine
-      - SERVICE_PORT=8081
+      - SERVICE_PORT=50051
       - RUST_LOG=info,signal_engine=debug
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
       - EVENT_BUS_URL=http://event-bus:50050
     ports:
-      - "8081:8081"
+      - "8081:50051"
+    healthcheck:
+      # signal-engine runs gRPC on 50051, not HTTP — check TCP connectivity
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/50051'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       event-bus:
         condition: service_healthy
@@ -385,6 +392,7 @@ services:
     depends_on:
       - signal-engine
       - event-bus
+    restart: no  # backtester is a batch job — runs once and exits cleanly
 
   # ==================== TYPESCRIPT APPLICATIONS ====================
 
