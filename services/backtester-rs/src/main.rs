@@ -33,21 +33,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Loading historical tick databases for symbols: {:?}", symbols);
     let start_load = Instant::now();
     
-    // Simulate generation of 250k ticks per symbol
-    let total_ticks = 250_000 * symbols.len();
-    let mut ticks = Vec::with_capacity(total_ticks);
-    for (idx, sym) in symbols.iter().enumerate() {
-        for i in 0..250_000 {
+    let db_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://apex:apex@localhost:5432/apex_v3".to_string());
+    
+    info!("Connecting to PostgreSQL database at {}...", db_url);
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?;
+
+    let mut ticks = Vec::new();
+    for sym in symbols.iter() {
+        let rows = sqlx::query("SELECT symbol, bid, ask, volume, timestamp_ms FROM ticks WHERE symbol = $1 ORDER BY timestamp_ms ASC")
+            .bind(sym.to_string())
+            .fetch_all(&pool)
+            .await?;
+
+        for row in rows {
+            use sqlx::Row;
+            let symbol: String = row.get("symbol");
+            let bid: rust_decimal::Decimal = row.get("bid");
+            let ask: rust_decimal::Decimal = row.get("ask");
+            let timestamp_ms: i64 = row.get("timestamp_ms");
+            
             ticks.push(Tick {
-                symbol: sym.to_string(),
-                timestamp: start_time + time::Duration::seconds(i as i64),
-                bid: Decimal::new(100 + idx as i64, 2),
-                ask: Decimal::new(100 + idx as i64, 2) + Decimal::new(1, 4),
+                symbol,
+                timestamp: OffsetDateTime::from_unix_timestamp_nanos((timestamp_ms as i128) * 1_000_000).unwrap_or(start_time),
+                bid,
+                ask,
                 bid_size: Decimal::ONE,
                 ask_size: Decimal::ONE,
             });
         }
     }
+    let total_ticks = ticks.len();
     info!("Loaded {} ticks from database in {:?}", total_ticks, start_load.elapsed());
 
     info!("Starting Replay Engine with Unlimited clock speed...");
