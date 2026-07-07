@@ -32,6 +32,8 @@ thiserror.workspace = true
 futures-util.workspace = true
 anyhow.workspace = true
 ring.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
 reqwest.workspace = true

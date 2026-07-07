@@ -25,3 +25,4 @@ futures-util.workspace = true
 ring.workspace = true
 uuid = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber.workspace = true
