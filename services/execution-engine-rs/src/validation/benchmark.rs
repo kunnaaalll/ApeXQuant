@@ -17,7 +17,7 @@ impl BenchmarkEngine {
     pub fn check_thresholds(result: &BenchmarkResult) -> bool {
         let max_avg = dec!(2);
         let max_p99 = dec!(10);
-        
+
         result.average_latency_ms <= max_avg && result.p99_latency_ms <= max_p99
     }
 }

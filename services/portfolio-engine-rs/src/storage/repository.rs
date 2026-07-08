@@ -1,4 +1,5 @@
 use anyhow::Result;
+use rust_decimal::Decimal;
 
 use super::events::EventRecord;
 use super::pg_store::PostgresPortfolioStore;
@@ -8,7 +9,7 @@ use super::snapshots::{SnapshotFrequency, SnapshotRecord};
 /// enabling deterministic state reconstructions, snapshotting, and event publishing.
 #[derive(Clone)]
 pub struct PortfolioRepository {
-    store: PostgresPortfolioStore,
+    pub store: PostgresPortfolioStore,
 }
 
 impl PortfolioRepository {
@@ -77,5 +78,155 @@ impl PortfolioRepository {
         let mut events = self.store.load_events(aggregate_id).await?;
         events.retain(|e| e.version > since_version);
         Ok(events)
+    }
+
+    pub async fn load_events_since_time(
+        &self,
+        aggregate_id: &str,
+        since_time: time::OffsetDateTime,
+    ) -> Result<Vec<EventRecord>> {
+        self.store.load_events_since_time(aggregate_id, since_time).await
+    }
+}
+
+#[derive(Clone)]
+pub struct AllocationRepository {
+    store: PostgresPortfolioStore,
+}
+
+impl AllocationRepository {
+    pub fn new(store: PostgresPortfolioStore) -> Self {
+        Self { store }
+    }
+
+    pub async fn save(&self, portfolio_id: &str, allocations: &serde_json::Value) -> Result<()> {
+        self.store.save_allocation(portfolio_id, allocations).await
+    }
+}
+
+#[derive(Clone)]
+pub struct OptimizationRepository {
+    store: PostgresPortfolioStore,
+}
+
+impl OptimizationRepository {
+    pub fn new(store: PostgresPortfolioStore) -> Self {
+        Self { store }
+    }
+
+    pub async fn save(
+        &self,
+        portfolio_id: &str,
+        method: &str,
+        weights: &serde_json::Value,
+        expected_return: Decimal,
+        estimated_volatility: Decimal,
+        sharpe_ratio: Decimal,
+    ) -> Result<()> {
+        self.store
+            .save_optimization(
+                portfolio_id,
+                method,
+                weights,
+                expected_return,
+                estimated_volatility,
+                sharpe_ratio,
+            )
+            .await
+    }
+}
+
+#[derive(Clone)]
+pub struct ExposureRepository {
+    store: PostgresPortfolioStore,
+}
+
+impl ExposureRepository {
+    pub fn new(store: PostgresPortfolioStore) -> Self {
+        Self { store }
+    }
+
+    pub async fn save(
+        &self,
+        portfolio_id: &str,
+        gross_exposure: Decimal,
+        net_exposure: Decimal,
+        long_exposure: Decimal,
+        short_exposure: Decimal,
+    ) -> Result<()> {
+        self.store
+            .save_exposure(
+                portfolio_id,
+                gross_exposure,
+                net_exposure,
+                long_exposure,
+                short_exposure,
+            )
+            .await
+    }
+}
+
+#[derive(Clone)]
+pub struct HealthRepository {
+    store: PostgresPortfolioStore,
+}
+
+impl HealthRepository {
+    pub fn new(store: PostgresPortfolioStore) -> Self {
+        Self { store }
+    }
+
+    pub async fn save(
+        &self,
+        portfolio_id: &str,
+        health_score: i32,
+        status: &str,
+        breakdown: &serde_json::Value,
+    ) -> Result<()> {
+        self.store.save_health(portfolio_id, health_score, status, breakdown).await
+    }
+}
+
+#[derive(Clone)]
+pub struct QualityRepository {
+    store: PostgresPortfolioStore,
+}
+
+impl QualityRepository {
+    pub fn new(store: PostgresPortfolioStore) -> Self {
+        Self { store }
+    }
+
+    pub async fn save(
+        &self,
+        portfolio_id: &str,
+        quality_score: Decimal,
+        breakdown: &serde_json::Value,
+    ) -> Result<()> {
+        self.store.save_quality(portfolio_id, quality_score, breakdown).await
+    }
+}
+
+#[derive(Clone)]
+pub struct CorrelationRepository {
+    store: PostgresPortfolioStore,
+}
+
+impl CorrelationRepository {
+    pub fn new(store: PostgresPortfolioStore) -> Self {
+        Self { store }
+    }
+
+    pub async fn save(
+        &self,
+        portfolio_id: &str,
+        window: &str,
+        matrix_type: &str,
+        identifiers: &serde_json::Value,
+        data: &serde_json::Value,
+    ) -> Result<()> {
+        self.store
+            .save_correlation(portfolio_id, window, matrix_type, identifiers, data)
+            .await
     }
 }

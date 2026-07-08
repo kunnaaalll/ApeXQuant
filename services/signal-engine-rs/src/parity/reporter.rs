@@ -168,10 +168,7 @@ impl ParityReporter {
             recommendation: if passing {
                 "System meets all go-live criteria".to_string()
             } else {
-                format!(
-                    "System requires {} fixes before go-live",
-                    reasons.len()
-                )
+                format!("System requires {} fixes before go-live", reasons.len())
             },
         }
     }
@@ -278,7 +275,10 @@ impl ParityReporter {
             .collect()
     }
 
-    fn identify_suspicious_cases(&self, comparisons: &[SignalComparisonRecord]) -> Vec<SuspiciousCase> {
+    fn identify_suspicious_cases(
+        &self,
+        comparisons: &[SignalComparisonRecord],
+    ) -> Vec<SuspiciousCase> {
         comparisons
             .iter()
             .filter(|c| c.agreement_score < self.config.suspicious_threshold)
@@ -387,18 +387,47 @@ impl ParityReport {
         // Header
         writeln!(&mut md, "# APEX Signal Engine Parity Report").unwrap();
         writeln!(&mut md).unwrap();
-        writeln!(&mut md, "**Generated:** {}", self.generated_at.format("%Y-%m-%d %H:%M:%S UTC")).unwrap();
-        writeln!(&mut md, "**Runtime:** {:.1} hours", self.runtime_duration_hours).unwrap();
+        writeln!(
+            &mut md,
+            "**Generated:** {}",
+            self.generated_at.format("%Y-%m-%d %H:%M:%S UTC")
+        )
+        .unwrap();
+        writeln!(
+            &mut md,
+            "**Runtime:** {:.1} hours",
+            self.runtime_duration_hours
+        )
+        .unwrap();
         writeln!(&mut md, "**Total Comparisons:** {}", self.total_comparisons).unwrap();
         writeln!(&mut md).unwrap();
 
         // Go-Live Status
         writeln!(&mut md, "## Go-Live Status").unwrap();
         writeln!(&mut md).unwrap();
-        let status_icon = if self.go_live_status.ready { "✅" } else { "❌" };
-        writeln!(&mut md, "### {} {}", status_icon, if self.go_live_status.ready { "READY" } else { "NOT READY" }).unwrap();
+        let status_icon = if self.go_live_status.ready {
+            "✅"
+        } else {
+            "❌"
+        };
+        writeln!(
+            &mut md,
+            "### {} {}",
+            status_icon,
+            if self.go_live_status.ready {
+                "READY"
+            } else {
+                "NOT READY"
+            }
+        )
+        .unwrap();
         writeln!(&mut md).unwrap();
-        writeln!(&mut md, "**Recommendation:** {}", self.go_live_status.recommendation).unwrap();
+        writeln!(
+            &mut md,
+            "**Recommendation:** {}",
+            self.go_live_status.recommendation
+        )
+        .unwrap();
         writeln!(&mut md).unwrap();
 
         if !self.go_live_status.passing_criteria.is_empty() {
@@ -423,22 +452,65 @@ impl ParityReport {
         writeln!(&mut md, "| Metric | Value | Target | Status |").unwrap();
         writeln!(&mut md, "|--------|-------|--------|--------|").unwrap();
 
-        let dir_status = if self.metrics.direction_agreement_pct >= 95.0 { "✅" } else { "❌" };
-        writeln!(&mut md, "| Direction Agreement | {:.1}% | >95% | {} |", self.metrics.direction_agreement_pct, dir_status).unwrap();
+        let dir_status = if self.metrics.direction_agreement_pct >= 95.0 {
+            "✅"
+        } else {
+            "❌"
+        };
+        writeln!(
+            &mut md,
+            "| Direction Agreement | {:.1}% | >95% | {} |",
+            self.metrics.direction_agreement_pct, dir_status
+        )
+        .unwrap();
 
-        let conf_status = if self.metrics.avg_confidence_diff < 10.0 { "✅" } else { "❌" };
-        writeln!(&mut md, "| Avg Confidence Diff | {:.1}% | <10% | {} |", self.metrics.avg_confidence_diff, conf_status).unwrap();
+        let conf_status = if self.metrics.avg_confidence_diff < 10.0 {
+            "✅"
+        } else {
+            "❌"
+        };
+        writeln!(
+            &mut md,
+            "| Avg Confidence Diff | {:.1}% | <10% | {} |",
+            self.metrics.avg_confidence_diff, conf_status
+        )
+        .unwrap();
 
-        writeln!(&mut md, "| Exact Matches | {} | - | - |", self.metrics.exact_matches).unwrap();
-        writeln!(&mut md, "| Close Matches | {} | - | - |", self.metrics.close_matches).unwrap();
-        writeln!(&mut md, "| Disagreements | {} | - | {} |", self.metrics.disagreements, if self.metrics.disagreements < 5 { "✅" } else { "❌" }).unwrap();
+        writeln!(
+            &mut md,
+            "| Exact Matches | {} | - | - |",
+            self.metrics.exact_matches
+        )
+        .unwrap();
+        writeln!(
+            &mut md,
+            "| Close Matches | {} | - | - |",
+            self.metrics.close_matches
+        )
+        .unwrap();
+        writeln!(
+            &mut md,
+            "| Disagreements | {} | - | {} |",
+            self.metrics.disagreements,
+            if self.metrics.disagreements < 5 {
+                "✅"
+            } else {
+                "❌"
+            }
+        )
+        .unwrap();
         writeln!(&mut md).unwrap();
 
         // Drift Summary
         if self.drift_summary.has_alerts {
             writeln!(&mut md, "## ⚠️ Drift Alerts").unwrap();
             writeln!(&mut md).unwrap();
-            writeln!(&mut md, "**Alerting Metrics:** {}", self.drift_summary.alerting_metrics.join(", ")).unwrap();
+            writeln!(
+                &mut md,
+                "**Alerting Metrics:** {}",
+                self.drift_summary.alerting_metrics.join(", ")
+            )
+            .unwrap();
             writeln!(&mut md).unwrap();
         }
 
@@ -446,17 +518,33 @@ impl ParityReport {
         if !self.symbol_breakdown.is_empty() {
             writeln!(&mut md, "## Symbol Breakdown").unwrap();
             writeln!(&mut md).unwrap();
-            writeln!(&mut md, "| Symbol | Comparisons | Dir Agreement | Exact Matches | Disagreements | Status |").unwrap();
-            writeln!(&mut md, "|--------|-------------|---------------|---------------|---------------|--------|").unwrap();
+            writeln!(
+                &mut md,
+                "| Symbol | Comparisons | Dir Agreement | Exact Matches | Disagreements | Status |"
+            )
+            .unwrap();
+            writeln!(
+                &mut md,
+                "|--------|-------------|---------------|---------------|---------------|--------|"
+            )
+            .unwrap();
             for sym in &self.symbol_breakdown {
                 let status_icon = match sym.status {
                     SymbolStatus::Passing => "✅",
                     SymbolStatus::NeedsReview => "⚠️",
                     SymbolStatus::Failing => "❌",
                 };
-                writeln!(&mut md, "| {} | {} | {:.1}% | {} | {} | {} |",
-                    sym.symbol, sym.total_comparisons, sym.direction_agreement_pct,
-                    sym.exact_matches, sym.disagreements, status_icon).unwrap();
+                writeln!(
+                    &mut md,
+                    "| {} | {} | {:.1}% | {} | {} | {} |",
+                    sym.symbol,
+                    sym.total_comparisons,
+                    sym.direction_agreement_pct,
+                    sym.exact_matches,
+                    sym.disagreements,
+                    status_icon
+                )
+                .unwrap();
             }
             writeln!(&mut md).unwrap();
         }
@@ -468,10 +556,21 @@ impl ParityReport {
             writeln!(&mut md, "| Pattern | Occurrences | Agreement | % |").unwrap();
             writeln!(&mut md, "|---------|-------------|-----------|---|").unwrap();
             for pat in &self.pattern_analysis {
-                let status = if pat.agreement_pct >= 90.0 { "✅" } else { "⚠️" };
-                writeln!(&mut md, "| {} | {} | {} | {:.1}% {} |",
-                    pat.pattern_name, pat.total_occurrences, pat.agreement_count,
-                    pat.agreement_pct, status).unwrap();
+                let status = if pat.agreement_pct >= 90.0 {
+                    "✅"
+                } else {
+                    "⚠️"
+                };
+                writeln!(
+                    &mut md,
+                    "| {} | {} | {} | {:.1}% {} |",
+                    pat.pattern_name,
+                    pat.total_occurrences,
+                    pat.agreement_count,
+                    pat.agreement_pct,
+                    status
+                )
+                .unwrap();
             }
             writeln!(&mut md).unwrap();
         }
@@ -481,11 +580,34 @@ impl ParityReport {
             writeln!(&mut md, "## Top Disagreements (Review Recommended)").unwrap();
             writeln!(&mut md).unwrap();
             for (i, comp) in self.top_disagreements.iter().take(10).enumerate() {
-                writeln!(&mut md, "### {}. {} {} @ {}", i + 1, comp.symbol, comp.timeframe, comp.timestamp.format("%Y-%m-%d %H:%M")).unwrap();
+                writeln!(
+                    &mut md,
+                    "### {}. {} {} @ {}",
+                    i + 1,
+                    comp.symbol,
+                    comp.timeframe,
+                    comp.timestamp.format("%Y-%m-%d %H:%M")
+                )
+                .unwrap();
                 writeln!(&mut md).unwrap();
-                writeln!(&mut md, "- **TypeScript:** {:?} (conf: {:.1}%)", comp.ts_output.direction, comp.ts_output.confidence).unwrap();
-                writeln!(&mut md, "- **Rust:** {:?} (conf: {:.1}%)", comp.rust_output.direction, comp.rust_output.confidence).unwrap();
-                writeln!(&mut md, "- **Agreement Score:** {:.2}", comp.agreement_score).unwrap();
+                writeln!(
+                    &mut md,
+                    "- **TypeScript:** {:?} (conf: {:.1}%)",
+                    comp.ts_output.direction, comp.ts_output.confidence
+                )
+                .unwrap();
+                writeln!(
+                    &mut md,
+                    "- **Rust:** {:?} (conf: {:.1}%)",
+                    comp.rust_output.direction, comp.rust_output.confidence
+                )
+                .unwrap();
+                writeln!(
+                    &mut md,
+                    "- **Agreement Score:** {:.2}",
+                    comp.agreement_score
+                )
+                .unwrap();
                 writeln!(&mut md).unwrap();
             }
         }
@@ -504,8 +626,18 @@ impl ParityReport {
     /// Export to CSV format
     pub fn to_csv(&self) -> String {
         let mut csv = "metric,value,target\n".to_string();
-        writeln!(&mut csv, "direction_agreement_pct,{:.2},95.0", self.metrics.direction_agreement_pct).unwrap();
-        writeln!(&mut csv, "avg_confidence_diff,{:.2},10.0", self.metrics.avg_confidence_diff).unwrap();
+        writeln!(
+            &mut csv,
+            "direction_agreement_pct,{:.2},95.0",
+            self.metrics.direction_agreement_pct
+        )
+        .unwrap();
+        writeln!(
+            &mut csv,
+            "avg_confidence_diff,{:.2},10.0",
+            self.metrics.avg_confidence_diff
+        )
+        .unwrap();
         writeln!(&mut csv, "exact_matches,{},-", self.metrics.exact_matches).unwrap();
         writeln!(&mut csv, "close_matches,{},-", self.metrics.close_matches).unwrap();
         writeln!(&mut csv, "disagreements,{},-", self.metrics.disagreements).unwrap();

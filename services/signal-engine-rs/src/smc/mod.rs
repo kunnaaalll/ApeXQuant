@@ -10,15 +10,24 @@ pub mod mitigation;
 pub mod order_blocks;
 pub mod premium_discount;
 
-pub use bos::{BOS, BOSDirection, detect_bos, has_recent_bos};
-pub use choch::{CHoCH, CHoCHDirection, detect_choch, has_recent_choch};
-pub use displacement::{Displacement, DisplacementDirection, detect_displacements, has_recent_displacement, analyze_displacement_bias};
-pub use fvg::{FairValueGap, FVGDirection, detect_fvgs, find_fresh_fvgs, analyze_fvgs};
-pub use imbalance::{Imbalance, ImbalanceDirection, analyze_imbalance};
-pub use liquidity::{LiquiditySweep, SweepDirection, detect_sweeps, has_recent_sweep, analyze_liquidity};
-pub use mitigation::{Mitigation, ReactionDirection, check_mitigation, analyze_mitigations};
-pub use order_blocks::{OrderBlock, OBDirection, OBType, detect_order_blocks, find_fresh_obs, get_entry_zone};
-pub use premium_discount::{PriceZone, PremiumDiscount, calculate_premium_discount, analyze_premium_discount};
+pub use bos::{detect_bos, has_recent_bos, BOSDirection, BOS};
+pub use choch::{detect_choch, has_recent_choch, CHoCH, CHoCHDirection};
+pub use displacement::{
+    analyze_displacement_bias, detect_displacements, has_recent_displacement, Displacement,
+    DisplacementDirection,
+};
+pub use fvg::{analyze_fvgs, detect_fvgs, FVGDirection, FairValueGap};
+pub use imbalance::{analyze_imbalance, Imbalance, ImbalanceDirection};
+pub use liquidity::{
+    analyze_liquidity, detect_sweeps, has_recent_sweep, LiquiditySweep, SweepDirection,
+};
+pub use mitigation::{analyze_mitigations, check_mitigation, Mitigation, ReactionDirection};
+pub use order_blocks::{
+    detect_order_blocks, find_fresh_obs, get_entry_zone, OBDirection, OBType, OrderBlock,
+};
+pub use premium_discount::{
+    analyze_premium_discount, calculate_premium_discount, PremiumDiscount, PriceZone,
+};
 
 use crate::market_data::Candle;
 use crate::structure::swings::SwingPoint;
@@ -111,35 +120,50 @@ impl SMCAnalysis {
 
     /// Check for bullish structure
     pub fn is_bullish_structure(&self) -> bool {
-        let bullish_bos = self.bos_patterns.iter().any(|b| matches!(b.direction, BOSDirection::Bullish));
-        let bullish_choch = self.choch_patterns.iter().any(|c| matches!(c.direction, CHoCHDirection::Bullish));
+        let bullish_bos = self
+            .bos_patterns
+            .iter()
+            .any(|b| matches!(b.direction, BOSDirection::Bullish));
+        let bullish_choch = self
+            .choch_patterns
+            .iter()
+            .any(|c| matches!(c.direction, CHoCHDirection::Bullish));
         bullish_bos || bullish_choch
     }
 
     /// Check for bearish structure
     pub fn is_bearish_structure(&self) -> bool {
-        let bearish_bos = self.bos_patterns.iter().any(|b| matches!(b.direction, BOSDirection::Bearish));
-        let bearish_choch = self.choch_patterns.iter().any(|c| matches!(c.direction, CHoCHDirection::Bearish));
+        let bearish_bos = self
+            .bos_patterns
+            .iter()
+            .any(|b| matches!(b.direction, BOSDirection::Bearish));
+        let bearish_choch = self
+            .choch_patterns
+            .iter()
+            .any(|c| matches!(c.direction, CHoCHDirection::Bearish));
         bearish_bos || bearish_choch
     }
 
     /// Get freshest bullish order block
     pub fn freshest_bullish_ob(&self) -> Option<&OrderBlock> {
-        self.order_blocks.iter()
+        self.order_blocks
+            .iter()
             .filter(|ob| matches!(ob.direction, OBDirection::Bullish) && !ob.mitigated)
             .min_by_key(|ob| ob.age_bars)
     }
 
     /// Get freshest bearish order block
     pub fn freshest_bearish_ob(&self) -> Option<&OrderBlock> {
-        self.order_blocks.iter()
+        self.order_blocks
+            .iter()
             .filter(|ob| matches!(ob.direction, OBDirection::Bearish) && !ob.mitigated)
             .min_by_key(|ob| ob.age_bars)
     }
 
     /// Get freshest FVGs
     pub fn fresh_fvgs(&self, max_age: u32) -> Vec<&FairValueGap> {
-        self.fvgs.iter()
+        self.fvgs
+            .iter()
             .filter(|f| !f.filled && f.age_bars <= max_age)
             .collect()
     }

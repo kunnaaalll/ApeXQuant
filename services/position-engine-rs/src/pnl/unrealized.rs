@@ -3,13 +3,17 @@ use rust_decimal::Decimal;
 pub struct UnrealizedPnL;
 
 impl UnrealizedPnL {
-    /// Calculates unrealized PnL based on position direction (Long vs Short assumes handled via signed size or explicit flag).
-    /// For this simple baseline, assuming Long: (current - entry) * size.
+    /// Calculates unrealized PnL based on position direction.
     pub fn calculate(
+        side: &str,
         current_price: Decimal,
         average_entry: Decimal,
         current_size: Decimal,
     ) -> Decimal {
-        (current_price - average_entry) * current_size
+        if side.eq_ignore_ascii_case("buy") {
+            (current_price - average_entry) * current_size
+        } else {
+            (average_entry - current_price) * current_size
+        }
     }
 }

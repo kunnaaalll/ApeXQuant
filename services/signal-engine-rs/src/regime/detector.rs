@@ -44,9 +44,20 @@ impl RegimeDetector {
                 let prev = &w[0];
                 let curr = &w[1];
 
-                let tr1 = (curr.high - curr.low).to_string().parse::<f64>().unwrap_or(0.0);
-                let tr2 = (curr.high - prev.close).abs().to_string().parse::<f64>().unwrap_or(0.0);
-                let tr3 = (curr.low - prev.close).abs().to_string().parse::<f64>().unwrap_or(0.0);
+                let tr1 = (curr.high - curr.low)
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
+                let tr2 = (curr.high - prev.close)
+                    .abs()
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
+                let tr3 = (curr.low - prev.close)
+                    .abs()
+                    .to_string()
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
 
                 tr1.max(tr2).max(tr3)
             })
@@ -56,7 +67,7 @@ impl RegimeDetector {
         let recent = &ranges[ranges.len() - lookback..];
 
         let current = recent.iter().sum::<f64>() / recent.len() as f64;
-        let median = recent.median();
+        let median = recent.mean();
 
         // Calculate percentile
         let sorted_count = recent.iter().filter(|&&r| r < current).count();
@@ -79,8 +90,14 @@ impl RegimeDetector {
         let recent = &candles[candles.len() - lookback..];
 
         // Simple directional movement calculation
-        let up_moves: usize = recent.windows(2).filter(|w| w[1].close > w[0].close).count();
-        let down_moves: usize = recent.windows(2).filter(|w| w[1].close < w[0].close).count();
+        let up_moves: usize = recent
+            .windows(2)
+            .filter(|w| w[1].close > w[0].close)
+            .count();
+        let down_moves: usize = recent
+            .windows(2)
+            .filter(|w| w[1].close < w[0].close)
+            .count();
 
         let total = up_moves + down_moves;
         if total == 0 {
@@ -103,11 +120,7 @@ impl RegimeDetector {
         let is_trending = trend_strength > 0.6;
 
         // Determine price direction
-        let start_price: f64 = candles[0]
-            .close
-            .to_string()
-            .parse()
-            .unwrap_or(0.0);
+        let start_price: f64 = candles[0].close.to_string().parse().unwrap_or(0.0);
         let end_price: f64 = candles[candles.len() - 1]
             .close
             .to_string()

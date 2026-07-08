@@ -7,7 +7,7 @@ impl DegradationDetector {
         // Simple logic: if current is more than 200% of baseline and > 50ms total
         let current_total = current.total_ms();
         let baseline_total = baseline.total_ms();
-        
+
         if baseline_total == 0 {
             return false;
         }

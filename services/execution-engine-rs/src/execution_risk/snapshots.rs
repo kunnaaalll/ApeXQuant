@@ -1,5 +1,5 @@
-use super::events::ExecutionRiskEvent;
 use super::circuit_breaker::ExecutionProtectionState;
+use super::events::ExecutionRiskEvent;
 use rust_decimal::Decimal;
 
 #[derive(Debug, Clone)]
@@ -33,16 +33,28 @@ impl ExecutionRiskSnapshot {
             ExecutionRiskEvent::StateTransition { to, .. } => {
                 self.current_state = *to;
             }
-            ExecutionRiskEvent::SpreadChanged { spread_multiplier, .. } => {
+            ExecutionRiskEvent::SpreadChanged {
+                spread_multiplier, ..
+            } => {
                 self.spread_multiplier = *spread_multiplier;
             }
-            ExecutionRiskEvent::LatencyChanged { latency_score: _, network_latency_ms, exchange_latency_ms, broker_latency_ms } => {
-                self.total_latency_ms = broker_latency_ms.saturating_add(*exchange_latency_ms).saturating_add(*network_latency_ms);
+            ExecutionRiskEvent::LatencyChanged {
+                latency_score: _,
+                network_latency_ms,
+                exchange_latency_ms,
+                broker_latency_ms,
+            } => {
+                self.total_latency_ms = broker_latency_ms
+                    .saturating_add(*exchange_latency_ms)
+                    .saturating_add(*network_latency_ms);
             }
             ExecutionRiskEvent::FailureRecorded { failure_score, .. } => {
                 self.failure_score = *failure_score;
             }
-            ExecutionRiskEvent::RejectionRecorded { consecutive_rejections, .. } => {
+            ExecutionRiskEvent::RejectionRecorded {
+                consecutive_rejections,
+                ..
+            } => {
                 self.consecutive_rejections = *consecutive_rejections;
             }
             _ => {}

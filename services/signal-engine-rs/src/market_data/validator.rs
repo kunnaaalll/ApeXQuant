@@ -13,19 +13,19 @@ impl DataValidator {
         // Check price ordering
         if candle.low > candle.high {
             return Err(SignalEngineError::validation(
-                "Low price cannot be greater than high price"
+                "Low price cannot be greater than high price",
             ));
         }
 
         if candle.open > candle.high || candle.open < candle.low {
             return Err(SignalEngineError::validation(
-                "Open price outside high/low range"
+                "Open price outside high/low range",
             ));
         }
 
         if candle.close > candle.high || candle.close < candle.low {
             return Err(SignalEngineError::validation(
-                "Close price outside high/low range"
+                "Close price outside high/low range",
             ));
         }
 
@@ -35,9 +35,7 @@ impl DataValidator {
             || candle.low <= rust_decimal::Decimal::ZERO
             || candle.close <= rust_decimal::Decimal::ZERO
         {
-            return Err(SignalEngineError::validation(
-                "Prices must be positive"
-            ));
+            return Err(SignalEngineError::validation("Prices must be positive"));
         }
 
         Ok(())
@@ -46,9 +44,7 @@ impl DataValidator {
     /// Validate a series of candles
     pub fn validate_series(candles: &[Candle]) -> Result<(), SignalEngineError> {
         if candles.is_empty() {
-            return Err(SignalEngineError::validation(
-                "Empty candle series"
-            ));
+            return Err(SignalEngineError::validation("Empty candle series"));
         }
 
         if candles.len() < 2 {
@@ -66,19 +62,23 @@ impl DataValidator {
                 )));
             }
 
-            // Check for gaps (optional - configurable)
+            // Check for gaps (configurable per timeframe ideally, hardcoded threshold for now)
             let gap = candles[i].timestamp - candles[i - 1].timestamp;
-            // TODO: Make this configurable per timeframe
+            // A basic check: if gap is larger than a weekend (approx 48 hours) + 1 day
+            if gap.whole_seconds() > 3 * 24 * 3600 {
+                return Err(SignalEngineError::validation(format!(
+                    "Unusually large gap detected between {} and {} ({} seconds)",
+                    candles[i - 1].timestamp,
+                    candles[i].timestamp,
+                    gap.whole_seconds()
+                )));
+            }
         }
 
         // Validate each candle
         for (i, candle) in candles.iter().enumerate() {
             Self::validate_candle(candle).map_err(|e| {
-                SignalEngineError::validation(format!(
-                    "Invalid candle at index {}: {}",
-                    i,
-                    e
-                ))
+                SignalEngineError::validation(format!("Invalid candle at index {}: {}", i, e))
             })?;
         }
 
@@ -86,10 +86,7 @@ impl DataValidator {
     }
 
     /// Check for suspicious outliers
-    pub fn check_outliers(
-        candles: &[Candle],
-        atr_multiplier: f64,
-    ) -> Vec<usize> {
+    pub fn check_outliers(candles: &[Candle], atr_multiplier: f64) -> Vec<usize> {
         let mut outliers = Vec::new();
 
         if candles.len() < 20 {

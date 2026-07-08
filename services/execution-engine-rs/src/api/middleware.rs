@@ -1,5 +1,5 @@
-use tower::ServiceBuilder;
 use tower::layer::util::{Identity, Stack};
+use tower::ServiceBuilder;
 
 use super::logging::LoggingLayer;
 use super::tracing::TracingLayer;

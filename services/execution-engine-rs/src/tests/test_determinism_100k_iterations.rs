@@ -1,7 +1,7 @@
-use rust_decimal_macros::dec;
 use crate::execution::ExecutionRequest;
 use crate::order::{OrderId, OrderSide, OrderType, TimeInForce};
 use crate::validation::OrderValidator;
+use rust_decimal_macros::dec;
 
 #[test]
 fn test_determinism_100k_iterations() {

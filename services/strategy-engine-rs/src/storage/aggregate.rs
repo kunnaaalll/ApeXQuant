@@ -64,47 +64,47 @@ impl Aggregatable for StrategyAggregate {
     fn apply_event(&mut self, event: &StrategyEventWrapper) -> Result<(), Self::Error> {
         match event {
             StrategyEventWrapper::Health(e) => {
-                self.health_status = e.details.clone();
+                self.health_status = e.status.clone();
                 self.health_updates += 1;
             }
             StrategyEventWrapper::Confidence(e) => {
-                self.confidence_level = e.details.clone();
+                self.confidence_level = e.tier.clone();
                 self.confidence_updates += 1;
             }
             StrategyEventWrapper::Drift(e) => {
-                self.drift_status = e.details.clone();
+                self.drift_status = e.requires_retraining.to_string();
                 self.drift_updates += 1;
             }
             StrategyEventWrapper::Allocation(e) => {
-                self.allocation_status = e.details.clone();
+                self.allocation_status = e.recommended_allocation.to_string();
                 self.allocation_updates += 1;
             }
             StrategyEventWrapper::Recommendation(e) => {
-                self.recommendation_status = e.details.clone();
+                self.recommendation_status = e.action.clone();
                 self.recommendation_updates += 1;
             }
             StrategyEventWrapper::Degradation(e) => {
-                self.degradation_status = e.details.clone();
+                self.degradation_status = e.reason.clone();
                 self.degradation_updates += 1;
             }
             StrategyEventWrapper::Meta(e) => {
-                self.meta_status = e.details.clone();
+                self.meta_status = e.adaptation_score.to_string();
                 self.meta_updates += 1;
             }
             StrategyEventWrapper::Cluster(e) => {
-                self.cluster_status = e.details.clone();
+                self.cluster_status = e.cluster_id.clone();
                 self.cluster_updates += 1;
             }
             StrategyEventWrapper::Context(e) => {
-                self.context_status = e.details.clone();
+                self.context_status = e.market_regime.clone();
                 self.context_updates += 1;
             }
             StrategyEventWrapper::Validation(e) => {
-                self.validation_status = e.details.clone();
+                self.validation_status = e.is_valid.to_string();
                 self.validation_updates += 1;
             }
             StrategyEventWrapper::Shadow(e) => {
-                self.shadow_status = e.details.clone();
+                self.shadow_status = e.is_diverging.to_string();
                 self.shadow_updates += 1;
             }
         }

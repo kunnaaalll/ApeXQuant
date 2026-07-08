@@ -3,7 +3,7 @@
 use crate::market_data::Candle;
 use crate::mtf::hierarchy::TimeframeHierarchy;
 use crate::mtf::types::{AlignmentDirection, MTFAlignmentResult, MarketBias, TimeframeAlignment};
-use crate::structure::{StructureAnalysis, trend::TrendDirection};
+use crate::structure::{trend::TrendDirection, StructureAnalysis};
 use std::collections::HashMap;
 
 /// Analyzes alignment across timeframes
@@ -77,17 +77,19 @@ impl<'a> MTFAligner<'a> {
     }
 
     /// Determine direction for a specific timeframe
-    fn determine_tf_direction(&self, timeframe: &str, structure: &StructureAnalysis) -> AlignmentDirection {
+    fn determine_tf_direction(
+        &self,
+        timeframe: &str,
+        structure: &StructureAnalysis,
+    ) -> AlignmentDirection {
         // Use structure trend for higher timeframes
         match timeframe {
-            "H4" | "Daily" | "Weekly" => {
-                match structure.trend {
-                    TrendDirection::Up => AlignmentDirection::Bullish,
-                    TrendDirection::Down => AlignmentDirection::Bearish,
-                    TrendDirection::Sideways => AlignmentDirection::Neutral,
-                    TrendDirection::Undefined => AlignmentDirection::Neutral,
-                }
-            }
+            "H4" | "Daily" | "Weekly" => match structure.trend {
+                TrendDirection::Up => AlignmentDirection::Bullish,
+                TrendDirection::Down => AlignmentDirection::Bearish,
+                TrendDirection::Sideways => AlignmentDirection::Neutral,
+                TrendDirection::Undefined => AlignmentDirection::Neutral,
+            },
             _ => {
                 // Lower timeframes - check for CHoCH/BOS signals
                 // Simplified - would check actual pattern presence

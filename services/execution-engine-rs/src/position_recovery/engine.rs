@@ -1,4 +1,4 @@
-use crate::brokers::broker::{BrokerAdapter, BrokerError, PositionState, OrderState};
+use crate::brokers::broker::{BrokerAdapter, BrokerError, OrderState, PositionState};
 use crate::order_reconciliation::detector::MismatchDetector;
 
 #[derive(Debug)]
@@ -8,6 +8,7 @@ pub struct RecoveryResult {
     pub is_parity_achieved: bool,
 }
 
+#[derive(Default)]
 pub struct RecoveryEngine {
     reconciler: MismatchDetector,
 }
@@ -19,16 +20,21 @@ impl RecoveryEngine {
         }
     }
 
-    pub async fn recover<B: BrokerAdapter>(&self, broker: &B, local_orders: &[OrderState], local_positions: &[PositionState]) -> Result<RecoveryResult, BrokerError> {
+    pub async fn recover<B: BrokerAdapter>(
+        &self,
+        broker: &B,
+        local_orders: &[OrderState],
+        local_positions: &[PositionState],
+    ) -> Result<RecoveryResult, BrokerError> {
         let broker_positions = broker.get_positions().await?;
         let broker_orders = broker.get_orders().await?;
 
         // In a real system, we would rebuild local state from broker_positions and broker_orders
         // Here we simulate the parity check.
         let order_issues = self.reconciler.detect(local_orders, &broker_orders);
-        
+
         let mut parity = order_issues.is_empty();
-        
+
         // Simple position parity check
         if local_positions.len() != broker_positions.len() {
             parity = false;

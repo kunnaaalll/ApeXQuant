@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use crate::microstructure::bid_ask::BidAsk;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Spread {
@@ -15,7 +15,7 @@ impl Spread {
             return Err("Midpoint is zero, cannot calculate relative spread");
         }
         let relative = (absolute / mid) * Decimal::new(10000, 0); // Convert to bps
-        
+
         Ok(Self { absolute, relative })
     }
 }

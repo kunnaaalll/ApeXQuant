@@ -1,5 +1,5 @@
-use crate::brokers::broker::OrderState;
 use super::detector::{MismatchDetector, ReconciliationIssue};
+use crate::brokers::broker::OrderState;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ReconciliationState {
@@ -13,6 +13,7 @@ pub struct ReconciliationResult {
     pub state: ReconciliationState,
 }
 
+#[derive(Default)]
 pub struct ReconciliationEngine {
     detector: MismatchDetector,
 }
@@ -24,9 +25,13 @@ impl ReconciliationEngine {
         }
     }
 
-    pub fn reconcile(&self, local_orders: &[OrderState], broker_orders: &[OrderState]) -> ReconciliationResult {
+    pub fn reconcile(
+        &self,
+        local_orders: &[OrderState],
+        broker_orders: &[OrderState],
+    ) -> ReconciliationResult {
         let issues = self.detector.detect(local_orders, broker_orders);
-        
+
         let state = if issues.is_empty() {
             ReconciliationState::ExactMatch
         } else {

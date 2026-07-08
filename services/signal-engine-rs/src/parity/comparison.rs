@@ -38,7 +38,8 @@ impl ComparisonEngine {
 
         let entry_diff = Self::calculate_price_diff(ts_output.entry_price, rust_output.entry_price);
         let stop_diff = Self::calculate_price_diff(ts_output.stop_loss, rust_output.stop_loss);
-        let target_diff = Self::calculate_price_diff(ts_output.take_profit, rust_output.take_profit);
+        let target_diff =
+            Self::calculate_price_diff(ts_output.take_profit, rust_output.take_profit);
 
         let pattern_comparisons = self.compare_patterns(&ts_output, &rust_output);
         let regime_comparison = self.compare_regimes(&ts_output, &rust_output);
@@ -97,14 +98,18 @@ impl ComparisonEngine {
     }
 
     /// Compare detected patterns between two outputs
-    fn compare_patterns(&self, ts_output: &SignalOutput, rust_output: &SignalOutput) -> Vec<PatternComparison> {
-        let rust_patterns: std::collections::HashSet<_> = rust_output.patterns.iter().cloned().collect();
-        let ts_patterns: std::collections::HashSet<_> = ts_output.patterns.iter().cloned().collect();
+    fn compare_patterns(
+        &self,
+        ts_output: &SignalOutput,
+        rust_output: &SignalOutput,
+    ) -> Vec<PatternComparison> {
+        let rust_patterns: std::collections::HashSet<_> =
+            rust_output.patterns.iter().cloned().collect();
+        let ts_patterns: std::collections::HashSet<_> =
+            ts_output.patterns.iter().cloned().collect();
 
-        let all_patterns: std::collections::HashSet<_> = rust_patterns
-            .union(&ts_patterns)
-            .cloned()
-            .collect();
+        let all_patterns: std::collections::HashSet<_> =
+            rust_patterns.union(&ts_patterns).cloned().collect();
 
         all_patterns
             .into_iter()
@@ -125,7 +130,11 @@ impl ComparisonEngine {
     }
 
     /// Compare regime classifications
-    fn compare_regimes(&self, ts_output: &SignalOutput, rust_output: &SignalOutput) -> RegimeComparison {
+    fn compare_regimes(
+        &self,
+        ts_output: &SignalOutput,
+        rust_output: &SignalOutput,
+    ) -> RegimeComparison {
         RegimeComparison {
             rust_regime: rust_output.regime.clone(),
             ts_regime: ts_output.regime.clone(),
@@ -159,7 +168,9 @@ impl ComparisonEngine {
 
         // Both have signals - check agreement
         if direction_match {
-            if confidence_diff < 1.0 && entry_diff.map_or(true, |d| d < self.config.price_tolerance_pips) {
+            if confidence_diff < 1.0
+                && entry_diff.map_or(true, |d| d < self.config.price_tolerance_pips)
+            {
                 return ComparisonType::ExactMatch;
             }
             if confidence_diff < self.config.confidence_tolerance {
@@ -239,29 +250,39 @@ impl ComparisonEngine {
         confidence_diff: f64,
         entry_diff: Option<f64>,
     ) -> String {
-        let mut notes = Vec::new();
+        let mut notes: Vec<String> = Vec::new();
 
         match comparison_type {
-            ComparisonType::ExactMatch => notes.push("Perfect match."),
-            ComparisonType::CloseMatch => notes.push("Close match with minor differences."),
-            ComparisonType::PartialMatch => notes.push("Partial agreement - review recommended."),
-            ComparisonType::Disagreement => notes.push("DISAGREEMENT - requires investigation."),
-            ComparisonType::Miss => notes.push("Rust missed TypeScript signal."),
-            ComparisonType::FalsePositive => notes.push("Rust generated false positive."),
-            ComparisonType::FalseNegative => notes.push("Both systems correctly no-signal."),
+            ComparisonType::ExactMatch => notes.push("Perfect match.".to_string()),
+            ComparisonType::CloseMatch => {
+                notes.push("Close match with minor differences.".to_string())
+            }
+            ComparisonType::PartialMatch => {
+                notes.push("Partial agreement - review recommended.".to_string())
+            }
+            ComparisonType::Disagreement => {
+                notes.push("DISAGREEMENT - requires investigation.".to_string())
+            }
+            ComparisonType::Miss => notes.push("Rust missed TypeScript signal.".to_string()),
+            ComparisonType::FalsePositive => {
+                notes.push("Rust generated false positive.".to_string())
+            }
+            ComparisonType::FalseNegative => {
+                notes.push("Both systems correctly no-signal.".to_string())
+            }
         }
 
         if !direction_match {
-            notes.push("Direction mismatch.");
+            notes.push("Direction mismatch.".to_string());
         }
 
         if confidence_diff > self.config.confidence_tolerance {
-            notes.push(&format!("Confidence drift: {:.1}%", confidence_diff));
+            notes.push(format!("Confidence drift: {:.1}%", confidence_diff));
         }
 
         if let Some(diff) = entry_diff {
             if diff > self.config.price_tolerance_pips {
-                notes.push(&format!("Entry price difference: {:.5}", diff));
+                notes.push(format!("Entry price difference: {:.5}", diff));
             }
         }
 

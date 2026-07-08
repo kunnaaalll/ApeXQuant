@@ -3,8 +3,8 @@ pub mod generator;
 pub mod result;
 pub mod validator;
 
-use std::collections::HashMap;
 use crate::market_data::Candle;
+use std::collections::HashMap;
 
 pub use emitter::SignalEmitter;
 pub use generator::SignalGenerator;

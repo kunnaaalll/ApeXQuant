@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EventRecord {
@@ -10,60 +11,71 @@ pub struct EventRecord {
     pub payload: serde_json::Value,
 }
 
-// Dummy structs for domain events to ensure exhaustive wrapper compiles
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HealthEvent {
-    pub details: String,
+    pub health_score: Decimal,
+    pub status: String,
+    pub streak: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConfidenceEvent {
-    pub details: String,
+    pub confidence_score: Decimal,
+    pub tier: String,
+    pub factors: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DriftEvent {
-    pub details: String,
+    pub drift_score: Decimal,
+    pub requires_retraining: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AllocationEvent {
-    pub details: String,
+    pub recommended_allocation: Decimal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecommendationEvent {
-    pub details: String,
+    pub action: String,
+    pub reason_codes: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DegradationEvent {
-    pub details: String,
+    pub is_degraded: bool,
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MetaEvent {
-    pub details: String,
+    pub learning_rate: Decimal,
+    pub adaptation_score: Decimal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClusterEvent {
-    pub details: String,
+    pub cluster_id: String,
+    pub similarity_score: Decimal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContextEvent {
-    pub details: String,
+    pub market_regime: String,
+    pub volatility_index: Decimal,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ValidationEvent {
-    pub details: String,
+    pub is_valid: bool,
+    pub validation_errors: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ShadowEvent {
-    pub details: String,
+    pub shadow_pnl: Decimal,
+    pub is_diverging: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

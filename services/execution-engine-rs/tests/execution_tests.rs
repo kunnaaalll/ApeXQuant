@@ -1,13 +1,17 @@
-use execution_engine::execution::smart::{ExecutionScore, Priority, RoutingDecision, RoutingState, Urgency};
+use execution_engine::events::SmartExecutionEvent;
+use execution_engine::execution::smart::{
+    ExecutionScore, Priority, RoutingDecision, RoutingState, Urgency,
+};
 use execution_engine::fills::{AveragePriceCalculator, FillState, PartialFillEngine};
-use execution_engine::liquidity::{AvailabilityScore, DepthScore, LiquidityRegime, OrderBookImbalance, SpreadQuality};
+use execution_engine::liquidity::{
+    AvailabilityScore, DepthScore, LiquidityRegime, OrderBookImbalance, SpreadQuality,
+};
 use execution_engine::order_split::{IcebergSplitter, TwapSplitter, VwapSplitter};
 use execution_engine::policies::fok::FokPolicy;
 use execution_engine::policies::gtc::GtcPolicy;
 use execution_engine::policies::ioc::IocPolicy;
 use execution_engine::policies::PolicyState;
 use execution_engine::slippage::SlippageScore;
-use execution_engine::events::SmartExecutionEvent;
 use execution_engine::snapshots::SmartExecutionSnapshot;
 
 use rust_decimal_macros::dec;
@@ -33,7 +37,7 @@ fn test_average_price() {
     let mut calc = AveragePriceCalculator::new();
     calc.add_fill(dec!(100), dec!(10)); // value 1000
     calc.add_fill(dec!(110), dec!(10)); // value 1100
-    // total value 2100, total qty 20 -> avg 105
+                                        // total value 2100, total qty 20 -> avg 105
     assert_eq!(calc.average_price(), Some(dec!(105)));
 }
 
@@ -87,7 +91,10 @@ fn test_execution_score_bounds() {
     // Check elite execution
     let score = ExecutionScore::new(dec!(100), dec!(100), dec!(100), dec!(100)).unwrap();
     assert_eq!(score.final_score, dec!(100));
-    assert!(matches!(score.grade(), execution_engine::execution::smart::ExecutionGrade::Elite));
+    assert!(matches!(
+        score.grade(),
+        execution_engine::execution::smart::ExecutionGrade::Elite
+    ));
 
     // Check bounds validation
     assert!(ExecutionScore::new(dec!(101), dec!(100), dec!(100), dec!(100)).is_err());
@@ -101,12 +108,15 @@ fn test_liquidity_regimes() {
     assert_eq!(DepthScore::calculate(dec!(150), dec!(100)), dec!(100)); // Capped at 100
 
     assert_eq!(AvailabilityScore::calculate(dec!(0.999)), dec!(99.90));
-    
+
     assert_eq!(SpreadQuality::calculate(dec!(1), dec!(2)), dec!(100)); // half the historical spread is perfect
-    assert_eq!(SpreadQuality::calculate(dec!(3), dec!(2)), dec!(50));  // 1.5x historical
-    assert_eq!(SpreadQuality::calculate(dec!(4), dec!(2)), dec!(0));   // 2x historical is zero
-    
-    assert_eq!(OrderBookImbalance::calculate(dec!(70), dec!(30)), dec!(0.4000));
+    assert_eq!(SpreadQuality::calculate(dec!(3), dec!(2)), dec!(50)); // 1.5x historical
+    assert_eq!(SpreadQuality::calculate(dec!(4), dec!(2)), dec!(0)); // 2x historical is zero
+
+    assert_eq!(
+        OrderBookImbalance::calculate(dec!(70), dec!(30)),
+        dec!(0.4000)
+    );
 }
 
 #[test]
@@ -156,12 +166,22 @@ fn test_event_replay() {
 
     for event in events {
         match event {
-            SmartExecutionEvent::RoutingDecisionMade { urgency, priority, decision, .. } => {
+            SmartExecutionEvent::RoutingDecisionMade {
+                urgency,
+                priority,
+                decision,
+                ..
+            } => {
                 snapshot.urgency = urgency;
                 snapshot.priority = priority;
                 snapshot.current_routing = Some(decision);
             }
-            SmartExecutionEvent::PartialFillRecorded { filled_qty, remaining_qty, state, .. } => {
+            SmartExecutionEvent::PartialFillRecorded {
+                filled_qty,
+                remaining_qty,
+                state,
+                ..
+            } => {
                 snapshot.filled_qty = filled_qty;
                 snapshot.remaining_qty = remaining_qty;
                 snapshot.fill_state = state;
@@ -186,13 +206,13 @@ fn test_determinism_100k_iterations() {
     // 100,000 loops. Zero drift validation using only Decimal.
     let mut current_price = dec!(100.0);
     let mut total_filled = dec!(0);
-    
+
     for _ in 0..100_000 {
         // Deterministic updates with exact math
         current_price = (current_price * dec!(1.00001)).trunc_with_scale(4);
         total_filled += dec!(0.001);
     }
-    
+
     // Check exact matches
     assert_eq!(total_filled, dec!(100));
     assert_eq!(current_price, dec!(263.3815));

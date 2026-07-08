@@ -1,11 +1,11 @@
-use uuid::Uuid;
 use crate::storage::aggregate::Aggregatable;
 use crate::storage::events::EventRecord;
-use crate::storage::snapshots::{SnapshotRecord, SnapshotFrequency};
 use crate::storage::pg_store::PgStore;
-use crate::storage::transactions::ExecutionTransaction;
 use crate::storage::rebuilder::ExecutionEventRebuilder;
+use crate::storage::snapshots::{SnapshotFrequency, SnapshotRecord};
+use crate::storage::transactions::ExecutionTransaction;
 use crate::storage::StorageError;
+use uuid::Uuid;
 
 pub struct ExecutionRepository {
     store: PgStore,
@@ -58,11 +58,11 @@ impl ExecutionRepository {
         aggregate_id: Uuid,
     ) -> Result<A, StorageError> {
         let snapshot = self.store.load_latest_snapshot(aggregate_id).await?;
-        
+
         let after_sequence = snapshot.as_ref().map(|s| s.sequence_number).unwrap_or(0);
-        
+
         let events = self.store.load_events(aggregate_id, after_sequence).await?;
-        
+
         let aggregate = ExecutionEventRebuilder::rebuild::<A>(snapshot, events)?;
         Ok(aggregate)
     }

@@ -1,5 +1,6 @@
 use super::persistence::{PersistenceEngine, StateSnapshot};
 
+#[derive(Default)]
 pub struct SystemRecovery {
     persistence: PersistenceEngine,
 }

@@ -1,10 +1,11 @@
-use chrono::{DateTime, Utc, NaiveTime};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use super::asia::AsiaSession;
 use super::london::LondonSession;
 use super::new_york::NewYorkSession;
 use super::overlap::SessionOverlap;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TradingSession {
     Asia,
     London,

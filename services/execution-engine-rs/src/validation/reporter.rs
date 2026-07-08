@@ -17,17 +17,14 @@ impl ValidationReporter {
             crate::validation::health::ValidationHealth::Weak => "Weak",
             crate::validation::health::ValidationHealth::Critical => "Critical",
         };
-        
+
         format!(
             "# Validation Report\n\n\
             ## Certification Status\n- {}\n\
             ## Score\n- {}\n\
             ## Health\n- {}\n\
             ## Parity Score\n- {}\n",
-            status,
-            state.score.value,
-            health,
-            state.parity_score
+            status, state.score.value, health, state.parity_score
         )
     }
 

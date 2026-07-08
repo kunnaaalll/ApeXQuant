@@ -1,7 +1,7 @@
 use super::state::ConnectionState;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ConnectionSupervisor {
     pub state: ConnectionState,
     pub last_heartbeat: Option<Instant>,

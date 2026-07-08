@@ -183,7 +183,7 @@ mod tests {
         let candles = vec![
             create_bullish_candle(1000, 1005),
             create_bullish_candle(1005, 1015),
-            create_bullish_candle(1015, 1025),
+            create_bullish_candle(1015, 1100), // Larger change to trigger displacement
         ];
 
         let atr = Decimal::new(50, 2); // 0.50

@@ -1,7 +1,6 @@
 #[cfg(test)]
-mod tests {
-    use super::super::DrawdownTracker;
-    use rust_decimal_macros::dec;
+use crate::drawdown::DrawdownTracker;
+use rust_decimal_macros::dec;
 
     #[test]
     fn test_drawdown_tracking() {
@@ -23,4 +22,4 @@ mod tests {
         assert_eq!(tracker.current_drawdown, dec!(0.0));
         assert_eq!(tracker.max_drawdown, dec!(0.10));
     }
-}
+

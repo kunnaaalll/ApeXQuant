@@ -11,6 +11,7 @@ pub struct Config {
     pub min_confluence_score: u8,
     pub min_signal_quality: SignalQuality,
     pub min_risk_reward: f64,
+    pub min_confidence_threshold: f64,
 
     /// Timeframes to analyze
     pub timeframes: Vec<String>,
@@ -44,6 +45,7 @@ impl Default for Config {
             min_confluence_score: 70,
             min_signal_quality: SignalQuality::A,
             min_risk_reward: 2.0,
+            min_confidence_threshold: 0.65,
             timeframes: vec![
                 "H4".to_string(),
                 "H1".to_string(),

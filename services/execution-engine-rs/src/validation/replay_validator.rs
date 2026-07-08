@@ -1,8 +1,8 @@
-use crate::validation::snapshots::ValidationSnapshot;
-use crate::validation::events::ValidationEvent;
-use crate::validation::state::ValidationState;
-use crate::validation::health::ValidationHealth;
 use crate::validation::certification::CertificationState;
+use crate::validation::events::ValidationEvent;
+use crate::validation::health::ValidationHealth;
+use crate::validation::snapshots::ValidationSnapshot;
+use crate::validation::state::ValidationState;
 use rust_decimal_macros::dec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,7 +15,11 @@ pub enum ReplayStatus {
 pub struct ReplayValidator;
 
 impl ReplayValidator {
-    pub fn validate(snapshot: &ValidationSnapshot, events: &[ValidationEvent], final_state: &ValidationState) -> ReplayStatus {
+    pub fn validate(
+        snapshot: &ValidationSnapshot,
+        events: &[ValidationEvent],
+        final_state: &ValidationState,
+    ) -> ReplayStatus {
         let mut current_state = snapshot.state.clone();
 
         for event in events {
@@ -24,23 +28,33 @@ impl ReplayValidator {
                     current_state.parity_score = *score;
                 }
                 ValidationEvent::DeterminismValidated { passed } => {
-                    if !*passed { current_state.health = ValidationHealth::Critical; }
+                    if !*passed {
+                        current_state.health = ValidationHealth::Critical;
+                    }
                 }
                 ValidationEvent::ReplayValidated { passed } => {
-                    if !*passed { current_state.health = ValidationHealth::Critical; }
+                    if !*passed {
+                        current_state.health = ValidationHealth::Critical;
+                    }
                 }
                 ValidationEvent::StressValidated { passed } => {
-                    if !*passed { current_state.health = ValidationHealth::Critical; }
+                    if !*passed {
+                        current_state.health = ValidationHealth::Critical;
+                    }
                 }
-                ValidationEvent::BenchmarkUpdated { average_latency_ms, p99_latency_ms } => {
-                    current_state.benchmark_metrics = Some(crate::validation::benchmark::BenchmarkResult {
-                        average_latency_ms: *average_latency_ms,
-                        p99_latency_ms: *p99_latency_ms,
-                        replay_time_ms: dec!(0),
-                        snapshot_time_ms: dec!(0),
-                        serialization_time_ms: dec!(0),
-                        validation_time_ms: dec!(0),
-                    });
+                ValidationEvent::BenchmarkUpdated {
+                    average_latency_ms,
+                    p99_latency_ms,
+                } => {
+                    current_state.benchmark_metrics =
+                        Some(crate::validation::benchmark::BenchmarkResult {
+                            average_latency_ms: *average_latency_ms,
+                            p99_latency_ms: *p99_latency_ms,
+                            replay_time_ms: dec!(0),
+                            snapshot_time_ms: dec!(0),
+                            serialization_time_ms: dec!(0),
+                            validation_time_ms: dec!(0),
+                        });
                 }
                 ValidationEvent::CertificationPromoted => {
                     current_state.certification_state = match current_state.certification_state {

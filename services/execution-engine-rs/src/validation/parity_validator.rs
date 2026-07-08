@@ -22,10 +22,16 @@ impl ParityValidator {
         microstructure: Decimal,
         routing_state: Decimal,
     ) -> (ParityResult, Decimal) {
-        let total = execution_risk + slippage + latency + liquidity + fill_quality + microstructure + routing_state;
+        let total = execution_risk
+            + slippage
+            + latency
+            + liquidity
+            + fill_quality
+            + microstructure
+            + routing_state;
         let count = dec!(7);
         let mut avg = total / count;
-        
+
         if avg < dec!(0) {
             avg = dec!(0);
         } else if avg > dec!(100) {

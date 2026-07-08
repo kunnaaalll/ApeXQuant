@@ -1,5 +1,5 @@
+use crate::order::{OrderId, OrderSide, OrderStatus, OrderType, TimeInForce};
 use crate::snapshots::{ExecutionSnapshot, OrderSnapshot};
-use crate::order::{OrderId, OrderType, OrderSide, OrderStatus, TimeInForce};
 use crate::state::ExecutionState;
 use rust_decimal_macros::dec;
 

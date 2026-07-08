@@ -1,5 +1,5 @@
-use crate::position::{Position, PositionState};
 use crate::order::OrderSide;
+use crate::position::{Position, PositionState};
 use rust_decimal_macros::dec;
 
 #[test]
@@ -14,7 +14,7 @@ fn test_position_open_close() {
     );
 
     assert_eq!(position.state, PositionState::Opening);
-    
+
     position.state = PositionState::Open;
     assert_eq!(position.state, PositionState::Open);
 

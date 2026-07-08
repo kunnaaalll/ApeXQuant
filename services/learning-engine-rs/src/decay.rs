@@ -123,7 +123,7 @@ impl DecayTracker {
 }
 
 fn to_dec(v: f64) -> Decimal {
-    Decimal::from_f64(v).unwrap_or(Decimal::ZERO).round_dp(6)
+    Decimal::from_f64(v).unwrap_or(Decimal::new(0, 0)).round_dp(6)
 }
 
 #[cfg(test)]
@@ -147,8 +147,8 @@ mod tests {
         m.ema_return = m.historical_mean_return;
         m.current_win_rate = m.baseline_win_rate;
         let out = DecayTracker::new().compute_decay(&m);
-        assert_eq!(out.edge_decay, Decimal::ZERO);
-        assert_eq!(out.confidence_decay, Decimal::ZERO);
+        assert_eq!(out.edge_decay, Decimal::new(0, 0));
+        assert_eq!(out.confidence_decay, Decimal::new(0, 0));
     }
 
     #[test]

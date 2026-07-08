@@ -2,31 +2,28 @@ use apex_protos::execution::execution_service_server::ExecutionService;
 use apex_protos::execution::{
     EvaluateExecutionRequest, EvaluateExecutionResponse, ExecutionRiskRequest,
     ExecutionRiskResponse, GetOrderStateRequest, GetOrderStateResponse, GetPositionStateRequest,
-    GetPositionStateResponse, HealthRequest as GrpcHealthRequest, HealthResponse as GrpcHealthResponse,
-    LatencyRequest, LatencyResponse, LiquidityProfileRequest, LiquidityProfileResponse,
-    MicrostructureRequest, MicrostructureResponse, ReadyRequest as GrpcReadyRequest,
-    ReadyResponse as GrpcReadyResponse, SlippageRequest, SlippageResponse, SubmitOrderRequest,
-    SubmitOrderResponse, Order,
+    GetPositionStateResponse, HealthRequest as GrpcHealthRequest,
+    HealthResponse as GrpcHealthResponse, LatencyRequest, LatencyResponse, LiquidityProfileRequest,
+    LiquidityProfileResponse, MicrostructureRequest, MicrostructureResponse, Order,
+    ReadyRequest as GrpcReadyRequest, ReadyResponse as GrpcReadyResponse, SlippageRequest,
+    SlippageResponse, SubmitOrderRequest, SubmitOrderResponse,
 };
-use tonic::{Request, Response, Status};
-use std::time::Instant;
 use rust_decimal_macros::dec;
+use std::time::Instant;
+use tonic::{Request, Response, Status};
 
 use crate::api::metrics::{record_request, record_response};
 use crate::slippage::expected::ExpectedSlippage;
 use crate::slippage::score::SlippageScore;
-use crate::latency::score::LatencyScore;
-use crate::microstructure::score::MicrostructureScore;
 
-use std::sync::Arc;
-use crate::event_bus::EventBusPublisher;
-use apex_protos::events::{Event, event::Payload, ExecutionOrderSubmittedEvent};
-use apex_protos::common::{Uuid as ProtoUuid, Timestamp, OrderType, TradeSide, Price, Volume};
-use crate::brokers::mt5::adapter::Mt5Adapter;
 use crate::brokers::binance::adapter::BinanceAdapter;
 use crate::brokers::broker::BrokerAdapter;
+use crate::brokers::mt5::adapter::Mt5Adapter;
+use crate::event_bus::EventBusPublisher;
 use crate::storage::pg_store::PgStore;
-
+use apex_protos::common::{Price, Timestamp};
+use apex_protos::events::{event::Payload, Event, ExecutionOrderSubmittedEvent};
+use std::sync::Arc;
 
 pub struct ExecutionServiceImpl {
     pub event_bus: Option<Arc<EventBusPublisher>>,
@@ -61,9 +58,7 @@ impl ExecutionService for ExecutionServiceImpl {
         record_request("EvaluateExecution");
 
         let inner = req.into_inner();
-        let order_size: rust_decimal::Decimal = inner.volume
-            .parse()
-            .unwrap_or(dec!(1.0));
+        let order_size: rust_decimal::Decimal = inner.volume.parse().unwrap_or(dec!(1.0));
 
         // Liquidity depth and volatility sourced from defaults until Market Data
         // Engine inter-service state channel is wired.
@@ -93,13 +88,19 @@ impl ExecutionService for ExecutionServiceImpl {
 
         let inner = req.into_inner();
         let request_id = inner.request_id.clone();
-        let new_order = inner.order.ok_or_else(|| Status::invalid_argument("Missing order details"))?;
+        let new_order = inner
+            .order
+            .ok_or_else(|| Status::invalid_argument("Missing order details"))?;
 
-        let symbol_code = new_order.symbol.as_ref().map(|s| s.code.as_str()).unwrap_or("");
-        
+        let symbol_code = new_order
+            .symbol
+            .as_ref()
+            .map(|s| s.code.as_str())
+            .unwrap_or("");
+
         // Decide which adapter to use
         let is_crypto = if let Some(sym) = &new_order.symbol {
-            sym.asset_class == apex_protos::common::AssetClass::Crypto as i32 
+            sym.asset_class == apex_protos::common::AssetClass::Crypto as i32
                 || sym.code.to_uppercase().contains("USDT")
                 || sym.code.to_uppercase().contains("BTC")
                 || sym.code.to_uppercase().contains("ETH")
@@ -114,24 +115,44 @@ impl ExecutionService for ExecutionServiceImpl {
         };
 
         let order_type = match new_order.order_type {
-            t if t == apex_protos::common::OrderType::Market as i32 => crate::brokers::requests::OrderType::Market,
-            t if t == apex_protos::common::OrderType::Limit as i32 => crate::brokers::requests::OrderType::Limit,
-            t if t == apex_protos::common::OrderType::Stop as i32 => crate::brokers::requests::OrderType::Stop,
-            t if t == apex_protos::common::OrderType::StopLimit as i32 => crate::brokers::requests::OrderType::StopLimit,
+            t if t == apex_protos::common::OrderType::Market as i32 => {
+                crate::brokers::requests::OrderType::Market
+            }
+            t if t == apex_protos::common::OrderType::Limit as i32 => {
+                crate::brokers::requests::OrderType::Limit
+            }
+            t if t == apex_protos::common::OrderType::Stop as i32 => {
+                crate::brokers::requests::OrderType::Stop
+            }
+            t if t == apex_protos::common::OrderType::StopLimit as i32 => {
+                crate::brokers::requests::OrderType::StopLimit
+            }
             _ => crate::brokers::requests::OrderType::Market,
         };
 
-        let volume = new_order.volume.as_ref()
-            .map(|v| v.units.parse::<rust_decimal::Decimal>().unwrap_or(rust_decimal::Decimal::ZERO))
+        let volume = new_order
+            .volume
+            .as_ref()
+            .map(|v| {
+                v.units
+                    .parse::<rust_decimal::Decimal>()
+                    .unwrap_or(rust_decimal::Decimal::ZERO)
+            })
             .unwrap_or(rust_decimal::Decimal::ZERO);
 
-        let price = new_order.limit_price.as_ref()
+        let price = new_order
+            .limit_price
+            .as_ref()
             .and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
 
-        let stop_loss = new_order.stop_loss.as_ref()
+        let stop_loss = new_order
+            .stop_loss
+            .as_ref()
             .and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
 
-        let take_profit = new_order.take_profit.as_ref()
+        let take_profit = new_order
+            .take_profit
+            .as_ref()
             .and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
 
         let broker_req = crate::brokers::requests::OrderSubmitRequest {
@@ -155,22 +176,24 @@ impl ExecutionService for ExecutionServiceImpl {
             Ok(resp) => resp.order_id,
             Err(err) => {
                 record_response("SubmitOrder", "error", start.elapsed());
-                return Err(Status::internal(format!("Broker execution failed: {:?}", err)));
+                return Err(Status::internal(format!(
+                    "Broker execution failed: {:?}",
+                    err
+                )));
             }
         };
 
         // Persist to PgStore
         if let Some(pg) = &self.pg_store {
             let now = time::OffsetDateTime::now_utc();
-            let payload = crate::storage::events::ExecutionEventWrapper::OrderEvent(
-                serde_json::json!({
+            let payload =
+                crate::storage::events::ExecutionEventWrapper::OrderEvent(serde_json::json!({
                     "order_id": order_id,
                     "symbol": symbol_code,
                     "volume": volume.to_string(),
                     "price": price.map(|p| p.to_string()),
                     "status": "Submitted"
-                })
-            );
+                }));
             let event_record = crate::storage::events::EventRecord {
                 aggregate_id: uuid::Uuid::new_v4(),
                 sequence_number: 1,
@@ -181,7 +204,8 @@ impl ExecutionService for ExecutionServiceImpl {
             };
 
             if let Ok(mut tx) = pg.begin_transaction().await {
-                let _ = crate::storage::pg_store::PgStore::append_event(&mut tx, &event_record).await;
+                let _ =
+                    crate::storage::pg_store::PgStore::append_event(&mut tx, &event_record).await;
                 let _ = tx.commit().await;
             }
         }
@@ -198,12 +222,22 @@ impl ExecutionService for ExecutionServiceImpl {
                 requester_service: "risk-engine".to_string(),
             };
 
-            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default();
             let event = Event {
-                event_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                event_id: Some(apex_protos::common::Uuid {
+                    value: uuid::Uuid::new_v4().as_bytes().to_vec(),
+                }),
                 spec_version: None,
-                occurred_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
-                published_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                occurred_at: Some(Timestamp {
+                    seconds: now.as_secs() as i64,
+                    nanos: now.subsec_nanos() as i32,
+                }),
+                published_at: Some(Timestamp {
+                    seconds: now.as_secs() as i64,
+                    nanos: now.subsec_nanos() as i32,
+                }),
                 event_type: "ExecutionOrderSubmittedEvent".to_string(),
                 source_service: "execution-engine".to_string(),
                 topic: "execution.order".to_string(),
@@ -227,36 +261,39 @@ impl ExecutionService for ExecutionServiceImpl {
             let volume_clone = new_order.volume.clone();
 
             tokio::spawn(async move {
+                let has_pending = if is_crypto {
+                    binance_clone
+                        .get_orders()
+                        .await
+                        .map(|orders| orders.iter().any(|o| o.ticket == order_id_clone))
+                        .unwrap_or(false)
+                } else {
+                    mt5_clone
+                        .get_orders()
+                        .await
+                        .map(|orders| orders.iter().any(|o| o.ticket == order_id_clone))
+                        .unwrap_or(false)
+                };
+
                 let mut filled = false;
-                let max_attempts = 120;
-                for _ in 0..max_attempts {
-                    let has_pending = if is_crypto {
-                        binance_clone.get_orders().await.map(|orders| orders.iter().any(|o| o.ticket == order_id_clone)).unwrap_or(false)
-                    } else {
-                        mt5_clone.get_orders().await.map(|orders| orders.iter().any(|o| o.ticket == order_id_clone)).unwrap_or(false)
-                    };
-
-                    if has_pending {
-                        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                        continue;
-                    }
-
+                if !has_pending {
                     let has_position = if is_crypto {
-                        binance_clone.get_positions().await.map(|positions| positions.iter().any(|p| p.ticket == order_id_clone)).unwrap_or(false)
+                        binance_clone
+                            .get_positions()
+                            .await
+                            .map(|positions| positions.iter().any(|p| p.ticket == order_id_clone))
+                            .unwrap_or(false)
                     } else {
-                        mt5_clone.get_positions().await.map(|positions| positions.iter().any(|p| p.ticket == order_id_clone)).unwrap_or(false)
+                        mt5_clone
+                            .get_positions()
+                            .await
+                            .map(|positions| positions.iter().any(|p| p.ticket == order_id_clone))
+                            .unwrap_or(false)
                     };
-
                     if has_position {
                         filled = true;
-                        break;
-                    }
-
-                    if !has_pending && !has_position {
-                        break; 
                     }
                 }
-
 
                 if filled {
                     if let Some(pg) = pg_clone {
@@ -264,8 +301,10 @@ impl ExecutionService for ExecutionServiceImpl {
                         let payload = crate::storage::events::ExecutionEventWrapper::OrderEvent(
                             serde_json::json!({
                                 "order_id": order_id_clone,
-                                "status": "Filled"
-                            })
+                                "status": "Filled",
+                                "fill_price": limit_price_clone.as_ref().map(|p| p.value.clone()).unwrap_or_else(|| "100.0".to_string()),
+                                "volume": volume_clone.as_ref().map(|v| v.units.clone()).unwrap_or_else(|| "1.0".to_string())
+                            }),
                         );
                         let event_record = crate::storage::events::EventRecord {
                             aggregate_id: uuid::Uuid::new_v4(),
@@ -277,28 +316,51 @@ impl ExecutionService for ExecutionServiceImpl {
                         };
 
                         if let Ok(mut tx) = pg.begin_transaction().await {
-                            let _ = crate::storage::pg_store::PgStore::append_event(&mut tx, &event_record).await;
+                            let _ = crate::storage::pg_store::PgStore::append_event(
+                                &mut tx,
+                                &event_record,
+                            )
+                            .await;
                             let _ = tx.commit().await;
                         }
                     }
 
                     if let Some(bus) = bus_clone {
-                        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+                        let now = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default();
                         let filled_event = apex_protos::events::ExecutionOrderFilledEvent {
                             order_id: order_id_clone.clone(),
                             execution_id: uuid::Uuid::new_v4().to_string(),
                             position_id: order_id_clone.clone(),
-                            fill_price: limit_price_clone.or_else(|| Some(Price { value: "100.0".to_string(), digits: 0, currency: "USD".to_string() })),
+                            fill_price: limit_price_clone.or_else(|| {
+                                Some(Price {
+                                    value: "100.0".to_string(),
+                                    digits: 0,
+                                    currency: "USD".to_string(),
+                                })
+                            }),
                             fill_volume: volume_clone,
                             broker_execution_id: format!("broker_fill_{}", order_id_clone),
-                            fill_time: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                            fill_time: Some(Timestamp {
+                                seconds: now.as_secs() as i64,
+                                nanos: now.subsec_nanos() as i32,
+                            }),
                         };
 
                         let event = Event {
-                            event_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                            event_id: Some(apex_protos::common::Uuid {
+                                value: uuid::Uuid::new_v4().as_bytes().to_vec(),
+                            }),
                             spec_version: None,
-                            occurred_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
-                            published_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                            occurred_at: Some(Timestamp {
+                                seconds: now.as_secs() as i64,
+                                nanos: now.subsec_nanos() as i32,
+                            }),
+                            published_at: Some(Timestamp {
+                                seconds: now.as_secs() as i64,
+                                nanos: now.subsec_nanos() as i32,
+                            }),
                             event_type: "ExecutionOrderFilledEvent".to_string(),
                             source_service: "execution-engine".to_string(),
                             topic: "execution.fill".to_string(),
@@ -339,81 +401,151 @@ impl ExecutionService for ExecutionServiceImpl {
         record_request("GetOrderState");
         let inner = request.into_inner();
         let order_id = inner.order_id;
-        
+
         let mut order_state = None;
 
         if let Some(pg) = &self.pg_store {
             use sqlx::Row;
-            let db_row = sqlx::query(
-                "SELECT order_id, symbol, side, volume, average_fill_price, state FROM orders WHERE order_id = $1"
+            let db_rows = sqlx::query(
+                "SELECT event_type, payload FROM execution_events WHERE order_id = $1 ORDER BY sequence_number ASC"
             )
             .bind(&order_id)
-            .fetch_optional(pg.pool())
+            .fetch_all(pg.pool())
             .await;
 
-            if let Ok(Some(row)) = db_row {
-                let symbol_str: String = row.get("symbol");
-                let side_str: String = row.get("side");
-                let volume_dec: rust_decimal::Decimal = row.get("volume");
-                let fill_price_dec: Option<rust_decimal::Decimal> = row.get("average_fill_price");
-                let state_str: String = row.get("state");
+            if let Ok(rows) = db_rows {
+                if !rows.is_empty() {
+                    let mut current_status = "Submitted".to_string();
+                    let mut symbol_str = "".to_string();
+                    let mut side_str = "".to_string();
+                    let mut volume_dec = rust_decimal::Decimal::ZERO;
+                    let mut fill_price_dec: Option<rust_decimal::Decimal> = None;
+                    let mut requested_price_dec: Option<rust_decimal::Decimal> = None;
 
-                let side_enum = if side_str.to_lowercase() == "buy" { 1 } else { 2 };
-                let state_enum = match state_str.to_lowercase().as_str() {
-                    "filled" => 5,
-                    "cancelled" => 6,
-                    "rejected" => 7,
-                    _ => 2,
-                };
+                    for row in rows {
+                        let event_type: String = row.get("event_type");
+                        let payload_val: serde_json::Value = row.get("payload");
+                        let inner = match &payload_val {
+                            serde_json::Value::Object(map) => {
+                                if let Some(serde_json::Value::Object(inner_map)) =
+                                    map.get("OrderEvent").or_else(|| map.get("FillEvent"))
+                                {
+                                    inner_map.clone()
+                                } else {
+                                    serde_json::Map::new()
+                                }
+                            }
+                            _ => serde_json::Map::new(),
+                        };
 
-                order_state = Some(Order {
-                    order_id: order_id.clone(),
-                    client_order_id: "".to_string(),
-                    symbol: Some(apex_protos::common::Symbol {
-                        code: symbol_str,
-                        exchange: "".to_string(),
-                        asset_class: 0,
-                        description: "".to_string(),
-                    }),
-                    order_type: 1,
-                    side: side_enum,
-                    requested_volume: Some(apex_protos::common::Volume {
-                        units: volume_dec.to_string(),
-                        lot_size: "100000".to_string(),
-                        fractional: true,
-                    }),
-                    filled_volume: Some(apex_protos::common::Volume {
-                        units: volume_dec.to_string(),
-                        lot_size: "100000".to_string(),
-                        fractional: true,
-                    }),
-                    remaining_volume: Some(apex_protos::common::Volume {
-                        units: "0".to_string(),
-                        lot_size: "100000".to_string(),
-                        fractional: true,
-                    }),
-                    limit_price: None,
-                    stop_price: None,
-                    stop_loss: None,
-                    take_profit: None,
-                    average_fill_price: Some(apex_protos::common::Price {
-                        value: fill_price_dec.unwrap_or_default().to_string(),
-                        digits: 5,
-                        currency: "USD".to_string(),
-                    }),
-                    state: state_enum,
-                    time_in_force: 0,
-                    created_at: None,
-                    submitted_at: None,
-                    last_updated_at: None,
-                    expires_at: None,
-                    broker_order_id: "".to_string(),
-                    execution_venue: "".to_string(),
-                    broker: "".to_string(),
-                    strategy_id: "".to_string(),
-                    signal_id: "".to_string(),
-                    correlation_id: "".to_string(),
-                });
+                        if event_type == "OrderSubmitted" {
+                            current_status = "Submitted".to_string();
+                            if let Some(s) = inner.get("symbol").and_then(|v| v.as_str()) {
+                                symbol_str = s.to_string();
+                            }
+                            if let Some(s) = inner.get("side").and_then(|v| v.as_str()) {
+                                side_str = s.to_string();
+                            }
+                            if let Some(v) = inner
+                                .get("volume")
+                                .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+                            {
+                                volume_dec = v;
+                            }
+                            if let Some(p) = inner
+                                .get("price")
+                                .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+                            {
+                                requested_price_dec = Some(p);
+                            }
+                        } else if event_type == "OrderFilled" {
+                            current_status = "Filled".to_string();
+                            if let Some(p) = inner
+                                .get("fill_price")
+                                .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+                            {
+                                fill_price_dec = Some(p);
+                            }
+                        } else if event_type == "OrderCancelled" {
+                            current_status = "Cancelled".to_string();
+                        } else if event_type == "OrderRejected" {
+                            current_status = "Rejected".to_string();
+                        }
+                    }
+
+                    let side_enum = if side_str.to_lowercase() == "buy" {
+                        1
+                    } else {
+                        2
+                    };
+                    let state_enum = match current_status.to_lowercase().as_str() {
+                        "filled" => 5,
+                        "cancelled" => 6,
+                        "rejected" => 7,
+                        _ => 2,
+                    };
+
+                    order_state = Some(Order {
+                        order_id: order_id.clone(),
+                        client_order_id: "".to_string(),
+                        symbol: Some(apex_protos::common::Symbol {
+                            code: symbol_str,
+                            exchange: "".to_string(),
+                            asset_class: 0,
+                            description: "".to_string(),
+                        }),
+                        order_type: 1,
+                        side: side_enum,
+                        requested_volume: Some(apex_protos::common::Volume {
+                            units: volume_dec.to_string(),
+                            lot_size: "100000".to_string(),
+                            fractional: true,
+                        }),
+                        filled_volume: Some(apex_protos::common::Volume {
+                            units: if current_status == "Filled" {
+                                volume_dec.to_string()
+                            } else {
+                                "0".to_string()
+                            },
+                            lot_size: "100000".to_string(),
+                            fractional: true,
+                        }),
+                        remaining_volume: Some(apex_protos::common::Volume {
+                            units: if current_status == "Filled" {
+                                "0".to_string()
+                            } else {
+                                volume_dec.to_string()
+                            },
+                            lot_size: "100000".to_string(),
+                            fractional: true,
+                        }),
+                        limit_price: requested_price_dec.map(|p| apex_protos::common::Price {
+                            value: p.to_string(),
+                            digits: 5,
+                            currency: "USD".to_string(),
+                        }),
+                        stop_price: None,
+                        stop_loss: None,
+                        take_profit: None,
+                        average_fill_price: fill_price_dec.map(|p| apex_protos::common::Price {
+                            value: p.to_string(),
+                            digits: 5,
+                            currency: "USD".to_string(),
+                        }),
+                        state: state_enum,
+                        time_in_force: 0,
+                        created_at: None,
+                        submitted_at: None,
+                        last_updated_at: None,
+                        expires_at: None,
+                        broker_order_id: "".to_string(),
+                        execution_venue: "".to_string(),
+                        broker: "".to_string(),
+                        strategy_id: "".to_string(),
+                        signal_id: "".to_string(),
+                        correlation_id: "".to_string(),
+                    });
+                }
             }
         }
 
@@ -486,18 +618,56 @@ impl ExecutionService for ExecutionServiceImpl {
 
         if let Some(pg) = &self.pg_store {
             use sqlx::Row;
-            let db_row = sqlx::query(
-                "SELECT current_volume, unrealized_pnl FROM positions WHERE position_id = $1 AND state = 'open'"
+            let db_rows = sqlx::query(
+                "SELECT event_type, payload FROM execution_events WHERE position_id = $1 ORDER BY sequence_number ASC"
             )
             .bind(&position_id)
-            .fetch_optional(pg.pool())
+            .fetch_all(pg.pool())
             .await;
 
-            if let Ok(Some(row)) = db_row {
-                let vol_dec: rust_decimal::Decimal = row.get("current_volume");
-                let pnl_dec: Option<rust_decimal::Decimal> = row.get("unrealized_pnl");
-                current_volume = vol_dec.to_string();
-                unrealized_pnl = pnl_dec.unwrap_or_default().to_string();
+            if let Ok(rows) = db_rows {
+                if !rows.is_empty() {
+                    let mut current_volume_dec = rust_decimal::Decimal::ZERO;
+                    let mut pnl_dec = rust_decimal::Decimal::ZERO;
+
+                    for row in rows {
+                        let event_type: String = row.get("event_type");
+                        let payload_val: serde_json::Value = row.get("payload");
+                        let inner = match &payload_val {
+                            serde_json::Value::Object(map) => {
+                                if let Some(serde_json::Value::Object(inner_map)) =
+                                    map.get("PositionEvent")
+                                {
+                                    inner_map.clone()
+                                } else {
+                                    serde_json::Map::new()
+                                }
+                            }
+                            _ => serde_json::Map::new(),
+                        };
+
+                        if event_type == "PositionOpened" || event_type == "PositionUpdated" {
+                            if let Some(v) = inner
+                                .get("volume")
+                                .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+                            {
+                                current_volume_dec = v;
+                            }
+                            if let Some(pnl) = inner
+                                .get("floating_pnl")
+                                .or_else(|| inner.get("pnl"))
+                                .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+                            {
+                                pnl_dec = pnl;
+                            }
+                        } else if event_type == "PositionClosed" {
+                            current_volume_dec = rust_decimal::Decimal::ZERO;
+                            pnl_dec = rust_decimal::Decimal::ZERO;
+                        }
+                    }
+                    current_volume = current_volume_dec.to_string();
+                    unrealized_pnl = pnl_dec.to_string();
+                }
             }
         }
 
@@ -528,9 +698,7 @@ impl ExecutionService for ExecutionServiceImpl {
         record_request("GetExecutionRisk");
 
         let inner = req.into_inner();
-        let order_size: rust_decimal::Decimal = inner.target_volume
-            .parse()
-            .unwrap_or(dec!(1.0));
+        let order_size: rust_decimal::Decimal = inner.target_volume.parse().unwrap_or(dec!(1.0));
 
         let volatility = dec!(0.001);
         let margin_rate = dec!(0.01);
@@ -557,10 +725,13 @@ impl ExecutionService for ExecutionServiceImpl {
         record_request("GetLiquidityProfile");
 
         let inner = req.into_inner();
-        let symbol_code = inner.symbol.map(|s| s.code).unwrap_or_else(|| "EURUSD".to_string());
-        
-        let mut bid_liq = rust_decimal_macros::dec!(1000000);
-        let mut ask_liq = rust_decimal_macros::dec!(1200000);
+        let symbol_code = inner
+            .symbol
+            .map(|s| s.code)
+            .unwrap_or_else(|| "EURUSD".to_string());
+
+        let bid_liq = rust_decimal_macros::dec!(1000000);
+        let ask_liq = rust_decimal_macros::dec!(1200000);
         let mut score = rust_decimal_macros::dec!(8.5);
 
         if let Some(pg) = &self.pg_store {
@@ -569,7 +740,7 @@ impl ExecutionService for ExecutionServiceImpl {
                 .bind(&symbol_code)
                 .fetch_optional(pg.pool())
                 .await;
-                
+
             if let Ok(Some(row)) = db_row {
                 let spread: rust_decimal::Decimal = row.get("spread");
                 // Tighter spread -> higher liquidity score
@@ -601,20 +772,68 @@ impl ExecutionService for ExecutionServiceImpl {
         record_request("GetSlippageMetrics");
 
         let inner = req.into_inner();
-        let executed_price: rust_decimal::Decimal = inner.executed_price
-            .parse()
-            .unwrap_or(dec!(0.0));
+        let executed_price: rust_decimal::Decimal =
+            inner.executed_price.parse().unwrap_or(dec!(0.0));
 
-        // Use random jitter to simulate slippage against an assumed reference price
-        let jitter = (start.elapsed().subsec_micros() % 10) as i64;
         let mut reference_price = executed_price;
-        if jitter % 2 == 0 {
-            reference_price -= rust_decimal::Decimal::new(jitter, 5);
-        } else {
-            reference_price += rust_decimal::Decimal::new(jitter, 5);
+        if let Some(pg) = &self.pg_store {
+            use sqlx::Row;
+            let db_rows = sqlx::query(
+                "SELECT event_type, payload FROM execution_events WHERE order_id = $1 ORDER BY sequence_number ASC"
+            )
+            .bind(&inner.order_id)
+            .fetch_all(pg.pool())
+            .await;
+
+            if let Ok(rows) = db_rows {
+                for row in rows {
+                    let event_type: String = row.get("event_type");
+                    let payload_val: serde_json::Value = row.get("payload");
+                    let inner_map = match &payload_val {
+                        serde_json::Value::Object(map) => {
+                            if let Some(serde_json::Value::Object(m)) = map.get("OrderEvent") {
+                                m.clone()
+                            } else {
+                                serde_json::Map::new()
+                            }
+                        }
+                        _ => serde_json::Map::new(),
+                    };
+
+                    if event_type == "OrderSubmitted" {
+                        if let Some(p) = inner_map
+                            .get("price")
+                            .and_then(|v| v.as_str().and_then(|s| s.parse().ok()))
+                        {
+                            reference_price = p;
+                        }
+                    }
+                }
+            }
         }
 
-        let slippage_amount = if reference_price.is_zero() { dec!(0) } else { (executed_price - reference_price).abs() };
+        if reference_price.is_zero() || reference_price == executed_price {
+            if let Some(pg) = &self.pg_store {
+                use sqlx::Row;
+                if let Ok(Some(row)) = sqlx::query("SELECT bid, ask FROM ticks WHERE symbol = 'EURUSD' ORDER BY sequence DESC LIMIT 1")
+                    .fetch_optional(pg.pool())
+                    .await {
+                        let bid: rust_decimal::Decimal = row.get("bid");
+                        let ask: rust_decimal::Decimal = row.get("ask");
+                        reference_price = (bid + ask) / dec!(2.0);
+                    }
+            }
+        }
+
+        if reference_price.is_zero() {
+            reference_price = executed_price;
+        }
+
+        let slippage_amount = if reference_price.is_zero() {
+            dec!(0)
+        } else {
+            (executed_price - reference_price).abs()
+        };
         let slippage_bps = if executed_price.is_zero() || reference_price.is_zero() {
             dec!(0)
         } else {
@@ -639,9 +858,10 @@ impl ExecutionService for ExecutionServiceImpl {
 
         let processing_us = start.elapsed().as_micros() as u64;
         let processing_ms = rust_decimal::Decimal::from(processing_us) / dec!(1000);
-        
+
         // Use realistic network latency based on typical broker connection
-        let network_ms = rust_decimal_macros::dec!(12.5) + rust_decimal::Decimal::from(start.elapsed().subsec_micros() % 5);
+        let network_ms = rust_decimal_macros::dec!(12.5)
+            + rust_decimal::Decimal::from(start.elapsed().subsec_micros() % 5);
 
         let response = LatencyResponse {
             network_latency_ms: network_ms.to_string(),
@@ -660,25 +880,31 @@ impl ExecutionService for ExecutionServiceImpl {
         record_request("GetMicrostructureScore");
 
         let inner = req.into_inner();
-        let symbol_code = inner.symbol.map(|s| s.code).unwrap_or_else(|| "EURUSD".to_string());
-        
+        let symbol_code = inner
+            .symbol
+            .map(|s| s.code)
+            .unwrap_or_else(|| "EURUSD".to_string());
+
         let mut tick_vol = rust_decimal_macros::dec!(0.0);
         let mut imbalance = rust_decimal_macros::dec!(0.0);
 
         if let Some(pg) = &self.pg_store {
             use sqlx::Row;
-            let db_rows = sqlx::query("SELECT spread FROM ticks WHERE symbol = $1 ORDER BY sequence DESC LIMIT 10")
-                .bind(&symbol_code)
-                .fetch_all(pg.pool())
-                .await;
-                
+            let db_rows = sqlx::query(
+                "SELECT spread FROM ticks WHERE symbol = $1 ORDER BY sequence DESC LIMIT 10",
+            )
+            .bind(&symbol_code)
+            .fetch_all(pg.pool())
+            .await;
+
             if let Ok(rows) = db_rows {
                 if !rows.is_empty() {
-                    let spreads: Vec<rust_decimal::Decimal> = rows.iter().map(|r| r.get("spread")).collect();
+                    let spreads: Vec<rust_decimal::Decimal> =
+                        rows.iter().map(|r| r.get("spread")).collect();
                     let max_spread = spreads.iter().max().cloned().unwrap_or_default();
                     let min_spread = spreads.iter().min().cloned().unwrap_or_default();
                     tick_vol = max_spread - min_spread;
-                    
+
                     // Mock imbalance based on tick volatility
                     if tick_vol > rust_decimal_macros::dec!(0.0002) {
                         imbalance = rust_decimal_macros::dec!(0.65);
@@ -704,7 +930,9 @@ impl ExecutionService for ExecutionServiceImpl {
     ) -> Result<Response<GrpcHealthResponse>, Status> {
         let start = Instant::now();
         record_request("Health");
-        let response = GrpcHealthResponse { status: "alive".to_string() };
+        let response = GrpcHealthResponse {
+            status: "alive".to_string(),
+        };
         record_response("Health", "ok", start.elapsed());
         Ok(Response::new(response))
     }
@@ -715,7 +943,9 @@ impl ExecutionService for ExecutionServiceImpl {
     ) -> Result<Response<GrpcReadyResponse>, Status> {
         let start = Instant::now();
         record_request("Ready");
-        let response = GrpcReadyResponse { status: "ready".to_string() };
+        let response = GrpcReadyResponse {
+            status: "ready".to_string(),
+        };
         record_response("Ready", "ok", start.elapsed());
         Ok(Response::new(response))
     }

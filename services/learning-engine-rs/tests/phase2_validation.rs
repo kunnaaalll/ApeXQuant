@@ -4,8 +4,7 @@ use learning_engine::retirement::{RetirementAction, RetirementManager};
 use learning_engine::anomaly::{AnomalyDetector, AnomalySeverity};
 use learning_engine::drift::{DriftMonitor, DriftMetrics, DriftStatus};
 use learning_engine::regime_memory::{RegimeMemory, MarketRegime};
-use learning_engine::clustering::{ClusterManager, Cluster, ClusterType};
-use learning_engine::explanation::ExplanationGenerator;
+use learning_engine::clustering::ClusterManager;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
@@ -48,7 +47,7 @@ fn test_regime_replay() {
 #[test]
 fn test_anomaly_detection() {
     let detector = AnomalyDetector::new();
-    let anomaly = detector.detect_slippage_anomaly(Decimal::new(10, 0), Decimal::new(1, 0)).unwrap();
+    let anomaly = detector.detect_slippage_anomaly(Decimal::new(10, 0), Decimal::new(1, 0), Decimal::new(1, 0)).unwrap();
     assert_eq!(anomaly.severity, AnomalySeverity::Critical);
 }
 

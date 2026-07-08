@@ -27,6 +27,12 @@ pub struct PositionTracker {
     pub current_stop_loss: Option<Decimal>,
     pub initial_take_profit: Option<Decimal>,
 
+    // Financials
+    pub margin_used: Option<Decimal>,
+    pub commission: Option<Decimal>,
+    pub swap: Option<Decimal>,
+    pub leverage: Option<Decimal>,
+
     // Performance metrics
     pub unrealized_pnl: Decimal,
     pub realized_pnl: Decimal,
@@ -36,6 +42,7 @@ pub struct PositionTracker {
     // Temporal metrics
     pub opened_at: SystemTime,
     pub last_updated_at: SystemTime,
+    pub closed_at: Option<SystemTime>,
 }
 
 impl PositionTracker {
@@ -60,12 +67,17 @@ impl PositionTracker {
             initial_stop_loss: None,
             current_stop_loss: None,
             initial_take_profit: None,
+            margin_used: None,
+            commission: Some(Decimal::ZERO),
+            swap: Some(Decimal::ZERO),
+            leverage: Some(Decimal::ONE),
             unrealized_pnl: Decimal::ZERO,
             realized_pnl: Decimal::ZERO,
             max_favorable_excursion: Decimal::ZERO,
             max_adverse_excursion: Decimal::ZERO,
             opened_at: now,
             last_updated_at: now,
+            closed_at: None,
         }
     }
 
@@ -73,6 +85,21 @@ impl PositionTracker {
         self.current_price = new_price;
         self.last_updated_at = SystemTime::now();
 
-        // TODO: Update MFE/MAE and Unrealized PnL internally or via event
+        // Calculate MFE and MAE
+        if self.side == "buy" {
+            if new_price > self.max_favorable_excursion || self.max_favorable_excursion.is_zero() {
+                self.max_favorable_excursion = new_price;
+            }
+            if new_price < self.max_adverse_excursion || self.max_adverse_excursion.is_zero() {
+                self.max_adverse_excursion = new_price;
+            }
+        } else {
+            if new_price < self.max_favorable_excursion || self.max_favorable_excursion.is_zero() {
+                self.max_favorable_excursion = new_price;
+            }
+            if new_price > self.max_adverse_excursion || self.max_adverse_excursion.is_zero() {
+                self.max_adverse_excursion = new_price;
+            }
+        }
     }
 }

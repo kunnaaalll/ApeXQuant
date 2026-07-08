@@ -1,8 +1,8 @@
 use std::task::{Context, Poll};
-use tower::{Layer, Service};
-use uuid::Uuid;
 use tonic::codegen::http;
 use tonic::codegen::http::header::HeaderName;
+use tower::{Layer, Service};
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct TracingLayer;
@@ -43,12 +43,13 @@ where
                 req.headers_mut().insert(request_id_header, header_value);
             }
         }
-        
+
         let correlation_id_header = HeaderName::from_static("x-correlation-id");
         if req.headers().get(&correlation_id_header).is_none() {
             let uuid = Uuid::new_v4().to_string();
             if let Ok(header_value) = uuid.parse() {
-                req.headers_mut().insert(correlation_id_header, header_value);
+                req.headers_mut()
+                    .insert(correlation_id_header, header_value);
             }
         }
 

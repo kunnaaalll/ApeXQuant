@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
+use sqlx::PgPool;
+use redis::Client;
 
 use apex_protos::risk::risk_engine_server::RiskEngineServer;
 
@@ -12,6 +14,12 @@ use crate::interceptors::metrics::MetricsLayer;
 use std::sync::Arc;
 use crate::event_bus::EventBusPublisher;
 
+#[derive(Clone)]
+pub struct AppState {
+    pub pg_pool: PgPool,
+    pub redis_client: Client,
+}
+
 /// Start the risk engine gRPC + HTTP health server.
 ///
 /// `state` is the live `RiskState` initialised at service bootstrap.
@@ -19,13 +27,22 @@ use crate::event_bus::EventBusPublisher;
 pub async fn start_server(
     state: RiskState,
     event_bus: Option<Arc<EventBusPublisher>>,
+    pg_pool: PgPool,
+    redis_client: Client,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let addr: SocketAddr = "0.0.0.0:50053".parse()?;
 
-    let health_router = health_routes();
+    let app_state = AppState {
+        pg_pool: pg_pool.clone(),
+        redis_client,
+    };
+
+    let repository = Arc::new(crate::storage::repository::RiskRepository::new(pg_pool.clone()));
+
+    let health_router = health_routes(app_state);
 
     let grpc_service = RiskEngineServer::with_interceptor(
-        RiskServiceImpl::new(state, event_bus),
+        RiskServiceImpl::new(state, event_bus, Some(repository)),
         auth_interceptor,
     );
 

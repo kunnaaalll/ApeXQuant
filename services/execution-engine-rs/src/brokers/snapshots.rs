@@ -1,5 +1,5 @@
-use super::health::BrokerHealth;
 use super::connection::ConnectionState;
+use super::health::BrokerHealth;
 use super::responses::{AccountInfo, OpenPosition, PendingOrder, SymbolInfo};
 use serde::{Deserialize, Serialize};
 

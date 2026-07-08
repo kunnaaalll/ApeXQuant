@@ -1,14 +1,14 @@
-pub mod events;
-pub mod snapshots;
-pub mod serializer;
 pub mod aggregate;
+pub mod consistency;
+pub mod events;
+pub mod pg_store;
 pub mod rebuilder;
 pub mod repository;
-pub mod pg_store;
 pub mod sequence;
-pub mod versioning;
+pub mod serializer;
+pub mod snapshots;
 pub mod transactions;
-pub mod consistency;
+pub mod versioning;
 
 #[cfg(test)]
 pub mod tests;
@@ -24,10 +24,7 @@ pub enum StorageError {
     SerializationError(#[from] serde_json::Error),
 
     #[error("Sequence violation: expected {expected}, got {actual}")]
-    SequenceViolation {
-        expected: u64,
-        actual: u64,
-    },
+    SequenceViolation { expected: u64, actual: u64 },
 
     #[error("Version error: invalid version transition")]
     VersionError,
@@ -38,4 +35,3 @@ pub enum StorageError {
     #[error("Snapshot not found")]
     SnapshotNotFound,
 }
-

@@ -69,10 +69,12 @@ pub fn detect_sweeps(
     }
 
     // Find swing-based liquidity levels
-    let swing_highs: Vec<&SwingPoint> = swings.iter()
+    let swing_highs: Vec<&SwingPoint> = swings
+        .iter()
         .filter(|s| s.swing_type == SwingType::High)
         .collect();
-    let swing_lows: Vec<&SwingPoint> = swings.iter()
+    let swing_lows: Vec<&SwingPoint> = swings
+        .iter()
         .filter(|s| s.swing_type == SwingType::Low)
         .collect();
 
@@ -107,7 +109,12 @@ pub fn detect_sweeps(
     }
 
     // Check for equal highs/lows
-    sweeps.extend(detect_equal_level_sweeps(candles, &swing_highs, &swing_lows, timeframe));
+    sweeps.extend(detect_equal_level_sweeps(
+        candles,
+        &swing_highs,
+        &swing_lows,
+        timeframe,
+    ));
 
     sweeps
 }
@@ -134,13 +141,8 @@ fn check_sweep_at_level(
 
                     // Need some reversal to confirm sweep
                     if reversal > Decimal::ZERO && candle.close < candle.open {
-                        let strength = calculate_sweep_strength(
-                            swept_distance,
-                            reversal,
-                            candles,
-                            i,
-                            true,
-                        );
+                        let strength =
+                            calculate_sweep_strength(swept_distance, reversal, candles, i, true);
 
                         return Some(LiquiditySweep {
                             direction: SweepDirection::High,
@@ -164,13 +166,8 @@ fn check_sweep_at_level(
                     let reversal = candle.close - level;
 
                     if reversal > Decimal::ZERO && candle.close > candle.open {
-                        let strength = calculate_sweep_strength(
-                            swept_distance,
-                            reversal,
-                            candles,
-                            i,
-                            false,
-                        );
+                        let strength =
+                            calculate_sweep_strength(swept_distance, reversal, candles, i, false);
 
                         return Some(LiquiditySweep {
                             direction: SweepDirection::Low,
@@ -264,7 +261,11 @@ fn calculate_sweep_strength(
     // Factor 1: Rejection quality (reversal vs sweep size)
     if swept_distance > Decimal::ZERO {
         let rejection_ratio = reversal / swept_distance;
-        score += rejection_ratio.min(Decimal::from(3)).to_f64().unwrap_or(0.0) * 0.35;
+        score += rejection_ratio
+            .min(Decimal::from(3))
+            .to_f64()
+            .unwrap_or(0.0)
+            * 0.35;
     }
 
     // Factor 2: Body confirmation
@@ -310,9 +311,7 @@ fn calculate_recent_volatility(candles: &[Candle], end_index: usize) -> f64 {
     }
 
     let mean = ranges.iter().sum::<f64>() / ranges.len() as f64;
-    let variance = ranges.iter()
-        .map(|r| (r - mean).powi(2))
-        .sum::<f64>() / ranges.len() as f64;
+    let variance = ranges.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / ranges.len() as f64;
 
     let cv = variance.sqrt() / mean; // Coefficient of variation
     cv.min(1.0)
@@ -327,20 +326,32 @@ pub fn has_recent_sweep(
 ) -> Option<LiquiditySweep> {
     let sweeps = detect_sweeps(candles, swings, "unknown");
 
-    sweeps.into_iter()
+    sweeps
+        .into_iter()
         .filter(|s| candles.len().saturating_sub(s.sweep_index) <= lookback)
         .filter(|s| s.direction == direction)
         .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
 }
 
 /// Get sweep bias from recent sweeps
-pub fn get_sweep_bias(sweeps: &[LiquiditySweep], lookback: usize, total_candles: usize) -> Option<SweepDirection> {
-    let recent: Vec<_> = sweeps.iter()
+pub fn get_sweep_bias(
+    sweeps: &[LiquiditySweep],
+    lookback: usize,
+    total_candles: usize,
+) -> Option<SweepDirection> {
+    let recent: Vec<_> = sweeps
+        .iter()
         .filter(|s| total_candles.saturating_sub(s.sweep_index) <= lookback)
         .collect();
 
-    let high_sweeps = recent.iter().filter(|s| s.direction == SweepDirection::High).count();
-    let low_sweeps = recent.iter().filter(|s| s.direction == SweepDirection::Low).count();
+    let high_sweeps = recent
+        .iter()
+        .filter(|s| s.direction == SweepDirection::High)
+        .count();
+    let low_sweeps = recent
+        .iter()
+        .filter(|s| s.direction == SweepDirection::Low)
+        .count();
 
     if high_sweeps > low_sweeps * 2 && high_sweeps >= 2 {
         Some(SweepDirection::High) // Swept highs = likely bearish after
@@ -364,21 +375,27 @@ pub struct LiquidityAnalysis {
 }
 
 /// Analyze liquidity conditions
-pub fn analyze_liquidity(
-    candles: &[Candle],
-    swings: &[SwingPoint],
-) -> LiquidityAnalysis {
+pub fn analyze_liquidity(candles: &[Candle], swings: &[SwingPoint]) -> LiquidityAnalysis {
     let sweeps = detect_sweeps(candles, swings, "unknown");
     let lookback = 20;
 
-    let recent: Vec<_> = sweeps.iter()
+    let recent: Vec<_> = sweeps
+        .iter()
         .filter(|s| candles.len().saturating_sub(s.sweep_index) <= lookback)
         .collect();
 
-    let high_sweeps = recent.iter().filter(|s| s.direction == SweepDirection::High).count();
-    let low_sweeps = recent.iter().filter(|s| s.direction == SweepDirection::Low).count();
+    let high_sweeps = recent
+        .iter()
+        .filter(|s| s.direction == SweepDirection::High)
+        .count();
+    let low_sweeps = recent
+        .iter()
+        .filter(|s| s.direction == SweepDirection::Low)
+        .count();
 
-    let strongest = recent.iter().max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
+    let strongest = recent
+        .iter()
+        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
 
     let bias = get_sweep_bias(&sweeps, lookback, candles.len());
 
@@ -408,16 +425,21 @@ mod tests {
 
     #[test]
     fn test_high_sweep_detection() {
-        let candles = vec![
+        let mut candles = vec![create_candle_with_wick(10000, 10100, 9900, 10050); 2];
+
+        candles.extend(vec![
             create_candle_with_wick(10000, 10100, 9900, 10050),
             create_candle_with_wick(10050, 10200, 10000, 10200), // Sets high
             create_candle_with_wick(10200, 10300, 10100, 10150), // Sweeps 102 with wick 103, closes lower
-        ];
+        ]);
 
-        // Create a swing high at index 1 with price 102.00
-        let swings = vec![
-            SwingPoint { index: 1, timestamp: OffsetDateTime::now_utc(), price: Decimal::new(10200, 2), swing_type: SwingType::High },
-        ];
+        // Create a swing high at index 3 (2 + 1) with price 102.00
+        let swings = vec![SwingPoint {
+            index: 3,
+            timestamp: OffsetDateTime::now_utc(),
+            price: Decimal::new(10200, 2),
+            swing_type: SwingType::High,
+        }];
 
         let sweeps = detect_sweeps(&candles, &swings, "M15");
 

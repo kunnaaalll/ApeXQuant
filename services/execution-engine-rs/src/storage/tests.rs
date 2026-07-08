@@ -1,13 +1,13 @@
-use uuid::Uuid;
-use time::OffsetDateTime;
 use serde_json::json;
+use time::OffsetDateTime;
+use uuid::Uuid;
 
+use crate::storage::aggregate::Aggregatable;
 use crate::storage::events::{EventRecord, ExecutionEventWrapper};
+use crate::storage::rebuilder::ExecutionEventRebuilder;
 use crate::storage::sequence::validate_sequence_strict;
 use crate::storage::versioning::AggregateVersion;
 use crate::storage::StorageError;
-use crate::storage::aggregate::Aggregatable;
-use crate::storage::rebuilder::ExecutionEventRebuilder;
 
 #[derive(Default, Debug, PartialEq)]
 struct ExecutionTestAggregate {
@@ -49,10 +49,16 @@ fn test_event_ordering() {
 #[test]
 fn test_sequence_violation() {
     let result = validate_sequence_strict(1, 3);
-    assert!(matches!(result, Err(StorageError::SequenceViolation { .. })));
+    assert!(matches!(
+        result,
+        Err(StorageError::SequenceViolation { .. })
+    ));
 
     let result = validate_sequence_strict(5, 2);
-    assert!(matches!(result, Err(StorageError::SequenceViolation { .. })));
+    assert!(matches!(
+        result,
+        Err(StorageError::SequenceViolation { .. })
+    ));
 }
 
 #[test]
@@ -60,12 +66,12 @@ fn test_snapshot_restore() {
     let mut aggregate = ExecutionTestAggregate::default();
     aggregate.apply_event(&ExecutionEventWrapper::OrderEvent(json!({})));
     aggregate.apply_event(&ExecutionEventWrapper::OrderEvent(json!({})));
-    
+
     let snap = aggregate.snapshot();
-    
+
     let mut new_aggregate = ExecutionTestAggregate::default();
     new_aggregate.restore_snapshot(snap);
-    
+
     assert_eq!(aggregate, new_aggregate);
 }
 
@@ -77,11 +83,11 @@ fn test_event_rebuild() {
         create_test_event(2),
         create_test_event(3),
     ];
-    
+
     for e in &events {
         aggregate.apply_event(&e.payload);
     }
-    
+
     let rebuilt = ExecutionEventRebuilder::rebuild::<ExecutionTestAggregate>(None, events).unwrap();
     assert_eq!(aggregate, rebuilt);
 }

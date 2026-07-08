@@ -67,9 +67,9 @@ impl LearningRebuilder {
             } => {
                 let strategy = self.state.active_strategies.entry(*strategy_id).or_insert(
                     StrategyStateSnapshot {
-                        allocation: Decimal::ZERO,
+                        allocation: Decimal::new(0, 0),
                         is_active: true,
-                        total_pnl: Decimal::ZERO,
+                        total_pnl: Decimal::new(0, 0),
                         trade_count: 0,
                     },
                 );
@@ -85,9 +85,9 @@ impl LearningRebuilder {
             } => {
                 let strategy = self.state.active_strategies.entry(*strategy_id).or_insert(
                     StrategyStateSnapshot {
-                        allocation: Decimal::ZERO,
+                        allocation: Decimal::new(0, 0),
                         is_active: true,
-                        total_pnl: Decimal::ZERO,
+                        total_pnl: Decimal::new(0, 0),
                         trade_count: 0,
                     },
                 );

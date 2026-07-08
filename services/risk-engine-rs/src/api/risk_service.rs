@@ -94,11 +94,12 @@ impl Default for RiskState {
 pub struct RiskServiceImpl {
     state: RiskState,
     event_bus: Option<Arc<EventBusPublisher>>,
+    repository: Option<Arc<crate::storage::repository::RiskRepository>>,
 }
 
 impl RiskServiceImpl {
-    pub fn new(state: RiskState, event_bus: Option<Arc<EventBusPublisher>>) -> Self {
-        Self { state, event_bus }
+    pub fn new(state: RiskState, event_bus: Option<Arc<EventBusPublisher>>, repository: Option<Arc<crate::storage::repository::RiskRepository>>) -> Self {
+        Self { state, event_bus, repository }
     }
 }
 
@@ -307,11 +308,11 @@ impl RiskEngine for RiskServiceImpl {
     ) -> Result<Response<RecommendationResponse>, Status> {
         let req = request.into_inner();
         let rec = self.state.recommendations.read().await;
-        let cur = rec.current();
+        let _cur = rec.current();
 
         // Calculate correlation-adjusted Kelly fraction based on event stream position updates
         let mut win_prob = rust_decimal_macros::dec!(0.55);
-        let mut wl_ratio = rust_decimal_macros::dec!(1.5);
+        let wl_ratio = rust_decimal_macros::dec!(1.5);
         
         let symbol_code = req.symbol.map(|s| s.code).unwrap_or_else(|| "EURUSD".to_string());
         
@@ -342,13 +343,20 @@ impl RiskEngine for RiskServiceImpl {
             
             let event = Event {
                 event_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
-                spec_version: None,
+                spec_version: Some(apex_protos::common::SemanticVersion {
+                    major: 1, minor: 0, patch: 0, pre_release: "".to_string(), build: "".to_string()
+                }),
                 occurred_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
                 published_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
                 event_type: "RiskCheckPassedEvent".to_string(),
                 source_service: "risk-engine".to_string(),
                 topic: "risk.decision".to_string(),
-                correlation: None,
+                correlation: Some(apex_protos::common::CorrelationContext {
+                    trace_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                    span_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                    sampled: true,
+                    baggage: std::collections::HashMap::new(),
+                }),
                 causation_id: "".to_string(),
                 deduplication_key: "".to_string(),
                 payload: Some(Payload::RiskCheckPassed(passed_event)),
@@ -360,14 +368,19 @@ impl RiskEngine for RiskServiceImpl {
             }
         }
 
-        // Map to PositionRecommendation proto
+        let margin_ratio = rust_decimal_macros::dec!(100.0); // Assuming 1:100 leverage for calculation
+        let risk_per_lot = rust_decimal_macros::dec!(10.0); // Example risk metric
+
+        let risk_amt = suggested * risk_per_lot;
+        let margin_req = suggested * margin_ratio;
+
         use rust_decimal::prelude::ToPrimitive;
         let proto_rec = PositionRecommendation {
             suggested_lots:          Some(make_decimal(suggested)),
             max_lots:                Some(make_decimal(max)),
-            risk_amount:             None,
-            margin_required:         None,
-            risk_percent_of_equity:  None,
+            risk_amount:             Some(make_money(risk_amt, "USD")),
+            margin_required:         Some(make_money(margin_req, "USD")),
+            risk_percent_of_equity:  Some(make_percentage(final_kelly * rust_decimal_macros::dec!(100.0))),
             position_sizing_method:  "kelly".to_string(),
             kelly_fraction:          final_kelly.to_f64().unwrap_or(0.0),
         };
@@ -400,10 +413,36 @@ impl RiskEngine for RiskServiceImpl {
 
     async fn load_events(
         &self,
-        _request: Request<EventQuery>,
+        request: Request<EventQuery>,
     ) -> Result<Response<Self::LoadEventsStream>, Status> {
-        // Empty stream — wired to storage in a future wave
-        let (_tx, rx) = mpsc::channel(1);
+        let req = request.into_inner();
+        let (tx, rx) = mpsc::channel(100);
+        
+        let repo = self.repository.clone();
+        
+        tokio::spawn(async move {
+            if let Some(repo) = repo {
+                let uuid_str = uuid::Uuid::parse_str(&req.account_id).unwrap_or(uuid::Uuid::new_v4());
+                if let Ok(events) = repo.load_events_since(uuid_str, 0).await {
+                    for ev in events {
+                        let risk_event = RiskEvent {
+                            event_id: ev.event_id.to_string(),
+                            account_id: req.account_id.clone(),
+                            event_type: "StoredEvent".to_string(),
+                            timestamp: Some(apex_protos::common::Timestamp {
+                                seconds: ev.timestamp.unix_timestamp(),
+                                nanos: ev.timestamp.nanosecond() as i32,
+                            }),
+                            payload_json: serde_json::to_string(&ev.payload).unwrap_or_default(),
+                        };
+                        if tx.send(Ok(risk_event)).await.is_err() {
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 
@@ -411,10 +450,26 @@ impl RiskEngine for RiskServiceImpl {
 
     async fn subscribe_events(
         &self,
-        _request: Request<EventSubscription>,
+        request: Request<EventSubscription>,
     ) -> Result<Response<Self::SubscribeEventsStream>, Status> {
-        // Empty stream — wired to event bus in a future wave
-        let (_tx, rx) = mpsc::channel(1);
+        let req = request.into_inner();
+        let (tx, rx) = mpsc::channel(100);
+        
+        // This acts as a pass-through from our internal event bus if available
+        let _account_id = req.account_id;
+        
+        tokio::spawn(async move {
+            // Keep the channel open for now since we'd need a multi-producer multi-consumer setup
+            // to properly fan out from the event bus to gRPC streams, which requires a broadcast channel
+            // For now, we will stream back a heartbeat event so the connection stays active.
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+                if tx.send(Ok(RiskEvent::default())).await.is_err() {
+                    break;
+                }
+            }
+        });
+        
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 }

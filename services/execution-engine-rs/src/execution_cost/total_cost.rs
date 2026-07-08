@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
-use crate::execution_cost::spread_cost::SpreadCost;
-use crate::execution_cost::slippage_cost::SlippageCost;
 use crate::execution_cost::impact_cost::ImpactCost;
+use crate::execution_cost::slippage_cost::SlippageCost;
+use crate::execution_cost::spread_cost::SpreadCost;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TotalExecutionCostGrade {
@@ -30,7 +30,7 @@ impl TotalExecutionCost {
         }
 
         let total_usd = spread_cost.cost_usd + slippage_cost.cost_usd + impact_cost.cost_usd;
-        
+
         let bps_cost = (total_usd / notional_usd) * Decimal::new(10000, 0);
         use rust_decimal::prelude::ToPrimitive;
         let bps_cost_u64 = bps_cost.to_u64().unwrap_or(100);

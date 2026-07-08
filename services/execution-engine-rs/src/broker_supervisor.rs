@@ -31,7 +31,10 @@ impl BrokerSupervisor {
         let binance = Arc::clone(&self.binance_adapter);
 
         tokio::spawn(async move {
-            info!("BrokerSupervisor: Heartbeat loop started ({}s)", interval_secs);
+            info!(
+                "BrokerSupervisor: Heartbeat loop started ({}s)",
+                interval_secs
+            );
             loop {
                 sleep(Duration::from_secs(interval_secs)).await;
 
@@ -53,7 +56,10 @@ impl BrokerSupervisor {
         let binance = Arc::clone(&self.binance_adapter);
 
         tokio::spawn(async move {
-            info!("BrokerSupervisor: Health check loop started ({}s)", interval_secs);
+            info!(
+                "BrokerSupervisor: Health check loop started ({}s)",
+                interval_secs
+            );
             loop {
                 sleep(Duration::from_secs(interval_secs)).await;
 
@@ -89,7 +95,10 @@ impl BrokerSupervisor {
         let binance = Arc::clone(&self.binance_adapter);
 
         tokio::spawn(async move {
-            info!("BrokerSupervisor: Reconciliation loop started ({}s)", interval_secs);
+            info!(
+                "BrokerSupervisor: Reconciliation loop started ({}s)",
+                interval_secs
+            );
             loop {
                 sleep(Duration::from_secs(interval_secs)).await;
 

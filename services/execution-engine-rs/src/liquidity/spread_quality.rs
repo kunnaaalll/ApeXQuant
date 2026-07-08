@@ -6,7 +6,11 @@ pub struct SpreadQuality;
 impl SpreadQuality {
     pub fn calculate(current_spread: Decimal, historical_average_spread: Decimal) -> Decimal {
         if historical_average_spread <= Decimal::ZERO {
-            return if current_spread <= Decimal::ZERO { dec!(100) } else { dec!(0) };
+            return if current_spread <= Decimal::ZERO {
+                dec!(100)
+            } else {
+                dec!(0)
+            };
         }
         if current_spread <= Decimal::ZERO {
             return dec!(100);

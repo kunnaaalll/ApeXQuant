@@ -8,8 +8,6 @@ use crate::recommendations::models::{RecommendationExplanation, RiskInputs, Trad
 
 use super::constraints::detect_constraints;
 use super::contributors::find_largest_contributor;
-use super::deterioration::detect_deterioration;
-use super::improvements::detect_improvements;
 use super::reasons::track_reasons;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -107,7 +105,7 @@ pub fn generate_narrative(
 
 /// Build structured rule violations from the risk inputs.
 fn build_rule_violations(
-    inputs: &RiskInputs,
+    _inputs: &RiskInputs,
     reasons: &[super::reasons::Reason],
 ) -> Vec<RuleViolation> {
     let mut violations = Vec::new();

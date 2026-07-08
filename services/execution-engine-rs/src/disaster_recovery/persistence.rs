@@ -8,6 +8,7 @@ pub struct StateSnapshot {
     pub timestamp: u64,
 }
 
+#[derive(Default)]
 pub struct PersistenceEngine {
     latest_snapshot: Option<StateSnapshot>,
 }

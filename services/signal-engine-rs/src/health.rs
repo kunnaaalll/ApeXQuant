@@ -115,12 +115,33 @@ pub async fn check_health(engine: &SignalEngine) -> HealthStatus {
     }
 }
 
-async fn check_data_freshness(_engine: &SignalEngine) -> CheckResult {
-    // TODO: Implement actual data freshness check
-    CheckResult {
-        status: Status::Healthy,
-        message: "Data pipeline operational".to_string(),
-        response_time_us: 100,
+async fn check_data_freshness(engine: &SignalEngine) -> CheckResult {
+    let now = time::OffsetDateTime::now_utc();
+    if let Some(last_update) = engine.last_data_update().await {
+        let elapsed = now - last_update;
+        if elapsed.whole_seconds() > 300 {
+            // 5 minutes
+            CheckResult {
+                status: Status::Degraded,
+                message: format!(
+                    "Data is stale. Last update was {} seconds ago",
+                    elapsed.whole_seconds()
+                ),
+                response_time_us: 100,
+            }
+        } else {
+            CheckResult {
+                status: Status::Healthy,
+                message: "Data pipeline operational".to_string(),
+                response_time_us: 100,
+            }
+        }
+    } else {
+        CheckResult {
+            status: Status::Degraded,
+            message: "No data received yet".to_string(),
+            response_time_us: 100,
+        }
     }
 }
 

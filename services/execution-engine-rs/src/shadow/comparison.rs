@@ -21,6 +21,7 @@ pub struct ComparisonResult {
     pub broker_routing_state: ComparisonState,
 }
 
+#[derive(Default)]
 pub struct ComparisonEngine;
 
 impl ComparisonEngine {

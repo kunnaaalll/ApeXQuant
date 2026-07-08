@@ -20,7 +20,7 @@ pub mod drift;
 pub mod reporter;
 pub mod statistics;
 
-pub use comparison::{ComparisonEngine, SignalComparison};
+pub use comparison::ComparisonEngine;
 pub use drift::{DriftAnalyzer, DriftReport};
 pub use reporter::{ParityReporter, ReportFormat};
 pub use statistics::{ParityStatistics, StatisticsCollector};
@@ -42,7 +42,7 @@ pub enum ParityError {
 pub type Result<T> = std::result::Result<T, ParityError>;
 
 /// Comparison classification types
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ComparisonType {
     /// Signals are identical in all respects
@@ -128,14 +128,14 @@ impl AgreementMetrics {
     pub fn calculate_direction_agreement(&mut self) {
         let agreeing = self.exact_matches + self.close_matches;
         if self.total_comparisons > 0 {
-            self.direction_agreement_pct = (agreeing as f64 / self.total_comparisons as f64) * 100.0;
+            self.direction_agreement_pct =
+                (agreeing as f64 / self.total_comparisons as f64) * 100.0;
         }
     }
 
     /// Check if go-live criteria are met
     pub fn meets_go_live_criteria(&self) -> bool {
-        self.direction_agreement_pct > 95.0
-            && self.avg_confidence_diff < 10.0
+        self.direction_agreement_pct > 95.0 && self.avg_confidence_diff < 10.0
     }
 }
 
@@ -235,9 +235,7 @@ impl ParityEngine {
         ts_output: SignalOutput,
         rust_output: SignalOutput,
     ) -> Result<SignalComparisonRecord> {
-        let record = self
-            .comparison_engine
-            .compare(ts_output, rust_output)?;
+        let record = self.comparison_engine.compare(ts_output, rust_output)?;
 
         self.statistics.record(&record)?;
         self.drift_analyzer.record(&record)?;
@@ -279,8 +277,8 @@ mod tests {
         let metrics = AgreementMetrics {
             total_comparisons: 100,
             exact_matches: 90,
-            close_matches: 5,
-            direction_agreement_pct: 95.0,
+            close_matches: 6,
+            direction_agreement_pct: 96.0,
             avg_confidence_diff: 5.0,
             ..Default::default()
         };

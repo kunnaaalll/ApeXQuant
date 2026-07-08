@@ -1,5 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum LiquidityRegime {
     Illiquid,
     Weak,
@@ -8,4 +7,3 @@ pub enum LiquidityRegime {
     Healthy,
     Excellent,
 }
-

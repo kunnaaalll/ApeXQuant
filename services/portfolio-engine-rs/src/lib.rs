@@ -25,6 +25,7 @@ pub mod integrations;
 pub mod certification;
 pub mod event_bus;
 pub mod event_bus_subscriber;
+pub mod config;
 
 // APEX V3 Portfolio Engine
 // Owns account-level intelligence, global exposure, and allocation.

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::position::PositionId;
 use crate::order::OrderSide;
+use crate::position::PositionId;
 use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

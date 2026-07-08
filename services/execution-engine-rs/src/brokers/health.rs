@@ -12,7 +12,13 @@ pub struct BrokerHealth {
 }
 
 impl BrokerHealth {
-    pub fn new(latency_ms: Decimal, uptime_percentage: Decimal, heartbeat_interval_ms: Decimal, last_response_time: SystemTime, reconnect_attempts: u32) -> Self {
+    pub fn new(
+        latency_ms: Decimal,
+        uptime_percentage: Decimal,
+        heartbeat_interval_ms: Decimal,
+        last_response_time: SystemTime,
+        reconnect_attempts: u32,
+    ) -> Self {
         Self {
             latency_ms,
             uptime_percentage,

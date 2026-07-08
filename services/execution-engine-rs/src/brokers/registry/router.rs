@@ -1,7 +1,7 @@
 use crate::brokers::broker::BrokerAdapter;
 use crate::brokers::errors::BrokerError;
-use crate::brokers::registry::selector::BrokerRole;
 use crate::brokers::registry::failover::FailoverState;
+use crate::brokers::registry::selector::BrokerRole;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -53,8 +53,10 @@ impl BrokerRegistry {
                 }
             }
         }
-        
-        Err(BrokerError::InternalError("No suitable broker available".to_string()))
+
+        Err(BrokerError::InternalError(
+            "No suitable broker available".to_string(),
+        ))
     }
 }
 

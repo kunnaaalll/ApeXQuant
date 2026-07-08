@@ -50,10 +50,7 @@ impl Correction {
 }
 
 /// Detect correction following an impulse wave
-pub fn detect_correction(
-    candles: &[Candle],
-    prior_impulse: &ImpulseWave,
-) -> Option<Correction> {
+pub fn detect_correction(candles: &[Candle], prior_impulse: &ImpulseWave) -> Option<Correction> {
     let start_idx = prior_impulse.end_index;
 
     if start_idx >= candles.len() - 1 {

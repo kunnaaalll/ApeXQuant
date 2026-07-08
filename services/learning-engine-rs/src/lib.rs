@@ -25,3 +25,6 @@ pub mod anomaly;
 pub mod explanation;
 pub mod certification;
 pub mod event_bus;
+pub mod database;
+pub mod api;
+pub mod metrics;

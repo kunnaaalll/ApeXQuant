@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,7 +39,11 @@ impl SlippageGuards {
         // Assuming drift in absolute price or pips. We will use a multiplier for state if we want,
         // but absolute drift makes sense. Or ratio:
         let ratio = if self.expected_slippage.is_zero() {
-            if self.realized_slippage > dec!(0.0001) { dec!(10.0) } else { Decimal::ONE }
+            if self.realized_slippage > dec!(0.0001) {
+                dec!(10.0)
+            } else {
+                Decimal::ONE
+            }
         } else {
             self.realized_slippage / self.expected_slippage
         };

@@ -37,18 +37,42 @@ impl AttributionEngine {
 
     pub fn evaluate_trade(
         &self,
-        _trade_pnl: Decimal,
-        _expected_pnl: Decimal,
-        _slippage: Decimal,
-        _market_volatility: Decimal,
+        trade_pnl: Decimal,
+        expected_pnl: Decimal,
+        slippage: Decimal,
+        market_volatility: Decimal,
     ) -> AttributionScore {
-        // Mock implementation for attribution logic.
-        // In reality, this would compute precise attribution matching the financial models.
+        // Deterministic implementation of performance attribution
+        
+        // 1. Execution is typically the cost paid to the market via slippage (usually negative)
+        let execution_contribution = -slippage.abs();
+        
+        // 2. Market contribution is driven by excess volatility tailwinds
+        // We heuristically attribute a fraction of the PnL to market volatility when high
+        let baseline_volatility = Decimal::new(15, 2); // 0.15
+        let vol_excess = if market_volatility > baseline_volatility {
+            market_volatility - baseline_volatility
+        } else {
+            Decimal::new(0, 0)
+        };
+        // E.g., if vol is 0.25, excess = 0.10. We attribute 10% of PnL to market condition.
+        let market_contribution = trade_pnl * vol_excess;
+        
+        // 3. Risk contribution penalizes deviations from expected return
+        // If trade_pnl > expected_pnl, risk is positive (upside risk captured)
+        // If trade_pnl < expected_pnl, risk is negative (downside realized)
+        // We take 20% of the deviation as the risk premium
+        let risk_deviation = trade_pnl - expected_pnl;
+        let risk_contribution = risk_deviation * Decimal::new(20, 2); // 0.20
+
+        // 4. Strategy contribution is the residual alpha
+        let strategy_contribution = trade_pnl - execution_contribution - market_contribution - risk_contribution;
+
         AttributionScore {
-            execution_contribution: Decimal::ZERO,
-            strategy_contribution: Decimal::ZERO,
-            market_contribution: Decimal::ZERO,
-            risk_contribution: Decimal::ZERO,
+            execution_contribution,
+            strategy_contribution,
+            market_contribution,
+            risk_contribution,
         }
     }
 }

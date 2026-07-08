@@ -1,24 +1,19 @@
 use super::auth::auth_interceptor;
 use super::errors::ApiError;
-use super::health::{health_handler, HealthResponse};
+use super::health::health_handler;
 use super::mapping::{format_decimal, parse_decimal};
-use super::readiness::{readiness_handler, set_ready, ComponentState, ReadinessResponse};
-use super::server::start_api_servers;
-use apex_protos::execution::execution_service_client::ExecutionServiceClient;
-use apex_protos::execution::{HealthRequest, SubmitOrderRequest};
+use super::readiness::{readiness_handler, set_ready};
 use axum::{body::Body, http::Request};
 use rust_decimal::Decimal;
 use std::str::FromStr;
-use tonic::{metadata::MetadataValue, transport::Channel, Request as TonicRequest, Status};
+use tonic::{metadata::MetadataValue, Request as TonicRequest, Status};
 use tower::ServiceExt;
 
 #[tokio::test]
 async fn test_auth_interceptor_valid() {
     let mut req = TonicRequest::new(());
-    req.metadata_mut().insert(
-        "x-api-key",
-        MetadataValue::from_static("valid-token"),
-    );
+    req.metadata_mut()
+        .insert("x-api-key", MetadataValue::from_static("valid-token"));
     let res = auth_interceptor(req);
     assert!(res.is_ok());
 }
@@ -26,10 +21,8 @@ async fn test_auth_interceptor_valid() {
 #[tokio::test]
 async fn test_auth_interceptor_invalid() {
     let mut req = TonicRequest::new(());
-    req.metadata_mut().insert(
-        "x-api-key",
-        MetadataValue::from_static("invalid-token"),
-    );
+    req.metadata_mut()
+        .insert("x-api-key", MetadataValue::from_static("invalid-token"));
     let res = auth_interceptor(req);
     assert!(res.is_err());
     assert_eq!(res.unwrap_err().code(), tonic::Code::PermissionDenied);
@@ -37,8 +30,29 @@ async fn test_auth_interceptor_invalid() {
 
 #[tokio::test]
 async fn test_health_endpoint() {
-    let app = axum::Router::new().route("/health", axum::routing::get(health_handler));
-    let req = Request::builder().uri("/health").body(Body::empty()).unwrap();
+    let app_state = super::server::AppState {
+        pg_store: None,
+        redis_client: None,
+        mt5_adapter: std::sync::Arc::new(crate::brokers::mt5::adapter::Mt5Adapter::new(
+            "MT5".to_string(),
+            "http://localhost:8001".to_string(),
+        )),
+        binance_adapter: std::sync::Arc::new(
+            crate::brokers::binance::adapter::BinanceAdapter::new(
+                "Binance".to_string(),
+                "http://localhost:8002".to_string(),
+                "".to_string(),
+                "".to_string(),
+            ),
+        ),
+    };
+    let app = axum::Router::new()
+        .route("/health", axum::routing::get(health_handler))
+        .with_state(app_state);
+    let req = Request::builder()
+        .uri("/health")
+        .body(Body::empty())
+        .unwrap();
     let res = app.oneshot(req).await.unwrap();
     assert_eq!(res.status(), 200);
 }
@@ -46,8 +60,29 @@ async fn test_health_endpoint() {
 #[tokio::test]
 async fn test_ready_endpoint() {
     set_ready(true);
-    let app = axum::Router::new().route("/ready", axum::routing::get(readiness_handler));
-    let req = Request::builder().uri("/ready").body(Body::empty()).unwrap();
+    let app_state = super::server::AppState {
+        pg_store: None,
+        redis_client: None,
+        mt5_adapter: std::sync::Arc::new(crate::brokers::mt5::adapter::Mt5Adapter::new(
+            "MT5".to_string(),
+            "http://localhost:8001".to_string(),
+        )),
+        binance_adapter: std::sync::Arc::new(
+            crate::brokers::binance::adapter::BinanceAdapter::new(
+                "Binance".to_string(),
+                "http://localhost:8002".to_string(),
+                "".to_string(),
+                "".to_string(),
+            ),
+        ),
+    };
+    let app = axum::Router::new()
+        .route("/ready", axum::routing::get(readiness_handler))
+        .with_state(app_state);
+    let req = Request::builder()
+        .uri("/ready")
+        .body(Body::empty())
+        .unwrap();
     let res = app.oneshot(req).await.unwrap();
     assert_eq!(res.status(), 200);
 }
@@ -65,7 +100,7 @@ fn test_decimal_serialization() {
     let d = Decimal::from_str("123.45").unwrap();
     let formatted = format_decimal(d);
     assert_eq!(formatted, "123.45");
-    
+
     let parsed = parse_decimal(&formatted).unwrap();
     assert_eq!(parsed, d);
 }

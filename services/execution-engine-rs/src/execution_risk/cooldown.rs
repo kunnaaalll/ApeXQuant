@@ -1,6 +1,6 @@
-use super::spread_guards::SpreadGuards;
-use super::latency_guards::LatencyGuards;
 use super::fill_quality_guards::FillQualityGuards;
+use super::latency_guards::LatencyGuards;
+use super::spread_guards::SpreadGuards;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CooldownEngine {
@@ -20,8 +20,14 @@ impl CooldownEngine {
         }
     }
 
-    pub fn record_cycle(&mut self, spread: &SpreadGuards, latency: &LatencyGuards, fills: &FillQualityGuards) {
-        let is_healthy = spread.get_state() == super::circuit_breaker::ExecutionProtectionState::Normal
+    pub fn record_cycle(
+        &mut self,
+        spread: &SpreadGuards,
+        latency: &LatencyGuards,
+        fills: &FillQualityGuards,
+    ) {
+        let is_healthy = spread.get_state()
+            == super::circuit_breaker::ExecutionProtectionState::Normal
             && latency.get_state() == super::latency_guards::LatencyState::Healthy
             && fills.get_grade() == super::fill_quality_guards::FillGrade::Elite;
 

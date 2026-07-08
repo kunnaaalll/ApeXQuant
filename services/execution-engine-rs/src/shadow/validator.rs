@@ -31,9 +31,11 @@ impl GoLiveValidator {
 
         if self.consecutive_parity_streaks >= 10 && self.state == ValidatorState::NotReady {
             self.state = ValidatorState::Monitoring;
-        } else if self.consecutive_parity_streaks >= 50 && self.state == ValidatorState::Monitoring {
+        } else if self.consecutive_parity_streaks >= 50 && self.state == ValidatorState::Monitoring
+        {
             self.state = ValidatorState::Candidate;
-        } else if self.consecutive_parity_streaks >= 100 && self.state == ValidatorState::Candidate {
+        } else if self.consecutive_parity_streaks >= 100 && self.state == ValidatorState::Candidate
+        {
             self.state = ValidatorState::Approved;
         }
     }

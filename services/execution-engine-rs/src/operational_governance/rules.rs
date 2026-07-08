@@ -16,6 +16,7 @@ pub struct GovernanceState {
     pub risk_engine_approved: bool,
 }
 
+#[derive(Default)]
 pub struct GovernanceEngine;
 
 impl GovernanceEngine {
@@ -29,7 +30,10 @@ impl GovernanceEngine {
         }
 
         if state.connection_state != ConnectionState::Healthy {
-            return TradingAuthorization::Denied(format!("Connection state is {:?}", state.connection_state));
+            return TradingAuthorization::Denied(format!(
+                "Connection state is {:?}",
+                state.connection_state
+            ));
         }
 
         if let ReconciliationState::CriticalMismatch(_) = state.reconciliation_state {

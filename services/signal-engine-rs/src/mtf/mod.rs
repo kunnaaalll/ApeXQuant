@@ -6,7 +6,7 @@ pub mod types;
 
 pub use aligner::MTFAligner;
 pub use hierarchy::TimeframeHierarchy;
-pub use types::{MTFAlignment, MTFAlignmentResult, TimeframeAlignment};
+pub use types::{MTFAlignmentResult, TimeframeAlignment};
 
 use crate::config::Config;
 use crate::market_data::Candle;

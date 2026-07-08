@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 
 pub struct SanityGuard {
     pub max_leverage_limit: Decimal,

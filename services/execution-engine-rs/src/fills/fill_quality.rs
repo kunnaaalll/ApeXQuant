@@ -1,5 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum FillQualityGrade {
     Terrible,
     Poor,
@@ -8,4 +7,3 @@ pub enum FillQualityGrade {
     Good,
     Excellent,
 }
-

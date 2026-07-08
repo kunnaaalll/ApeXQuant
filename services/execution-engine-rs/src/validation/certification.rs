@@ -32,7 +32,8 @@ impl CertificationEngine {
         stress_pass: bool,
         benchmark_pass: bool,
     ) {
-        let all_pass = parity_pass && determinism_pass && replay_pass && stress_pass && benchmark_pass;
+        let all_pass =
+            parity_pass && determinism_pass && replay_pass && stress_pass && benchmark_pass;
 
         if all_pass {
             self.state = match self.state {

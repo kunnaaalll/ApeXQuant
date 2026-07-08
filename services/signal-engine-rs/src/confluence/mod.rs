@@ -6,7 +6,7 @@ pub mod weights;
 
 pub use engine::ConfluenceEngine;
 pub use factors::{ConfluenceFactor, FactorBuilder, FactorType};
-pub use weights::{WeightAdjuster, AdaptiveWeights};
+pub use weights::{AdaptiveWeights, WeightAdjuster};
 
 /// Confluence score (0-100)
 #[derive(Debug, Clone)]
@@ -43,7 +43,8 @@ impl ConfluenceScore {
 
     /// Get factor contribution by type
     pub fn factor_contribution(&self, factor_type: FactorType) -> Option<f64> {
-        self.factors.iter()
+        self.factors
+            .iter()
             .find(|f| f.factor_type == factor_type)
             .map(|f| f.contribution)
     }

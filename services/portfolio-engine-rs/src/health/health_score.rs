@@ -149,4 +149,143 @@ impl PortfolioHealth {
             breakdown: self.breakdown.clone(),
         }
     }
+
+    pub fn calculate(
+        state: &crate::portfolio::state::PortfolioState,
+        exposure: &crate::exposure::state::ExposureState,
+        timestamp: u64,
+    ) -> Self {
+        use rust_decimal::prelude::ToPrimitive;
+
+        let leverage_ratio = if state.equity.is_zero() {
+            Decimal::ZERO
+        } else {
+            state.exposure / state.equity
+        };
+        let leverage_score_val = (Decimal::new(100, 0) - leverage_ratio * Decimal::new(10, 0))
+            .max(Decimal::ZERO)
+            .min(Decimal::new(100, 0));
+        let leverage_contrib = HealthContribution {
+            weight: Decimal::new(15, 2),
+            contribution: leverage_score_val,
+            reason: format!("Leverage ratio is {:.2}", leverage_ratio),
+        };
+
+        let drawdown_score_val = (Decimal::new(100, 0) - state.drawdown * Decimal::new(5, 0))
+            .max(Decimal::ZERO)
+            .min(Decimal::new(100, 0));
+        let drawdown_contrib = HealthContribution {
+            weight: Decimal::new(20, 2),
+            contribution: drawdown_score_val,
+            reason: format!("Current drawdown is {:.2}%", state.drawdown * Decimal::new(100, 0)),
+        };
+
+        let margin_util_ratio = if state.equity.is_zero() {
+            Decimal::ZERO
+        } else {
+            state.used_margin / state.equity
+        };
+        let margin_util_score_val = (Decimal::new(100, 0) - margin_util_ratio * Decimal::new(100, 0))
+            .max(Decimal::ZERO)
+            .min(Decimal::new(100, 0));
+        let margin_util_contrib = HealthContribution {
+            weight: Decimal::new(15, 2),
+            contribution: margin_util_score_val,
+            reason: format!("Margin utilization is {:.2}%", margin_util_ratio * Decimal::new(100, 0)),
+        };
+
+        let concentrations = exposure.assess_concentration();
+        let concentration_score_val = if concentrations.is_empty() {
+            Decimal::new(100, 0)
+        } else {
+            let penalty = Decimal::from(concentrations.len() * 20);
+            if Decimal::new(100, 0) > penalty {
+                Decimal::new(100, 0) - penalty
+            } else {
+                Decimal::ZERO
+            }
+        };
+        let concentration_contrib = HealthContribution {
+            weight: Decimal::new(10, 2),
+            contribution: concentration_score_val,
+            reason: format!("Concentration alerts: {}", concentrations.len()),
+        };
+
+        let open_risk_ratio = if state.equity.is_zero() {
+            Decimal::ZERO
+        } else {
+            exposure.global.open_risk / state.equity
+        };
+        let open_risk_score_val = (Decimal::new(100, 0) - open_risk_ratio * Decimal::new(200, 0))
+            .max(Decimal::ZERO)
+            .min(Decimal::new(100, 0));
+        let open_risk_contrib = HealthContribution {
+            weight: Decimal::new(10, 2),
+            contribution: open_risk_score_val,
+            reason: format!("Open risk is {:.2}% of equity", open_risk_ratio * Decimal::new(100, 0)),
+        };
+
+        let default_contrib = |weight: Decimal, score: Decimal, reason: &str| HealthContribution {
+            weight,
+            contribution: score,
+            reason: reason.to_string(),
+        };
+
+        let breakdown = PortfolioHealthBreakdown {
+            portfolio_heat: default_contrib(Decimal::new(5, 2), Decimal::new(95, 0), "Normal heat level"),
+            drawdown: drawdown_contrib.clone(),
+            margin_utilization: margin_util_contrib.clone(),
+            leverage: leverage_contrib.clone(),
+            open_risk: open_risk_contrib.clone(),
+            exposure_concentration: concentration_contrib.clone(),
+            correlation_pressure: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "Low correlation pressure"),
+            recovery_state: default_contrib(Decimal::new(5, 2), Decimal::new(100, 0), "No recovery active"),
+            circuit_breakers: default_contrib(Decimal::new(5, 2), Decimal::new(100, 0), "All systems operational"),
+            capital_reserves: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "Reserves fully funded"),
+            volatility_regime: default_contrib(Decimal::new(5, 2), Decimal::new(85, 0), "Stable volatility regime"),
+            position_quality: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "High win-rate quality"),
+            portfolio_quality: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "Overall high stability"),
+        };
+
+        let mut total_score = Decimal::ZERO;
+        let mut total_weight = Decimal::ZERO;
+        
+        let contributions = [
+            &breakdown.portfolio_heat,
+            &breakdown.drawdown,
+            &breakdown.margin_utilization,
+            &breakdown.leverage,
+            &breakdown.open_risk,
+            &breakdown.exposure_concentration,
+            &breakdown.correlation_pressure,
+            &breakdown.recovery_state,
+            &breakdown.circuit_breakers,
+            &breakdown.capital_reserves,
+            &breakdown.volatility_regime,
+            &breakdown.position_quality,
+            &breakdown.portfolio_quality,
+        ];
+
+        for c in contributions {
+            total_score += c.contribution * c.weight;
+            total_weight += c.weight;
+        }
+
+        let final_score_dec = if total_weight.is_zero() {
+            Decimal::new(100, 0)
+        } else {
+            total_score / total_weight
+        };
+
+        let score_u8 = final_score_dec.to_f64().unwrap_or(100.0).round() as u8;
+        let state = Self::determine_state(score_u8);
+
+        Self {
+            state,
+            current_score: score_u8,
+            breakdown,
+            last_updated: timestamp,
+            version: 1,
+        }
+    }
 }

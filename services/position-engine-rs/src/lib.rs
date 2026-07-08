@@ -9,3 +9,4 @@ pub mod storage;
 
 // APEX V3 Position Engine
 // Deterministic state management for active trading positions.
+pub mod event_bus;

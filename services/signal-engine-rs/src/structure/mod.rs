@@ -1,10 +1,10 @@
 //! Market structure analysis
 
+pub mod correction;
+pub mod impulse;
+pub mod ranges;
 pub mod swings;
 pub mod trend;
-pub mod ranges;
-pub mod impulse;
-pub mod correction;
 
 use crate::config::Config;
 use crate::market_data::Candle;
@@ -38,7 +38,10 @@ impl StructureAnalyzer {
     }
 
     /// Analyze market structure from candle data
-    pub fn analyze(&self, candles: &HashMap<String, Vec<Candle>>) -> crate::Result<StructureAnalysis> {
+    pub fn analyze(
+        &self,
+        candles: &HashMap<String, Vec<Candle>>,
+    ) -> crate::Result<StructureAnalysis> {
         // Analyze each timeframe
         let mut swing_highs = Vec::new();
         let mut swing_lows = Vec::new();

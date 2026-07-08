@@ -1,4 +1,4 @@
-use apex_protos::events::{Event, SubscribeRequest, event_bus_service_client::EventBusServiceClient, EventBatch, AckRequest, AckResponse};
+use apex_protos::events::{Event, SubscribeRequest, event_bus_service_client::EventBusServiceClient, AckRequest, AckResponse};
 use anyhow::{Result, Context};
 use tokio::sync::mpsc;
 use tonic::transport::Channel;

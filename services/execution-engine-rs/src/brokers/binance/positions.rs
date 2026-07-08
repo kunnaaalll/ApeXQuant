@@ -1,6 +1,6 @@
+use crate::brokers::responses::OpenPosition;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::brokers::responses::OpenPosition;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BinancePosition {

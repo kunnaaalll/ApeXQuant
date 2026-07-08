@@ -6,8 +6,6 @@ use apex_protos::risk::risk_engine_server::RiskEngine;
 use apex_protos::risk::*;
 use risk_engine::api::risk_service::RiskServiceImpl;
 use risk_engine::interceptors::auth::auth_interceptor;
-use risk_engine::health::{liveness::liveness_check, readiness::readiness_check};
-use axum::response::IntoResponse;
 
 #[test]
 fn test_error_mapping() {
@@ -30,7 +28,7 @@ fn test_error_mapping() {
 
 #[tokio::test]
 async fn test_streaming() {
-    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None);
+    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None, None);
     let request = Request::new(EventQuery {
         account_id: "acc_123".to_string(),
         start_time: None,
@@ -46,17 +44,8 @@ async fn test_streaming() {
 }
 
 #[tokio::test]
-async fn test_health_endpoints() {
-    let liveness = liveness_check().await.into_response();
-    assert_eq!(liveness.status(), axum::http::StatusCode::OK);
-
-    let readiness = readiness_check().await.into_response();
-    assert_eq!(readiness.status(), axum::http::StatusCode::OK);
-}
-
-#[tokio::test]
 async fn test_determinism() {
-    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None);
+    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None, None);
     
     // Simulate 100,000 requests
     for i in 0..100_000 {

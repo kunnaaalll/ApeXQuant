@@ -1,5 +1,5 @@
-use crate::brokers::health::BrokerHealth;
 use crate::brokers::connection::ConnectionState;
+use crate::brokers::health::BrokerHealth;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Mt5Health {

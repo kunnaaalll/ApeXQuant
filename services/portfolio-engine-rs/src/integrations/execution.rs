@@ -4,7 +4,6 @@
 //! No hardcoded "FILLED" fallback — fill data comes from the execution engine.
 
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromStr;
 use serde::{Deserialize, Serialize};
 
 use apex_protos::execution::execution_engine_client::ExecutionEngineClient;

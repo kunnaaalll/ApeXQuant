@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 
 pub struct FixedFractionalSizer {
     pub risk_fraction: Decimal, // e.g. 0.02 for 2%

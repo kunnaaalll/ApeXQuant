@@ -1,8 +1,8 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MarketQuality {
-    pub liquidity_score: u8, // 0-100
+    pub liquidity_score: u8,  // 0-100
     pub volatility_score: u8, // 0-100
-    pub overall_quality: u8, // 0-100
+    pub overall_quality: u8,  // 0-100
 }
 
 impl MarketQuality {

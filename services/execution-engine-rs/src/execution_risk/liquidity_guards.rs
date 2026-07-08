@@ -58,7 +58,9 @@ impl LiquidityGuards {
 
     pub fn get_protection_state(&self) -> ExecutionProtectionState {
         match self.get_regime() {
-            LiquidityRegime::Excellent | LiquidityRegime::Normal => ExecutionProtectionState::Normal,
+            LiquidityRegime::Excellent | LiquidityRegime::Normal => {
+                ExecutionProtectionState::Normal
+            }
             LiquidityRegime::Weak => ExecutionProtectionState::Warning,
             LiquidityRegime::Poor => ExecutionProtectionState::Restricted,
             LiquidityRegime::Broken => {

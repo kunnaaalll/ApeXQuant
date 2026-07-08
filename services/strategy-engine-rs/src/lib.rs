@@ -49,5 +49,8 @@ pub mod overfitting;
 pub mod research;
 pub mod simulator;
 
+pub mod event_bus;
+pub mod event_bus_subscriber;
+
 #[cfg(test)]
 mod tests;

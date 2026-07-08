@@ -31,7 +31,7 @@ impl SmartExecutionEngine {
         // Simplified deterministic routing based on urgency and available venues
         // In a real system, this would evaluate liquidity regimes across venues.
         let target = available_venues[0].clone();
-        
+
         let state = match urgency {
             Urgency::Patient => super::routing::RoutingState::Primary,
             Urgency::Balanced => super::routing::RoutingState::Primary,

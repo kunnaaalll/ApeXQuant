@@ -1,15 +1,15 @@
+use crate::SignalEngine;
+use apex_protos::common::{Empty, Result as CommonResult};
 use apex_protos::signal::signal_engine_server::SignalEngine as GrpcSignalEngine;
 use apex_protos::signal::{
     DetectRequest, DetectResponse, EngineConfiguration, EngineStatus,
     HealthStatus as ProtoHealthStatus, MarketDataChunk, Signal, SignalOutput,
     SubscribeSignalsRequest,
 };
-use apex_protos::common::{Result as CommonResult, Empty};
-use tonic::{Request, Response, Status};
-use tokio_stream::wrappers::ReceiverStream;
-use tokio::sync::mpsc;
 use std::sync::Arc;
-use crate::SignalEngine;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
+use tonic::{Request, Response, Status};
 
 pub struct SignalEngineServiceImpl {
     pub engine: Arc<SignalEngine>,
@@ -50,10 +50,7 @@ impl GrpcSignalEngine for SignalEngineServiceImpl {
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 
-    async fn get_status(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<EngineStatus>, Status> {
+    async fn get_status(&self, _request: Request<Empty>) -> Result<Response<EngineStatus>, Status> {
         Ok(Response::new(EngineStatus::default()))
     }
 
@@ -61,7 +58,10 @@ impl GrpcSignalEngine for SignalEngineServiceImpl {
         &self,
         _request: Request<EngineConfiguration>,
     ) -> Result<Response<CommonResult>, Status> {
-        Ok(Response::new(CommonResult { ok: true, error: None }))
+        Ok(Response::new(CommonResult {
+            ok: true,
+            error: None,
+        }))
     }
 
     async fn health(

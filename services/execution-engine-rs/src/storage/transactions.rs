@@ -1,8 +1,8 @@
-use sqlx::{Postgres, Transaction};
 use crate::storage::events::EventRecord;
-use crate::storage::snapshots::SnapshotRecord;
 use crate::storage::pg_store::PgStore;
+use crate::storage::snapshots::SnapshotRecord;
 use crate::storage::StorageError;
+use sqlx::{Postgres, Transaction};
 
 pub struct ExecutionTransaction<'a> {
     tx: Transaction<'a, Postgres>,

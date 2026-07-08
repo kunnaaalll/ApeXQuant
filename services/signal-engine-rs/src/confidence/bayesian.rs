@@ -9,9 +9,9 @@
 //! This module is consumed by the learning engine which calls `update()` after
 //! each completed trade and `posterior_confidence()` when scoring signals.
 
-use std::collections::HashMap;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use rust_decimal::Decimal;
-use rust_decimal::prelude::{ToPrimitive, FromPrimitive};
+use std::collections::HashMap;
 
 /// Beta distribution parameters for a strategy.
 #[derive(Debug, Clone)]
@@ -113,8 +113,7 @@ impl BayesianConfidenceUpdater {
         };
 
         // Regime and execution quality adjustments
-        let adjusted = (shrunk * self.regime_quality * self.execution_quality)
-            .clamp(0.0, 1.0);
+        let adjusted = (shrunk * self.regime_quality * self.execution_quality).clamp(0.0, 1.0);
 
         f64_to_decimal(adjusted)
     }
@@ -141,7 +140,9 @@ impl BayesianConfidenceUpdater {
     /// Uncertainty width (95% CI half-width) for a strategy.
     /// Higher = less confident in the estimate.
     pub fn uncertainty(&self, strategy_id: &str) -> Decimal {
-        let u = self.posteriors.get(strategy_id)
+        let u = self
+            .posteriors
+            .get(strategy_id)
             .map(|p| p.uncertainty_95pct())
             .unwrap_or(0.25); // Maximum uncertainty for unknown strategy
         f64_to_decimal(u)
@@ -154,7 +155,9 @@ impl BayesianConfidenceUpdater {
 }
 
 impl Default for BayesianConfidenceUpdater {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 fn f64_to_decimal(v: f64) -> Decimal {
@@ -175,7 +178,11 @@ mod tests {
         let conf = updater.posterior_confidence("strat_a");
         let conf_f = conf.to_f64().unwrap_or(0.0);
         // With 100 samples, posterior should be close to 0.60 (within 0.05)
-        assert!((conf_f - 0.60).abs() < 0.05, "Expected ~0.60, got {}", conf_f);
+        assert!(
+            (conf_f - 0.60).abs() < 0.05,
+            "Expected ~0.60, got {}",
+            conf_f
+        );
     }
 
     #[test]

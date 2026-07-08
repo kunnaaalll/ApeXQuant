@@ -19,9 +19,7 @@ impl TimeframeHierarchy {
             b_rank.cmp(&a_rank) // Reverse for descending
         });
 
-        Self {
-            timeframes: sorted,
-        }
+        Self { timeframes: sorted }
     }
 
     /// Get the ordered timeframes

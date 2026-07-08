@@ -10,12 +10,14 @@ use apex_protos::portfolio::*;
 use std::sync::Arc;
 use crate::event_bus::EventBusPublisher;
 use crate::portfolio::registry::PortfolioRegistry;
+use crate::exposure::registry::ExposureRegistry;
 use crate::storage::repository::PortfolioRepository;
 
 pub struct PortfolioServiceImpl {
     pub event_bus: Option<Arc<EventBusPublisher>>,
     pub pool: PgPool,
     pub registry: PortfolioRegistry,
+    pub exposure_registry: ExposureRegistry,
     pub repository: PortfolioRepository,
 }
 
@@ -24,12 +26,14 @@ impl PortfolioServiceImpl {
         event_bus: Option<Arc<EventBusPublisher>>,
         pool: PgPool,
         registry: PortfolioRegistry,
+        exposure_registry: ExposureRegistry,
         repository: PortfolioRepository,
     ) -> Self {
         Self {
             event_bus,
             pool,
             registry,
+            exposure_registry,
             repository,
         }
     }
@@ -59,10 +63,9 @@ impl PortfolioServiceImpl {
             r#"
             SELECT position_id, symbol, side, current_volume, entry_price, current_price, unrealized_pnl, return_percent
             FROM positions
-            WHERE session_id = $1 AND state = 'open'
+            WHERE state = 'open'
             "#
         )
-        .bind(session_uuid)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| Status::internal(format!("Database error fetching positions: {}", e)))?;
@@ -159,10 +162,9 @@ impl PortfolioServiceImpl {
             r#"
             SELECT COALESCE(SUM(realized_pnl), 0) as realized
             FROM positions
-            WHERE session_id = $1 AND state = 'closed'
+            WHERE state = 'closed'
             "#
         )
-        .bind(session_uuid)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| Status::internal(format!("Database error fetching realized PnL: {}", e)))?;
@@ -354,9 +356,63 @@ impl PortfolioEngine for PortfolioServiceImpl {
         &self,
         request: Request<QualityQuery>,
     ) -> Result<Response<QualityResponse>, Status> {
-        let _req = request.into_inner();
+        let req = request.into_inner();
+
+        let rows = sqlx::query(
+            "SELECT realized_pnl FROM positions WHERE state = 'closed'"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| Status::internal(e.to_string()))?;
+
+        let mut wins = 0;
+        let mut losses = 0;
+        let mut gross_profit = rust_decimal::Decimal::ZERO;
+        let mut gross_loss = rust_decimal::Decimal::ZERO;
+
+        for r in &rows {
+            let pnl_opt: Option<rust_decimal::Decimal> = r.get("realized_pnl");
+            let pnl = pnl_opt.unwrap_or(rust_decimal::Decimal::ZERO);
+            if pnl.is_sign_positive() {
+                wins += 1;
+                gross_profit += pnl;
+            } else if pnl.is_sign_negative() {
+                losses += 1;
+                gross_loss += pnl.abs();
+            }
+        }
+
+        let total_trades = wins + losses;
+        let win_rate = if total_trades > 0 {
+            rust_decimal::Decimal::from(wins) / rust_decimal::Decimal::from(total_trades)
+        } else {
+            rust_decimal::Decimal::ZERO
+        };
+
+        let profit_factor = if gross_loss.is_zero() {
+            if gross_profit.is_zero() { rust_decimal::Decimal::ONE } else { rust_decimal::Decimal::from(10) }
+        } else {
+            gross_profit / gross_loss
+        };
+
+        let avg_win = if wins > 0 { gross_profit / rust_decimal::Decimal::from(wins) } else { rust_decimal::Decimal::ZERO };
+        let avg_loss = if losses > 0 { gross_loss / rust_decimal::Decimal::from(losses) } else { rust_decimal::Decimal::ZERO };
+        let expectancy = (win_rate * avg_win) - ((rust_decimal::Decimal::ONE - win_rate) * avg_loss);
+        let average_rr = if avg_loss.is_zero() { rust_decimal::Decimal::ONE } else { avg_win / avg_loss };
+
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let quality = crate::quality::quality_score::PortfolioQuality::calculate(
+            win_rate,
+            profit_factor,
+            expectancy,
+            average_rr,
+            now,
+        );
+
+        let _ = self.repository.store.save_quality(&req.portfolio_id, quality.current_score, &serde_json::to_value(&quality.breakdown).unwrap_or_default()).await;
+
         Ok(Response::new(QualityResponse {
-            quality_score: Some(apex_protos::common::Decimal { value: "95.0".to_string() }),
+            quality_score: Some(apex_protos::common::Decimal { value: quality.current_score.to_string() }),
         }))
     }
 
@@ -364,10 +420,20 @@ impl PortfolioEngine for PortfolioServiceImpl {
         &self,
         request: Request<HealthQuery>,
     ) -> Result<Response<HealthResponse>, Status> {
-        let _req = request.into_inner();
+        let req = request.into_inner();
+        let port_state = self.registry.get_state()
+            .map_err(|e| Status::internal(format!("Failed to get portfolio state: {:?}", e)))?;
+        let exp_state = self.exposure_registry.get_state()
+            .map_err(|e| Status::internal(format!("Failed to get exposure state: {:?}", e)))?;
+
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let health = crate::health::health_score::PortfolioHealth::calculate(&port_state, &exp_state, now);
+
+        let _ = self.repository.store.save_health(&req.portfolio_id, health.current_score as i32, &format!("{:?}", health.state), &serde_json::to_value(&health.breakdown).unwrap_or_default()).await;
+
         Ok(Response::new(HealthResponse {
-            health_score: Some(apex_protos::common::Decimal { value: "100.0".to_string() }),
-            status: "HEALTHY".to_string(),
+            health_score: Some(apex_protos::common::Decimal { value: health.current_score.to_string() }),
+            status: format!("{:?}", health.state).to_uppercase(),
         }))
     }
 
@@ -389,9 +455,54 @@ impl PortfolioEngine for PortfolioServiceImpl {
         &self,
         request: Request<CorrelationQuery>,
     ) -> Result<Response<CorrelationResponse>, Status> {
-        let _req = request.into_inner();
+        let req = request.into_inner();
+        let exp_state = self.exposure_registry.get_state()
+            .map_err(|e| Status::internal(format!("Failed to get exposure state: {:?}", e)))?;
+
+        let symbols: Vec<String> = exp_state.symbols.keys().cloned().collect();
+        let mut returns_map = std::collections::HashMap::new();
+        for sym in &symbols {
+            let rows = sqlx::query("SELECT return_percent FROM positions WHERE symbol = $1 AND state = 'closed' ORDER BY updated_at DESC LIMIT 30")
+                .bind(sym)
+                .fetch_all(&self.pool)
+                .await
+                .map_err(|e| Status::internal(e.to_string()))?;
+            let rets: Vec<rust_decimal::Decimal> = rows.iter()
+                .map(|r| r.get::<Option<rust_decimal::Decimal>, _>("return_percent").unwrap_or_default())
+                .collect();
+            if rets.len() >= 2 {
+                returns_map.insert(sym.clone(), rets);
+            }
+        }
+
+        let avg_corr_val = if returns_map.len() >= 2 {
+            if let Ok(matrix) = crate::correlation::matrix::CorrelationMatrix::from_returns(
+                crate::correlation::matrix::CorrelationType::Symbol,
+                crate::correlation::matrix::CorrelationWindow::MediumTerm,
+                &returns_map,
+            ) {
+                let mut sum = rust_decimal::Decimal::ZERO;
+                let mut count = 0;
+                for i in 0..matrix.rows {
+                    for j in (i+1)..matrix.cols {
+                        if let Some(c) = matrix.get_correlation(i, j) {
+                            sum += c;
+                            count += 1;
+                        }
+                    }
+                }
+                let avg = if count > 0 { sum / rust_decimal::Decimal::from(count) } else { rust_decimal::Decimal::new(15, 2) };
+                let _ = self.repository.store.save_correlation(&req.portfolio_id, "MediumTerm", "Symbol", &serde_json::to_value(&matrix.identifiers).unwrap_or_default(), &serde_json::to_value(&matrix.data).unwrap_or_default()).await;
+                avg
+            } else {
+                rust_decimal::Decimal::new(15, 2)
+            }
+        } else {
+            rust_decimal::Decimal::new(15, 2)
+        };
+
         Ok(Response::new(CorrelationResponse {
-            avg_correlation: Some(apex_protos::common::Decimal { value: "0.15".to_string() }),
+            avg_correlation: Some(apex_protos::common::Decimal { value: avg_corr_val.to_string() }),
         }))
     }
 
@@ -399,9 +510,71 @@ impl PortfolioEngine for PortfolioServiceImpl {
         &self,
         request: Request<RecommendationsQuery>,
     ) -> Result<Response<RecommendationsResponse>, Status> {
-        let _req = request.into_inner();
+        let req = request.into_inner();
+        let exp_state = self.exposure_registry.get_state()
+            .map_err(|e| Status::internal(format!("Failed to get exposure state: {:?}", e)))?;
+
+        let mut current_weights = Vec::new();
+        for (sym, exp) in &exp_state.symbols {
+            current_weights.push((sym.clone(), exp.weight));
+        }
+
+        let row_opt = sqlx::query("SELECT allocations FROM portfolio_allocations WHERE portfolio_id = $1 ORDER BY timestamp DESC LIMIT 1")
+            .bind(&req.portfolio_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let mut targets = Vec::new();
+        if let Some(row) = row_opt {
+            if let Ok(allocs_val) = row.try_get::<serde_json::Value, _>("allocations") {
+                if let Ok(parsed_targets) = serde_json::from_value::<Vec<crate::rebalancing::RebalanceTarget>>(allocs_val) {
+                    targets = parsed_targets;
+                }
+            }
+        }
+
+        if targets.is_empty() {
+            let active_symbols = current_weights.len();
+            if active_symbols > 0 {
+                let eq_weight = rust_decimal::Decimal::ONE / rust_decimal::Decimal::from(active_symbols);
+                for (sym, _) in &current_weights {
+                    targets.push(crate::rebalancing::RebalanceTarget {
+                        symbol: sym.clone(),
+                        target_weight: eq_weight,
+                    });
+                }
+            }
+        }
+
+        let engine = crate::rebalancing::RebalanceEngine::new(rust_decimal::Decimal::new(2, 2));
+        let actions = engine.calculate_actions(&current_weights, &targets);
+
+        let mut recommendations = Vec::new();
+        for act in actions {
+            recommendations.push(TradeInstruction {
+                symbol: Some(apex_protos::common::Symbol {
+                    code: act.symbol.clone(),
+                    exchange: "".to_string(),
+                    asset_class: 0,
+                    description: "".to_string(),
+                }),
+                side: if act.is_buy {
+                    apex_protos::common::TradeSide::Buy as i32
+                } else {
+                    apex_protos::common::TradeSide::Sell as i32
+                },
+                volume: Some(apex_protos::common::Volume {
+                    units: act.weight_delta.abs().to_string(),
+                    lot_size: "100000".to_string(),
+                    fractional: true,
+                }),
+                reason: format!("Adjust target allocation drift by {}", act.weight_delta),
+            });
+        }
+
         Ok(Response::new(RecommendationsResponse {
-            recommendations: vec![],
+            recommendations,
         }))
     }
 
@@ -445,8 +618,31 @@ impl PortfolioEngine for PortfolioServiceImpl {
         &self,
         request: Request<LoadEventsRequest>,
     ) -> Result<Response<Self::LoadEventsStream>, Status> {
-        let _req = request.into_inner();
-        let (_tx, rx) = mpsc::channel(100);
+        let req = request.into_inner();
+        let events = if let Some(ts) = req.from {
+            let offset_time = time::OffsetDateTime::from_unix_timestamp(ts.seconds)
+                .map_err(|e| Status::invalid_argument(format!("Invalid timestamp seconds: {}", e)))?;
+            let offset_time = offset_time + time::Duration::nanoseconds(ts.nanos as i64);
+            self.repository.load_events_since_time(&req.portfolio_id, offset_time)
+                .await
+                .map_err(|e| Status::internal(e.to_string()))?
+        } else {
+            self.repository.load_events_since(&req.portfolio_id, 0)
+                .await
+                .map_err(|e| Status::internal(e.to_string()))?
+        };
+
+        let (tx, rx) = mpsc::channel(100);
+        tokio::spawn(async move {
+            for e in events {
+                if let Ok(proto_event) = serde_json::from_value::<PortfolioEvent>(serde_json::to_value(e.payload).unwrap_or_default()) {
+                    if tx.send(Ok(proto_event)).await.is_err() {
+                        break;
+                    }
+                }
+            }
+        });
+
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 
@@ -454,16 +650,62 @@ impl PortfolioEngine for PortfolioServiceImpl {
         &self,
         request: Request<EquityCurveQuery>,
     ) -> Result<Response<EquityCurveResponse>, Status> {
-        let _req = request.into_inner();
-        Ok(Response::new(EquityCurveResponse::default()))
+        let req = request.into_inner();
+        let rows = sqlx::query("SELECT timestamp, payload FROM portfolio_snapshots WHERE aggregate_id = $1 ORDER BY version ASC")
+            .bind(&req.portfolio_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+        
+        let mut points = Vec::new();
+        for r in rows {
+            let ts: time::OffsetDateTime = r.get("timestamp");
+            let payload: serde_json::Value = r.get("payload");
+            let equity = payload.get("equity").and_then(|v| v.as_str()).unwrap_or("0").to_string();
+            let balance = payload.get("balance").and_then(|v| v.as_str()).unwrap_or("0").to_string();
+            let drawdown = payload.get("drawdown").and_then(|v| v.as_str()).unwrap_or("0").to_string();
+            points.push(PortfolioDataPoint {
+                timestamp: Some(apex_protos::common::Timestamp { seconds: ts.unix_timestamp(), nanos: 0 }),
+                equity: Some(apex_protos::common::Money { amount: equity, currency: "USD".to_string(), exponent: 0 }),
+                balance: Some(apex_protos::common::Money { amount: balance, currency: "USD".to_string(), exponent: 0 }),
+                margin_used: None,
+                unrealized_pnl: None,
+                position_count: 0,
+                drawdown_percent: Some(apex_protos::common::Decimal { value: drawdown }),
+            });
+        }
+        Ok(Response::new(EquityCurveResponse { points }))
     }
 
     async fn get_symbol_performance(
         &self,
         request: Request<SymbolPerformanceQuery>,
     ) -> Result<Response<SymbolPerformanceResponse>, Status> {
-        let _req = request.into_inner();
-        Ok(Response::new(SymbolPerformanceResponse::default()))
+        let req = request.into_inner();
+        let row_opt = sqlx::query("SELECT COALESCE(SUM(realized_pnl), 0) as realized, COUNT(*) as count FROM positions WHERE symbol = $1 AND state = 'closed'")
+            .bind(&req.symbol)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
+
+        let (realized, _count) = if let Some(row) = row_opt {
+            let pnl: rust_decimal::Decimal = row.get("realized");
+            let cnt: i64 = row.get("count");
+            (pnl, cnt)
+        } else {
+            (rust_decimal::Decimal::ZERO, 0)
+        };
+
+        let return_pct_val = if realized.is_zero() {
+            "0.0".to_string()
+        } else {
+            (realized / rust_decimal::Decimal::from(100000)).to_string()
+        };
+
+        Ok(Response::new(SymbolPerformanceResponse {
+            return_pct: Some(apex_protos::common::Percentage { value: return_pct_val, is_basis_points: false }),
+            pnl: Some(apex_protos::common::Money { amount: realized.to_string(), currency: "USD".to_string(), exponent: 0 }),
+        }))
     }
 
     async fn get_regime_performance(
@@ -503,7 +745,10 @@ impl PortfolioEngine for PortfolioServiceImpl {
         request: Request<SnapshotSubscriptionRequest>,
     ) -> Result<Response<Self::SubscribeSnapshotsStream>, Status> {
         let _req = request.into_inner();
-        let (_tx, rx) = mpsc::channel(100);
+        let (tx, rx) = mpsc::channel(100);
+        if let Ok(state) = self.build_snapshot_from_db(&_req.client_id).await {
+            let _ = tx.send(Ok(state)).await;
+        }
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 

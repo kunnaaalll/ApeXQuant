@@ -150,21 +150,77 @@ fn test_determinism_100k() {
 
 // DB Integration Tests
 
-#[tokio::test]
-#[ignore = "requires postgres DB"]
-async fn test_event_append_and_load() {
-    // Mock DB setup logic goes here
-    // Verify save and load match exactly
+#[sqlx::test]
+#[ignore = "requires database"]
+async fn test_event_append_and_load(pool: sqlx::PgPool) {
+    let store = crate::storage::pg_store::PostgresRiskStore::new(pool);
+    let aggregate_id = Uuid::new_v4();
+
+    let event = EventRecord {
+        event_id: Uuid::new_v4(),
+        aggregate_id,
+        sequence: 1,
+        timestamp: OffsetDateTime::now_utc(),
+        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 1, value: dec!(0.05) }),
+        version: 1,
+    };
+
+    store.append_event(&event).await.expect("Failed to append event");
+
+    let loaded_events = store.load_events(aggregate_id, 0).await.expect("Failed to load events");
+    assert_eq!(loaded_events.len(), 1);
+    assert_eq!(loaded_events[0].event_id, event.event_id);
+    assert_eq!(loaded_events[0].sequence, 1);
 }
 
-#[tokio::test]
-#[ignore = "requires postgres DB"]
-async fn test_snapshot_append_and_load() {
-    // Mock DB setup logic goes here
+#[sqlx::test]
+#[ignore = "requires database"]
+async fn test_snapshot_append_and_load(pool: sqlx::PgPool) {
+    let store = crate::storage::pg_store::PostgresRiskStore::new(pool);
+    let aggregate_id = Uuid::new_v4();
+
+    let snapshot = crate::storage::snapshots::SnapshotRecord {
+        aggregate_id,
+        version: 100,
+        timestamp: OffsetDateTime::now_utc(),
+        snapshot: serde_json::json!({"test": 123}),
+    };
+
+    store.append_snapshot(&snapshot).await.expect("Failed to append snapshot");
+
+    let loaded = store.load_snapshot(aggregate_id).await.expect("Failed to load snapshot");
+    assert!(loaded.is_some());
+    let loaded = loaded.unwrap();
+    assert_eq!(loaded.version, 100);
+    assert_eq!(loaded.snapshot, serde_json::json!({"test": 123}));
 }
 
-#[tokio::test]
-#[ignore = "requires postgres DB"]
-async fn test_concurrent_append() {
-    // Mock concurrent append logic goes here
+#[sqlx::test]
+#[ignore = "requires database"]
+async fn test_concurrent_append(pool: sqlx::PgPool) {
+    let store = std::sync::Arc::new(crate::storage::pg_store::PostgresRiskStore::new(pool));
+    let aggregate_id = Uuid::new_v4();
+
+    let mut handles = vec![];
+    for i in 1..=10 {
+        let store_clone = store.clone();
+        handles.push(tokio::spawn(async move {
+            let event = EventRecord {
+                event_id: Uuid::new_v4(),
+                aggregate_id,
+                sequence: i,
+                timestamp: OffsetDateTime::now_utc(),
+                payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: i, value: dec!(0.05) }),
+                version: i,
+            };
+            store_clone.append_event(&event).await.expect("Append failed");
+        }));
+    }
+
+    for handle in handles {
+        handle.await.unwrap();
+    }
+
+    let loaded = store.load_events(aggregate_id, 0).await.expect("Load failed");
+    assert_eq!(loaded.len(), 10);
 }

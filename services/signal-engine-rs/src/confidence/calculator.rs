@@ -8,7 +8,7 @@ use crate::confidence::decay::ConfidenceDecay;
 use crate::confluence::ConfluenceScore;
 use crate::mtf::types::MTFAlignmentResult;
 use crate::regime::MarketRegime;
-use crate::signals::SignalDirection;
+use crate::signals::result::SignalDirection;
 use crate::smc::SMCAnalysis;
 use crate::structure::StructureAnalysis;
 
@@ -118,12 +118,11 @@ impl ConfidenceCalculator {
         let confluence_factor = confluence.total as f64 / 100.0;
 
         // Weighted combination
-        let weighted_sum =
-            pattern_quality * 0.25 +
-            structure_quality * 0.20 +
-            regime_quality * 0.15 +
-            mtf_agreement * 0.20 +
-            confluence_factor * 0.20;
+        let weighted_sum = pattern_quality * 0.25
+            + structure_quality * 0.20
+            + regime_quality * 0.15
+            + mtf_agreement * 0.20
+            + confluence_factor * 0.20;
 
         // Apply adjustments
         let adjusted = weighted_sum * volatility_adjustment * time_decay;
@@ -150,16 +149,22 @@ impl ConfidenceCalculator {
         let mut score = 0.5; // Neutral base
 
         // SMC pattern quality
-        let ob_quality = smc.freshest_bullish_ob()
+        let ob_quality = smc
+            .freshest_bullish_ob()
             .or_else(|| smc.freshest_bearish_ob())
             .map(|ob| ob.strength)
             .unwrap_or(0.0);
 
-        let fvg_quality = smc.fresh_fvgs(20).iter()
+        let fvg_quality = smc
+            .fresh_fvgs(20)
+            .iter()
             .map(|f| f.strength)
-            .fold(0.0, |a, b| a.max(b));
+            .fold(0.0_f64, |a, b| a.max(b));
 
-        let liquidity_quality = smc.liquidity.strongest_sweep.as_ref()
+        let liquidity_quality = smc
+            .liquidity
+            .strongest_sweep
+            .as_ref()
             .map(|s| s.strength)
             .unwrap_or(0.0);
 
@@ -199,7 +204,7 @@ impl ConfidenceCalculator {
         // Bonus for clear range structure
         let range_bonus = if structure.range.is_some() { 0.05 } else { 0.0 };
 
-        (clarity + range_bonus).min(1.0)
+        f64::min(clarity + range_bonus, 1.0_f64)
     }
 
     fn calculate_regime_quality(&self, regime: &MarketRegime, direction: SignalDirection) -> f64 {
@@ -221,7 +226,7 @@ impl ConfidenceCalculator {
     }
 
     fn calculate_mtf_agreement(&self, mtf: &MTFAlignmentResult, direction: SignalDirection) -> f64 {
-        use crate::mtf::types::{MarketBias, AlignmentDirection};
+        use crate::mtf::types::{AlignmentDirection, MarketBias};
 
         let alignment_score = mtf.alignment_score;
 
@@ -237,12 +242,14 @@ impl ConfidenceCalculator {
         }
 
         // Count agreeing timeframes
-        let agreeing = mtf.alignments.iter()
+        let agreeing = mtf
+            .alignments
+            .iter()
             .filter(|a| {
                 matches!(
                     (a.direction, direction),
-                    (AlignmentDirection::Bullish, SignalDirection::Long) |
-                    (AlignmentDirection::Bearish, SignalDirection::Short)
+                    (AlignmentDirection::Bullish, SignalDirection::Long)
+                        | (AlignmentDirection::Bearish, SignalDirection::Short)
                 )
             })
             .count();
@@ -257,22 +264,42 @@ impl ConfidenceCalculator {
         let vol_pct = regime.volatility_percentile;
 
         match vol_pct {
-            v if v < 0.1 => 0.9,  // Too quiet
-            v if v < 0.3 => 1.0,  // Good
-            v if v < 0.7 => 1.0,  // Optimal
-            v if v < 0.9 => 0.9,  // Elevated
-            _ => 0.7,             // Too volatile
+            v if v < 0.1 => 0.9, // Too quiet
+            v if v < 0.3 => 1.0, // Good
+            v if v < 0.7 => 1.0, // Optimal
+            v if v < 0.9 => 0.9, // Elevated
+            _ => 0.7,            // Too volatile
         }
     }
 
-    /// Update calibration based on actual results
+    /// Update calibration based on actual results (Bayesian update using Beta distribution)
     pub fn update_calibration(&mut self, predicted: f64, actual: bool) {
-        // Simple calibration update using empirical calibration
-        // This is a placeholder - real implementation would use Bayesian updates
-        let error = if actual { predicted - 100.0 } else { predicted };
-        let adjustment = error * 0.001; // Small learning rate
+        // We use a Beta distribution (alpha, beta) for Bayesian update
+        // We can approximate the current calibration state
+        // Let's assume an effective sample size (ESS) of 100 for smoothing
+        let ess = 100.0;
+        let mut alpha = self.calibration * ess;
+        let mut beta_param = ess - alpha;
 
-        self.calibration = (self.calibration - adjustment).clamp(0.5, 1.2);
+        // Update priors
+        if actual {
+            alpha += 1.0;
+        } else {
+            beta_param += 1.0;
+        }
+
+        // Calculate new expected value (posterior mean)
+        let expected_win_rate = alpha / (alpha + beta_param);
+
+        // Ratio of actual win rate vs predicted is our new calibration
+        let prediction_decimal = (predicted / 100.0).clamp(0.01, 0.99);
+        let new_calibration = expected_win_rate / prediction_decimal;
+
+        // Exponential smoothing to avoid sudden jumps
+        let learning_rate = 0.05;
+        self.calibration = (self.calibration * (1.0 - learning_rate)
+            + new_calibration * learning_rate)
+            .clamp(0.5, 1.2);
     }
 }
 
@@ -293,7 +320,10 @@ mod tests {
         // Test that confidence stays within bounds
         let result = calc.calculate(
             SignalDirection::Long,
-            &crate::confluence::ConfluenceScore { total: 50, factors: vec![] },
+            &crate::confluence::ConfluenceScore {
+                total: 50,
+                factors: vec![],
+            },
             &crate::structure::StructureAnalysis {
                 swing_highs: vec![],
                 swing_lows: vec![],

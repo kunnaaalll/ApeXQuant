@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use super::circuit_breaker::ExecutionProtectionState;
@@ -58,7 +58,7 @@ impl SpreadGuards {
             let diff = self.spread_multiplier - one;
             let ratio = diff / dec!(4.0);
             let score = ratio * dec!(100.0);
-            
+
             score.to_u32().unwrap_or(100).min(100)
         }
     }

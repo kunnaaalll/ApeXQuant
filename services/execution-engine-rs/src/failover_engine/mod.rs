@@ -1,5 +1,5 @@
-pub mod policies;
 pub mod engine;
+pub mod policies;
 
-pub use policies::{FailoverPolicy, FailureTrigger};
 pub use engine::FailoverEngine;
+pub use policies::{FailoverPolicy, FailureTrigger};

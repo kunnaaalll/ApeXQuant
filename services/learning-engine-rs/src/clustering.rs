@@ -30,7 +30,7 @@ impl Default for ClusterManager {
 impl ClusterManager {
     pub fn new() -> Self {
         Self {
-            clusters: Vec::new(),
+            clusters: vec![],
         }
     }
 
@@ -48,7 +48,7 @@ impl ClusterManager {
 
     // A deterministic clustering mechanism would group items by similar traits without f32/f64.
     pub fn cluster_strategies(&self, traits: &HashMap<String, Vec<String>>) -> Vec<Cluster> {
-        let mut result = Vec::new();
+        let mut result = vec![];
         // deterministic bucketing implementation
         for (trait_key, members) in traits {
             let mut props = HashMap::new();

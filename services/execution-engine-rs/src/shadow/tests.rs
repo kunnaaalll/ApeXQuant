@@ -17,20 +17,38 @@ fn test_shadow_match_bounds() {
     let thresholds = ParityThresholds::institutional();
 
     // Exact Match
-    assert_eq!(engine.compare(dec!(100.0), dec!(100.0), &thresholds), ComparisonState::ExactMatch);
-    assert_eq!(engine.compare(dec!(100.0), dec!(101.0), &thresholds), ComparisonState::ExactMatch);
+    assert_eq!(
+        engine.compare(dec!(100.0), dec!(100.0), &thresholds),
+        ComparisonState::ExactMatch
+    );
+    assert_eq!(
+        engine.compare(dec!(100.0), dec!(101.0), &thresholds),
+        ComparisonState::ExactMatch
+    );
 
     // Close Match
-    assert_eq!(engine.compare(dec!(100.0), dec!(102.0), &thresholds), ComparisonState::CloseMatch);
+    assert_eq!(
+        engine.compare(dec!(100.0), dec!(102.0), &thresholds),
+        ComparisonState::CloseMatch
+    );
 
     // Warning
-    assert_eq!(engine.compare(dec!(100.0), dec!(104.0), &thresholds), ComparisonState::Warning);
+    assert_eq!(
+        engine.compare(dec!(100.0), dec!(104.0), &thresholds),
+        ComparisonState::Warning
+    );
 
     // Mismatch
-    assert_eq!(engine.compare(dec!(100.0), dec!(109.0), &thresholds), ComparisonState::Mismatch);
+    assert_eq!(
+        engine.compare(dec!(100.0), dec!(109.0), &thresholds),
+        ComparisonState::Mismatch
+    );
 
     // Critical Mismatch
-    assert_eq!(engine.compare(dec!(100.0), dec!(111.0), &thresholds), ComparisonState::CriticalMismatch);
+    assert_eq!(
+        engine.compare(dec!(100.0), dec!(111.0), &thresholds),
+        ComparisonState::CriticalMismatch
+    );
 }
 
 #[test]
@@ -110,7 +128,7 @@ fn test_forbidden_transitions() {
 #[test]
 fn test_event_rebuild() {
     let mut snapshot = ShadowSnapshot::new();
-    
+
     let mut stats = ShadowStatistics::new();
     stats.exact_match_count = 50;
 
@@ -129,7 +147,7 @@ fn test_event_rebuild() {
 fn test_snapshot_restore() {
     let mut snapshot = ShadowSnapshot::new();
     let drift = DriftEngine::calculate(dec!(100.0), dec!(99.0));
-    
+
     snapshot.apply_event(ShadowEvent::DriftCalculated(drift.clone()));
     let state = snapshot.rebuild_state();
 
@@ -140,7 +158,7 @@ fn test_snapshot_restore() {
 fn test_report_generation() {
     let mut state = ShadowState::new();
     state.statistics.exact_match_count = 42;
-    
+
     let md = ReporterEngine::generate_markdown(&state);
     assert!(md.contains("Exact Matches: 42"));
 
@@ -168,7 +186,7 @@ fn test_parity_score_bounds() {
 fn test_health_score() {
     let mut stats = ShadowStatistics::new();
     stats.exact_match_count = 100;
-    
+
     let parity = ParityEngine::compute(&stats);
     let validator = GoLiveValidator::new();
 
@@ -187,10 +205,10 @@ fn test_determinism_100k_iterations() {
         // Pseudo deterministic cycle logic without randomness
         let expected = dec!(100.0) + rust_decimal::Decimal::from(i % 10);
         let actual = expected; // exact match
-        
+
         let comp = engine.compare(expected, actual, &thresholds);
         assert_eq!(comp, ComparisonState::ExactMatch);
-        
+
         stats.exact_match_count = stats.exact_match_count.saturating_add(1);
         validator.process_parity_pass();
     }

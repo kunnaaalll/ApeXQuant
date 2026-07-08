@@ -5,9 +5,12 @@ pub struct ReporterEngine;
 impl ReporterEngine {
     pub fn generate_markdown(state: &ShadowState) -> String {
         let stats = &state.statistics;
-        
+
         let drift_str = match &state.drift_score {
-            Some(d) => format!("- Absolute: {}\n- Relative: {}%\n- State: {:?}", d.absolute_drift, d.relative_drift, d.state),
+            Some(d) => format!(
+                "- Absolute: {}\n- Relative: {}%\n- State: {:?}",
+                d.absolute_drift, d.relative_drift, d.state
+            ),
             None => "- Not recorded".to_string(),
         };
 
@@ -59,11 +62,20 @@ impl ReporterEngine {
 
     pub fn generate_json(state: &ShadowState) -> String {
         let stats = &state.statistics;
-        
-        let drift_abs = state.drift_score.as_ref().map_or("0".to_string(), |d| d.absolute_drift.to_string());
-        let drift_rel = state.drift_score.as_ref().map_or("0".to_string(), |d| d.relative_drift.to_string());
-        
-        let parity_val = state.parity_score.as_ref().map_or("0".to_string(), |p| p.value.to_string());
+
+        let drift_abs = state
+            .drift_score
+            .as_ref()
+            .map_or("0".to_string(), |d| d.absolute_drift.to_string());
+        let drift_rel = state
+            .drift_score
+            .as_ref()
+            .map_or("0".to_string(), |d| d.relative_drift.to_string());
+
+        let parity_val = state
+            .parity_score
+            .as_ref()
+            .map_or("0".to_string(), |p| p.value.to_string());
 
         let health_val = match &state.health {
             Some(h) => format!("{:?}", h),

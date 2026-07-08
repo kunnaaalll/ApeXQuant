@@ -13,7 +13,10 @@ impl FailoverEngine {
         match trigger {
             FailureTrigger::ConnectionLoss => {
                 if current_attempts < self.retry_limit {
-                    FailoverPolicy::Retry { max_attempts: self.retry_limit, delay_ms: 1000 }
+                    FailoverPolicy::Retry {
+                        max_attempts: self.retry_limit,
+                        delay_ms: 1000,
+                    }
                 } else {
                     FailoverPolicy::FreezeTrading
                 }

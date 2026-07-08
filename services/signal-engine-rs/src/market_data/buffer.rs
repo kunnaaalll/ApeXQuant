@@ -73,6 +73,8 @@ pub struct CandleBuffer {
     buffers: DashMap<String, HashMap<String, TimeframeBuffer>>,
     /// Configuration
     config: Config,
+    /// Last update timestamp
+    pub last_update: Option<time::OffsetDateTime>,
 }
 
 impl CandleBuffer {
@@ -81,6 +83,7 @@ impl CandleBuffer {
         Self {
             buffers: DashMap::new(),
             config: config.clone(),
+            last_update: None,
         }
     }
 
@@ -100,7 +103,9 @@ impl CandleBuffer {
                 TimeframeBuffer::new(timeframe.to_string(), self.get_buffer_size(timeframe))
             });
 
-        buffer.add_candles(candles)
+        let result = buffer.add_candles(candles);
+        self.last_update = Some(time::OffsetDateTime::now_utc());
+        result
     }
 
     /// Get candles for a specific symbol and timeframe
@@ -123,10 +128,7 @@ impl CandleBuffer {
     }
 
     /// Get all timeframe data for a symbol
-    pub fn get_all_timeframes(
-        &self,
-        symbol: &str,
-    ) -> Result<HashMap<String, Vec<Candle>>> {
+    pub fn get_all_timeframes(&self, symbol: &str) -> Result<HashMap<String, Vec<Candle>>> {
         match self.buffers.get(symbol) {
             Some(entry) => {
                 let symbol_buffers = entry.value();

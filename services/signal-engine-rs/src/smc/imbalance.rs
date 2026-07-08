@@ -38,11 +38,7 @@ pub enum ImbalanceDirection {
 }
 
 /// Detect order flow imbalance from candles
-pub fn detect_imbalance(
-    candles: &[Candle],
-    min_bars: usize,
-    lookback: usize,
-) -> Vec<Imbalance> {
+pub fn detect_imbalance(candles: &[Candle], min_bars: usize, lookback: usize) -> Vec<Imbalance> {
     let mut imbalances = Vec::new();
 
     if candles.len() < min_bars {
@@ -84,11 +80,10 @@ fn analyze_window(candles: &[Candle], start_idx: usize) -> Option<Imbalance> {
     }
 
     // Calculate delta (approximate using close - open accumulation)
-    let delta = candles.iter()
-        .map(|c| c.close - c.open)
-        .sum::<Decimal>();
+    let delta = candles.iter().map(|c| c.close - c.open).sum::<Decimal>();
 
-    let avg_size = candles.iter()
+    let avg_size = candles
+        .iter()
         .map(|c| c.range())
         .fold(Decimal::ZERO, |acc, r| acc + r)
         / Decimal::from(candles.len() as i64);
@@ -114,13 +109,14 @@ fn calculate_imbalance_strength(
 ) -> f64 {
     let mut score = 0.0;
 
-    let directional_matches = candles.iter().filter(|c| {
-        match direction {
+    let directional_matches = candles
+        .iter()
+        .filter(|c| match direction {
             ImbalanceDirection::Buying => c.is_bullish(),
             ImbalanceDirection::Selling => c.is_bearish(),
             _ => false,
-        }
-    }).count() as f64;
+        })
+        .count() as f64;
 
     let consistency = directional_matches / candles.len() as f64;
     score += consistency * 0.4;
@@ -182,10 +178,12 @@ pub fn analyze_imbalance(candles: &[Candle]) -> ImbalanceAnalysis {
     let (current, strength) = current_imbalance(candles, 10);
     let recent = detect_imbalance(candles, 3, 30);
 
-    let buying_count = recent.iter()
+    let buying_count = recent
+        .iter()
         .filter(|i| i.direction == ImbalanceDirection::Buying)
         .count();
-    let selling_count = recent.iter()
+    let selling_count = recent
+        .iter()
         .filter(|i| i.direction == ImbalanceDirection::Selling)
         .count();
 

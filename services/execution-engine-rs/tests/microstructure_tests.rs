@@ -1,24 +1,24 @@
 #![deny(unsafe_code)]
 
-use rust_decimal::Decimal;
-use execution_engine::microstructure::bid_ask::BidAsk;
-use execution_engine::microstructure::spread::Spread;
-use execution_engine::microstructure::depth::{OrderBookDepth, DepthLevel};
-use execution_engine::microstructure::imbalance::ImbalanceScore;
-use execution_engine::microstructure::queue::QueueState;
-use execution_engine::microstructure::impact::{MarketImpact, MarketImpactGrade};
-use execution_engine::microstructure::resiliency::ResiliencyState;
-use execution_engine::microstructure::score::{MicrostructureScore, MicrostructureGrade};
-use execution_engine::market::state::MarketState;
-use execution_engine::market::transitions::StateTransition;
+use execution_engine::events::microstructure_events::MicrostructureEvent;
+use execution_engine::execution_cost::impact_cost::ImpactCost;
+use execution_engine::execution_cost::slippage_cost::SlippageCost;
+use execution_engine::execution_cost::spread_cost::SpreadCost;
+use execution_engine::execution_cost::total_cost::{TotalExecutionCost, TotalExecutionCostGrade};
 use execution_engine::latency::health::LatencyState;
 use execution_engine::latency::score::LatencyScore;
-use execution_engine::execution_cost::spread_cost::SpreadCost;
-use execution_engine::execution_cost::slippage_cost::SlippageCost;
-use execution_engine::execution_cost::impact_cost::ImpactCost;
-use execution_engine::execution_cost::total_cost::{TotalExecutionCost, TotalExecutionCostGrade};
-use execution_engine::events::microstructure_events::MicrostructureEvent;
+use execution_engine::market::state::MarketState;
+use execution_engine::market::transitions::StateTransition;
+use execution_engine::microstructure::bid_ask::BidAsk;
+use execution_engine::microstructure::depth::{DepthLevel, OrderBookDepth};
+use execution_engine::microstructure::imbalance::ImbalanceScore;
+use execution_engine::microstructure::impact::{MarketImpact, MarketImpactGrade};
+use execution_engine::microstructure::queue::QueueState;
+use execution_engine::microstructure::resiliency::ResiliencyState;
+use execution_engine::microstructure::score::{MicrostructureGrade, MicrostructureScore};
+use execution_engine::microstructure::spread::Spread;
 use execution_engine::snapshots::microstructure_snapshots::MicrostructureSnapshot;
+use rust_decimal::Decimal;
 
 #[test]
 fn test_spread_bounds() {
@@ -31,10 +31,16 @@ fn test_spread_bounds() {
 
 #[test]
 fn test_depth_grades() {
-    let depth = OrderBookDepth::new(Decimal::new(500, 0), Decimal::new(300, 0), Decimal::new(200, 0)).unwrap();
+    let depth = OrderBookDepth::new(
+        Decimal::new(500, 0),
+        Decimal::new(300, 0),
+        Decimal::new(200, 0),
+    )
+    .unwrap();
     assert_eq!(depth.grade(), DepthLevel::Excellent);
-    
-    let weak_depth = OrderBookDepth::new(Decimal::new(5, 0), Decimal::new(3, 0), Decimal::new(2, 0)).unwrap();
+
+    let weak_depth =
+        OrderBookDepth::new(Decimal::new(5, 0), Decimal::new(3, 0), Decimal::new(2, 0)).unwrap();
     assert_eq!(weak_depth.grade(), DepthLevel::Weak);
 }
 
@@ -73,7 +79,7 @@ fn test_resiliency_states() {
 fn test_market_state_transitions() {
     let next = StateTransition::next(MarketState::Normal, MarketState::Stressed).unwrap();
     assert_eq!(next, MarketState::Stressed);
-    
+
     let fail = StateTransition::next(MarketState::Closed, MarketState::Stressed);
     assert!(fail.is_err());
 }
@@ -82,10 +88,10 @@ fn test_market_state_transitions() {
 fn test_latency_bounds() {
     let state = LatencyState::evaluate(40).unwrap();
     assert_eq!(state, LatencyState::Healthy);
-    
+
     let score = LatencyScore::calculate(80).unwrap();
     assert_eq!(score.score, 60);
-    
+
     let score_critical = LatencyScore::calculate(250).unwrap();
     assert_eq!(score_critical.score, 0);
 }
@@ -96,7 +102,7 @@ fn test_execution_cost_score() {
     let spread = SpreadCost::calculate(Decimal::new(10, 0), notional).unwrap(); // $100
     let slippage = SlippageCost::calculate(Decimal::new(5, 0), notional).unwrap(); // $50
     let impact = ImpactCost::calculate(Decimal::new(5, 0), notional).unwrap(); // $50
-    
+
     let total = TotalExecutionCost::calculate(&spread, &slippage, &impact, notional).unwrap();
     assert_eq!(total.total_usd, Decimal::new(200, 0));
     // 200 on 100k is 20 bps -> Poor

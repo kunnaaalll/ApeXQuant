@@ -50,12 +50,8 @@ impl RollingWindow {
             return 0.0;
         }
         let avg = self.average();
-        let variance: f64 = self
-            .values
-            .iter()
-            .map(|v| (v - avg).powi(2))
-            .sum::<f64>()
-            / self.values.len() as f64;
+        let variance: f64 =
+            self.values.iter().map(|v| (v - avg).powi(2)).sum::<f64>() / self.values.len() as f64;
         variance.sqrt()
     }
 
@@ -179,11 +175,23 @@ impl ParityStatistics {
             total_comparisons: self.total_comparisons,
             exact_matches: *self.by_type.get(&ComparisonType::ExactMatch).unwrap_or(&0),
             close_matches: *self.by_type.get(&ComparisonType::CloseMatch).unwrap_or(&0),
-            partial_matches: *self.by_type.get(&ComparisonType::PartialMatch).unwrap_or(&0),
-            disagreements: *self.by_type.get(&ComparisonType::Disagreement).unwrap_or(&0),
+            partial_matches: *self
+                .by_type
+                .get(&ComparisonType::PartialMatch)
+                .unwrap_or(&0),
+            disagreements: *self
+                .by_type
+                .get(&ComparisonType::Disagreement)
+                .unwrap_or(&0),
             misses: *self.by_type.get(&ComparisonType::Miss).unwrap_or(&0),
-            false_positives: *self.by_type.get(&ComparisonType::FalsePositive).unwrap_or(&0),
-            false_negatives: *self.by_type.get(&ComparisonType::FalseNegative).unwrap_or(&0),
+            false_positives: *self
+                .by_type
+                .get(&ComparisonType::FalsePositive)
+                .unwrap_or(&0),
+            false_negatives: *self
+                .by_type
+                .get(&ComparisonType::FalseNegative)
+                .unwrap_or(&0),
             direction_agreement_pct: self.direction_agreement_pct(),
             avg_confidence_diff: self.avg_confidence_diff.average(),
             avg_entry_diff: self.avg_entry_diff.average(),
@@ -260,7 +268,8 @@ impl SymbolStatistics {
         }
 
         // Update running average of agreement score
-        self.avg_agreement_score = ((self.avg_agreement_score * (self.comparison_count - 1) as f64)
+        self.avg_agreement_score = ((self.avg_agreement_score
+            * (self.comparison_count - 1) as f64)
             + comparison.agreement_score)
             / self.comparison_count as f64;
     }
@@ -296,9 +305,10 @@ impl StatisticsCollector {
 
     /// Record a comparison
     pub fn record(&self, comparison: &SignalComparisonRecord) -> Result<()> {
-        let mut stats = self.inner.lock().map_err(|_| {
-            ParityError::StatisticsError("Failed to lock statistics".to_string())
-        })?;
+        let mut stats = self
+            .inner
+            .lock()
+            .map_err(|_| ParityError::StatisticsError("Failed to lock statistics".to_string()))?;
         stats.record(comparison);
         Ok(())
     }
@@ -317,9 +327,10 @@ impl StatisticsCollector {
 
     /// Reset statistics
     pub fn reset(&self) -> Result<()> {
-        let mut stats = self.inner.lock().map_err(|_| {
-            ParityError::StatisticsError("Failed to lock statistics".to_string())
-        })?;
+        let mut stats = self
+            .inner
+            .lock()
+            .map_err(|_| ParityError::StatisticsError("Failed to lock statistics".to_string()))?;
         *stats = ParityStatistics::default();
         Ok(())
     }

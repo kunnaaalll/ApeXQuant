@@ -16,11 +16,21 @@ impl ValidationHealth {
         benchmark_pass: bool,
     ) -> Self {
         let mut score = 0;
-        if parity_pass { score += 1; }
-        if determinism_pass { score += 1; }
-        if replay_pass { score += 1; }
-        if stress_pass { score += 1; }
-        if benchmark_pass { score += 1; }
+        if parity_pass {
+            score += 1;
+        }
+        if determinism_pass {
+            score += 1;
+        }
+        if replay_pass {
+            score += 1;
+        }
+        if stress_pass {
+            score += 1;
+        }
+        if benchmark_pass {
+            score += 1;
+        }
 
         match score {
             5 => ValidationHealth::Excellent,

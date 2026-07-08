@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal_macros::dec;
 
 pub struct VolatilityModel {
@@ -47,9 +46,7 @@ impl VolatilityModel {
             .sum();
 
         let variance = variance_sum / (count - dec!(1.0));
-        let variance_f64 = variance.to_f64().unwrap_or(0.0);
-        let std_dev_f64 = variance_f64.sqrt();
-
-        Decimal::from_f64_retain(std_dev_f64).unwrap_or(Decimal::ZERO)
+        use rust_decimal::MathematicalOps;
+        variance.sqrt().unwrap_or(Decimal::ZERO)
     }
 }

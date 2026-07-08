@@ -48,7 +48,10 @@ impl RangeStructure {
 }
 
 /// Detect if market is in a range
-pub fn detect_range(swings_highs: &[SwingPoint], swing_lows: &[SwingPoint]) -> Option<RangeStructure> {
+pub fn detect_range(
+    swings_highs: &[SwingPoint],
+    swing_lows: &[SwingPoint],
+) -> Option<RangeStructure> {
     // Need at least 2 touches on each side
     if swings_highs.len() < 2 || swing_lows.len() < 2 {
         return None;
@@ -169,9 +172,9 @@ mod tests {
         ];
 
         let lows = vec![
-            create_swing_low(5, 10800),   // 108.00
-            create_swing_low(15, 10805),  // 108.05
-            create_swing_low(25, 10802),  // 108.02
+            create_swing_low(5, 10800),  // 108.00
+            create_swing_low(15, 10805), // 108.05
+            create_swing_low(25, 10802), // 108.02
         ];
 
         let range = detect_range(&highs, &lows);

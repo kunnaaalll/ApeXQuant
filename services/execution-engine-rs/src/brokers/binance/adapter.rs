@@ -1,17 +1,19 @@
-use crate::brokers::broker::BrokerAdapter;
-use crate::brokers::errors::BrokerError;
-use crate::brokers::health::BrokerHealth;
-use crate::brokers::requests::{ClosePositionRequest, OrderCancelRequest, OrderModifyRequest, OrderSubmitRequest};
-use crate::brokers::responses::{
-    AccountInfo, ClosePositionResponse, OpenPosition, OrderCancelResponse, OrderModifyResponse,
-    OrderSubmitResponse, PendingOrder, SymbolInfo,
-};
 use crate::brokers::binance::account::BinanceAccount;
 use crate::brokers::binance::orders::BinanceOrder;
 use crate::brokers::binance::positions::BinancePosition;
 use crate::brokers::binance::symbols::BinanceSymbol;
-use crate::brokers::connection::ConnectionState;
+use crate::brokers::broker::BrokerAdapter;
 use crate::brokers::capabilities::BrokerCapabilities;
+use crate::brokers::connection::ConnectionState;
+use crate::brokers::errors::BrokerError;
+use crate::brokers::health::BrokerHealth;
+use crate::brokers::requests::{
+    ClosePositionRequest, OrderCancelRequest, OrderModifyRequest, OrderSubmitRequest,
+};
+use crate::brokers::responses::{
+    AccountInfo, ClosePositionResponse, OpenPosition, OrderCancelResponse, OrderModifyResponse,
+    OrderSubmitResponse, PendingOrder, SymbolInfo,
+};
 
 use async_trait::async_trait;
 use ring::hmac;
@@ -30,6 +32,7 @@ pub struct BinanceAdapter {
     connection_state: Arc<RwLock<ConnectionState>>,
     connect_time: Arc<RwLock<Option<SystemTime>>>,
     reconnect_count: Arc<AtomicU32>,
+    symbol_cache: Arc<RwLock<std::collections::HashMap<String, String>>>,
 }
 
 impl BinanceAdapter {
@@ -47,6 +50,7 @@ impl BinanceAdapter {
             connection_state: Arc::new(RwLock::new(ConnectionState::Disconnected)),
             connect_time: Arc::new(RwLock::new(None)),
             reconnect_count: Arc::new(AtomicU32::new(0)),
+            symbol_cache: Arc::new(RwLock::new(std::collections::HashMap::new())),
         }
     }
 
@@ -63,17 +67,24 @@ impl BinanceAdapter {
     }
 
     pub async fn connect(&self) -> Result<(), BrokerError> {
-        let mut state = self.connection_state.write().await;
-        if *state == ConnectionState::Connected {
-            return Ok(());
+        {
+            let state = self.connection_state.read().await;
+            if *state == ConnectionState::Connected {
+                return Ok(());
+            }
         }
 
         let url = format!("{}/fapi/v1/ping", self.base_url);
-        let res = self.http_client.get(&url).send().await.map_err(|e| {
-            *state = ConnectionState::Failed;
-            BrokerError::ConnectionFailure(e.to_string())
-        })?;
+        let res = match self.http_client.get(&url).send().await {
+            Ok(r) => r,
+            Err(e) => {
+                let mut state = self.connection_state.write().await;
+                *state = ConnectionState::Failed;
+                return Err(BrokerError::ConnectionFailure(e.to_string()));
+            }
+        };
 
+        let mut state = self.connection_state.write().await;
         if res.status().is_success() {
             *state = ConnectionState::Connected;
             let mut ct = self.connect_time.write().await;
@@ -81,7 +92,10 @@ impl BinanceAdapter {
             Ok(())
         } else {
             *state = ConnectionState::Failed;
-            Err(BrokerError::ConnectionFailure(format!("HTTP {}", res.status())))
+            Err(BrokerError::ConnectionFailure(format!(
+                "HTTP {}",
+                res.status()
+            )))
         }
     }
 
@@ -122,23 +136,38 @@ impl BrokerAdapter for BinanceAdapter {
     async fn get_account(&self) -> Result<AccountInfo, BrokerError> {
         let qs = format!("timestamp={}", Self::timestamp());
         let signature = self.sign(&qs);
-        let url = format!("{}/fapi/v2/account?{}&signature={}", self.base_url, qs, signature);
+        let url = format!(
+            "{}/fapi/v2/account?{}&signature={}",
+            self.base_url, qs, signature
+        );
 
-        let res = self.http_client.get(&url)
+        let res = self
+            .http_client
+            .get(&url)
             .header("X-MBX-APIKEY", &self.api_key)
-            .send().await.map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
 
         if !res.status().is_success() {
             return Err(BrokerError::AccountError(format!("HTTP {}", res.status())));
         }
 
-        let account: BinanceAccount = res.json().await.map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
+        let account: BinanceAccount = res
+            .json()
+            .await
+            .map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
         Ok(account.into())
     }
 
     async fn get_symbol(&self, symbol: &str) -> Result<SymbolInfo, BrokerError> {
         let url = format!("{}/fapi/v1/exchangeInfo", self.base_url);
-        let res = self.http_client.get(&url).send().await.map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+        let res = self
+            .http_client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
 
         if !res.status().is_success() {
             return Err(BrokerError::InternalError(format!("HTTP {}", res.status())));
@@ -149,9 +178,15 @@ impl BrokerAdapter for BinanceAdapter {
             symbols: Vec<BinanceSymbol>,
         }
 
-        let info: ExchangeInfo = res.json().await.map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
+        let info: ExchangeInfo = res
+            .json()
+            .await
+            .map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
 
-        let sym = info.symbols.into_iter().find(|s| s.symbol == symbol)
+        let sym = info
+            .symbols
+            .into_iter()
+            .find(|s| s.symbol == symbol)
             .ok_or_else(|| BrokerError::SymbolNotFound(symbol.to_string()))?;
 
         Ok(sym.into())
@@ -160,19 +195,30 @@ impl BrokerAdapter for BinanceAdapter {
     async fn get_positions(&self) -> Result<Vec<OpenPosition>, BrokerError> {
         let qs = format!("timestamp={}", Self::timestamp());
         let signature = self.sign(&qs);
-        let url = format!("{}/fapi/v2/positionRisk?{}&signature={}", self.base_url, qs, signature);
+        let url = format!(
+            "{}/fapi/v2/positionRisk?{}&signature={}",
+            self.base_url, qs, signature
+        );
 
-        let res = self.http_client.get(&url)
+        let res = self
+            .http_client
+            .get(&url)
             .header("X-MBX-APIKEY", &self.api_key)
-            .send().await.map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
 
         if !res.status().is_success() {
             return Err(BrokerError::InternalError(format!("HTTP {}", res.status())));
         }
 
-        let positions: Vec<BinancePosition> = res.json().await.map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
+        let positions: Vec<BinancePosition> = res
+            .json()
+            .await
+            .map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
 
-        Ok(positions.into_iter()
+        Ok(positions
+            .into_iter()
             .filter(|p| !p.position_amount.is_zero())
             .map(|p| p.into())
             .collect())
@@ -181,22 +227,35 @@ impl BrokerAdapter for BinanceAdapter {
     async fn get_orders(&self) -> Result<Vec<PendingOrder>, BrokerError> {
         let qs = format!("timestamp={}", Self::timestamp());
         let signature = self.sign(&qs);
-        let url = format!("{}/fapi/v1/openOrders?{}&signature={}", self.base_url, qs, signature);
+        let url = format!(
+            "{}/fapi/v1/openOrders?{}&signature={}",
+            self.base_url, qs, signature
+        );
 
-        let res = self.http_client.get(&url)
+        let res = self
+            .http_client
+            .get(&url)
             .header("X-MBX-APIKEY", &self.api_key)
-            .send().await.map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
 
         if !res.status().is_success() {
             return Err(BrokerError::InternalError(format!("HTTP {}", res.status())));
         }
 
-        let orders: Vec<BinanceOrder> = res.json().await.map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
+        let orders: Vec<BinanceOrder> = res
+            .json()
+            .await
+            .map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
 
         Ok(orders.into_iter().map(|o| o.into()).collect())
     }
 
-    async fn submit_order(&self, req: OrderSubmitRequest) -> Result<OrderSubmitResponse, BrokerError> {
+    async fn submit_order(
+        &self,
+        req: OrderSubmitRequest,
+    ) -> Result<OrderSubmitResponse, BrokerError> {
         let side = match req.side {
             crate::brokers::requests::OrderSide::Buy => "BUY",
             crate::brokers::requests::OrderSide::Sell => "SELL",
@@ -208,9 +267,15 @@ impl BrokerAdapter for BinanceAdapter {
             crate::brokers::requests::OrderType::StopLimit => "STOP",
         };
 
-        let mut qs = format!("symbol={}&side={}&type={}&quantity={}&timestamp={}",
-                             req.symbol, side, r#type, req.volume, Self::timestamp());
-        
+        let mut qs = format!(
+            "symbol={}&side={}&type={}&quantity={}&timestamp={}",
+            req.symbol,
+            side,
+            r#type,
+            req.volume,
+            Self::timestamp()
+        );
+
         if let Some(p) = req.price {
             qs.push_str(&format!("&price={}&timeInForce=GTC", p));
         }
@@ -219,14 +284,24 @@ impl BrokerAdapter for BinanceAdapter {
         }
 
         let signature = self.sign(&qs);
-        let url = format!("{}/fapi/v1/order?{}&signature={}", self.base_url, qs, signature);
+        let url = format!(
+            "{}/fapi/v1/order?{}&signature={}",
+            self.base_url, qs, signature
+        );
 
-        let res = self.http_client.post(&url)
+        let res = self
+            .http_client
+            .post(&url)
             .header("X-MBX-APIKEY", &self.api_key)
-            .send().await.map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
 
         if !res.status().is_success() {
-            return Err(BrokerError::OrderSubmissionFailed(format!("HTTP {}", res.status())));
+            return Err(BrokerError::OrderSubmissionFailed(format!(
+                "HTTP {}",
+                res.status()
+            )));
         }
 
         #[derive(serde::Deserialize)]
@@ -235,29 +310,155 @@ impl BrokerAdapter for BinanceAdapter {
             order_id: i64,
         }
 
-        let resp: SubmitResp = res.json().await.map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
+        let resp: SubmitResp = res
+            .json()
+            .await
+            .map_err(|e| BrokerError::InvalidMessage(e.to_string()))?;
+        let order_id_str = resp.order_id.to_string();
+
+        {
+            let mut cache = self.symbol_cache.write().await;
+            cache.insert(order_id_str.clone(), req.symbol.clone());
+        }
 
         Ok(OrderSubmitResponse {
-            order_id: resp.order_id.to_string(),
+            order_id: order_id_str,
         })
     }
 
-    async fn modify_order(&self, _req: OrderModifyRequest) -> Result<OrderModifyResponse, BrokerError> {
-        Err(BrokerError::OrderModificationFailed("Binance Futures does not support modify via REST, requires cancel/replace".to_string()))
+    async fn modify_order(
+        &self,
+        _req: OrderModifyRequest,
+    ) -> Result<OrderModifyResponse, BrokerError> {
+        Err(BrokerError::OrderModificationFailed(
+            "Binance Futures does not support modify via REST, requires cancel/replace".to_string(),
+        ))
     }
 
-    async fn cancel_order(&self, _req: OrderCancelRequest) -> Result<OrderCancelResponse, BrokerError> {
-        // We need the symbol for Binance cancel order which is not in OrderCancelRequest directly.
-        // As a workaround for this signature we might need to change it or pass dummy symbol.
-        // Assuming we store symbol mapped to order_id, or we modify the trait if allowed.
-        // The instructions said "No new traits unless absolutely required by an existing interface" and we shouldn't modify the interface either.
-        // For Binance we HAVE to pass symbol. This is a known issue with Binance API.
-        Err(BrokerError::OrderCancellationFailed("Binance cancel order requires symbol parameter which is missing in OrderCancelRequest".to_string()))
+    async fn cancel_order(
+        &self,
+        req: OrderCancelRequest,
+    ) -> Result<OrderCancelResponse, BrokerError> {
+        let symbol = {
+            let cache = self.symbol_cache.read().await;
+            cache.get(&req.order_id).cloned()
+        };
+
+        let symbol = match symbol {
+            Some(sym) => sym,
+            None => {
+                let orders = self.get_orders().await?;
+                let found = orders.into_iter().find(|o| o.ticket == req.order_id);
+                match found {
+                    Some(o) => {
+                        let mut cache = self.symbol_cache.write().await;
+                        cache.insert(req.order_id.clone(), o.symbol.clone());
+                        o.symbol
+                    }
+                    None => {
+                        return Err(BrokerError::OrderCancellationFailed(format!(
+                            "Order {} not found in symbol cache or active orders",
+                            req.order_id
+                        )));
+                    }
+                }
+            }
+        };
+
+        let qs = format!(
+            "symbol={}&orderId={}&timestamp={}",
+            symbol,
+            req.order_id,
+            Self::timestamp()
+        );
+        let signature = self.sign(&qs);
+        let url = format!(
+            "{}/fapi/v1/order?{}&signature={}",
+            self.base_url, qs, signature
+        );
+
+        let res = self
+            .http_client
+            .delete(&url)
+            .header("X-MBX-APIKEY", &self.api_key)
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+
+        if !res.status().is_success() {
+            return Err(BrokerError::OrderCancellationFailed(format!(
+                "HTTP {}",
+                res.status()
+            )));
+        }
+
+        Ok(OrderCancelResponse { success: true })
     }
 
-    async fn close_position(&self, _req: ClosePositionRequest) -> Result<ClosePositionResponse, BrokerError> {
-        // Similar issue, need symbol.
-        Err(BrokerError::PositionCloseFailed("Binance requires symbol to close position".to_string()))
+    async fn close_position(
+        &self,
+        req: ClosePositionRequest,
+    ) -> Result<ClosePositionResponse, BrokerError> {
+        let parts: Vec<&str> = req.position_id.split('-').collect();
+        if parts.is_empty() {
+            return Err(BrokerError::PositionCloseFailed(format!(
+                "Invalid position ID format: {}",
+                req.position_id
+            )));
+        }
+
+        let symbol = parts[0];
+        let positions = self.get_positions().await?;
+        let pos = positions
+            .into_iter()
+            .find(|p| p.ticket == req.position_id)
+            .ok_or_else(|| {
+                BrokerError::PositionCloseFailed(format!(
+                    "Position {} not found on broker",
+                    req.position_id
+                ))
+            })?;
+
+        let volume_to_close = req.volume.unwrap_or(pos.volume);
+        let close_side = match pos.side.to_uppercase().as_str() {
+            "LONG" | "BUY" => crate::brokers::requests::OrderSide::Sell,
+            _ => crate::brokers::requests::OrderSide::Buy,
+        };
+
+        let side_str = match close_side {
+            crate::brokers::requests::OrderSide::Buy => "BUY",
+            crate::brokers::requests::OrderSide::Sell => "SELL",
+        };
+
+        let qs = format!(
+            "symbol={}&side={}&type=MARKET&quantity={}&reduceOnly=true&timestamp={}",
+            symbol,
+            side_str,
+            volume_to_close,
+            Self::timestamp()
+        );
+        let signature = self.sign(&qs);
+        let url = format!(
+            "{}/fapi/v1/order?{}&signature={}",
+            self.base_url, qs, signature
+        );
+
+        let res = self
+            .http_client
+            .post(&url)
+            .header("X-MBX-APIKEY", &self.api_key)
+            .send()
+            .await
+            .map_err(|e| BrokerError::ConnectionFailure(e.to_string()))?;
+
+        if !res.status().is_success() {
+            return Err(BrokerError::PositionCloseFailed(format!(
+                "HTTP {}",
+                res.status()
+            )));
+        }
+
+        Ok(ClosePositionResponse { success: true })
     }
 
     async fn health(&self) -> Result<BrokerHealth, BrokerError> {
@@ -285,11 +486,14 @@ impl BrokerAdapter for BinanceAdapter {
 
     async fn ping(&self) -> Result<(), BrokerError> {
         let url = format!("{}/fapi/v1/ping", self.base_url);
-        let res = self.http_client.get(&url).send().await.map_err(|e| {
-            let mut state = futures::executor::block_on(self.connection_state.write());
-            *state = ConnectionState::Failed;
-            BrokerError::ConnectionFailure(e.to_string())
-        })?;
+        let res = match self.http_client.get(&url).send().await {
+            Ok(r) => r,
+            Err(e) => {
+                let mut state = self.connection_state.write().await;
+                *state = ConnectionState::Failed;
+                return Err(BrokerError::ConnectionFailure(e.to_string()));
+            }
+        };
 
         if res.status().is_success() {
             let mut state = self.connection_state.write().await;
@@ -300,7 +504,10 @@ impl BrokerAdapter for BinanceAdapter {
         } else {
             let mut state = self.connection_state.write().await;
             *state = ConnectionState::Failed;
-            Err(BrokerError::ConnectionFailure(format!("HTTP {}", res.status())))
+            Err(BrokerError::ConnectionFailure(format!(
+                "HTTP {}",
+                res.status()
+            )))
         }
     }
 }

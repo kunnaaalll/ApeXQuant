@@ -19,7 +19,7 @@ impl ImbalanceScore {
         } else {
             // (bid / total) * 100 -> rounded
             let ratio = (bid_volume / total) * Decimal::new(100, 0);
-            
+
             // convert decimal to u8 safely
             let rounded = ratio.round();
             use rust_decimal::prelude::ToPrimitive;

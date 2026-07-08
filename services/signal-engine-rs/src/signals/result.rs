@@ -16,4 +16,9 @@ pub struct SignalResult {
     pub confidence: f64,
     pub confluence_score: f64,
     pub entry_price: Decimal,
+    pub stop_loss: Option<Decimal>,
+    pub take_profit: Option<Decimal>,
+    pub patterns: Vec<String>,
+    pub regime: String,
+    pub timestamp: time::OffsetDateTime,
 }

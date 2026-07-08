@@ -20,7 +20,7 @@ pub struct ConfluenceFactor {
 }
 
 /// Types of confluence factors
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum FactorType {
     /// Multi-timeframe alignment
     TimeframeAlignment,
@@ -52,18 +52,18 @@ impl FactorType {
     /// Get default weight for factor type
     pub fn default_weight(&self) -> f64 {
         match self {
-            FactorType::TimeframeAlignment => 1.2,    // Strong - HTF context
-            FactorType::TrendQuality => 1.0,           // Standard
-            FactorType::Regime => 0.8,                 // Moderate
-            FactorType::OrderBlock => 1.0,             // Standard
-            FactorType::FairValueGap => 0.7,           // Secondary
-            FactorType::Liquidity => 0.9,              // Important
-            FactorType::Displacement => 1.1,           // Strong signal
-            FactorType::Momentum => 0.8,               // Moderate
-            FactorType::Volatility => 0.6,             // Lower weight
-            FactorType::Session => 0.5,                // Lower weight
-            FactorType::Structure => 1.0,              // Standard
-            FactorType::RiskReward => 1.0,             // Hard filter
+            FactorType::TimeframeAlignment => 1.2, // Strong - HTF context
+            FactorType::TrendQuality => 1.0,       // Standard
+            FactorType::Regime => 0.8,             // Moderate
+            FactorType::OrderBlock => 1.0,         // Standard
+            FactorType::FairValueGap => 0.7,       // Secondary
+            FactorType::Liquidity => 0.9,          // Important
+            FactorType::Displacement => 1.1,       // Strong signal
+            FactorType::Momentum => 0.8,           // Moderate
+            FactorType::Volatility => 0.6,         // Lower weight
+            FactorType::Session => 0.5,            // Lower weight
+            FactorType::Structure => 1.0,          // Standard
+            FactorType::RiskReward => 1.0,         // Hard filter
         }
     }
 
@@ -231,7 +231,11 @@ impl FactorBuilder {
             _ => 2.0,
         };
 
-        let contribution = if fvg_aligned { base_contribution } else { base_contribution * 0.3 };
+        let contribution = if fvg_aligned {
+            base_contribution
+        } else {
+            base_contribution * 0.3
+        };
 
         let desc = if fvg_aligned {
             format!("FVG aligned ({:.0}%)", fvg_strength * 100.0)
@@ -258,7 +262,11 @@ impl FactorBuilder {
             _ => 4.0,
         };
 
-        let contribution = if sweep_aligned { base_contribution } else { 0.0 };
+        let contribution = if sweep_aligned {
+            base_contribution
+        } else {
+            0.0
+        };
 
         let desc = if sweep_aligned {
             format!("Liquidity sweep confirmed ({:.0}%)", sweep_strength * 100.0)
@@ -285,10 +293,17 @@ impl FactorBuilder {
             _ => 2.0,
         };
 
-        let contribution = if direction_aligned { base_contribution } else { base_contribution * 0.2 };
+        let contribution = if direction_aligned {
+            base_contribution
+        } else {
+            base_contribution * 0.2
+        };
 
         let desc = if direction_aligned {
-            format!("Displacement aligned ({:.0}%)", displacement_strength * 100.0)
+            format!(
+                "Displacement aligned ({:.0}%)",
+                displacement_strength * 100.0
+            )
         } else {
             "Displacement opposing".to_string()
         };
@@ -312,7 +327,11 @@ impl FactorBuilder {
             _ => 2.0,
         };
 
-        let contribution = if direction_aligned { base_contribution } else { base_contribution * 0.2 };
+        let contribution = if direction_aligned {
+            base_contribution
+        } else {
+            base_contribution * 0.2
+        };
 
         self.add_simple(
             FactorType::Momentum,
@@ -355,7 +374,11 @@ impl FactorBuilder {
             _ => 4.0,
         };
 
-        let contribution = if clear_swings { base_contribution } else { base_contribution * 0.5 };
+        let contribution = if clear_swings {
+            base_contribution
+        } else {
+            base_contribution * 0.5
+        };
 
         let desc = if clear_swings {
             format!("Clear structure ({:.0}%)", structure_quality * 100.0)
@@ -416,8 +439,12 @@ mod tests {
         let factors = builder.build();
 
         assert_eq!(factors.len(), 3);
-        assert!(factors.iter().any(|f| f.factor_type == FactorType::TimeframeAlignment));
-        assert!(factors.iter().any(|f| f.factor_type == FactorType::TrendQuality));
+        assert!(factors
+            .iter()
+            .any(|f| f.factor_type == FactorType::TimeframeAlignment));
+        assert!(factors
+            .iter()
+            .any(|f| f.factor_type == FactorType::TrendQuality));
     }
 
     #[test]

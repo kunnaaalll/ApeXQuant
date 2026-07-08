@@ -1,8 +1,8 @@
-use rust_decimal::Decimal;
-use crate::microstructure::score::MicrostructureGrade;
-use crate::market::state::MarketState;
-use crate::latency::health::LatencyState;
 use crate::execution_cost::total_cost::TotalExecutionCostGrade;
+use crate::latency::health::LatencyState;
+use crate::market::state::MarketState;
+use crate::microstructure::score::MicrostructureGrade;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MicrostructureSnapshot {

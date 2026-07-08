@@ -1,12 +1,12 @@
 #![deny(unsafe_code)]
 
+use execution_engine::api::readiness;
 use execution_engine::api::server::start_api_servers;
 use execution_engine::broker_supervisor::BrokerSupervisor;
 use execution_engine::brokers::binance::adapter::BinanceAdapter;
 use execution_engine::brokers::mt5::adapter::Mt5Adapter;
 use execution_engine::config::EnvironmentConfiguration;
 use execution_engine::event_bus::EventBusPublisher;
-use execution_engine::api::readiness;
 
 use std::sync::Arc;
 use tracing::{error, info, Level};
@@ -17,9 +17,7 @@ async fn main() -> anyhow::Result<()> {
     let config = EnvironmentConfiguration::from_env();
 
     // Step 2: Initialize observability
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("Starting APEX V3 Execution Engine...");
 
@@ -67,10 +65,25 @@ async fn main() -> anyhow::Result<()> {
     let pg_store = match pg_pool {
         Ok(pool) => {
             info!("PostgreSQL connected successfully");
-            Some(Arc::new(execution_engine::storage::pg_store::PgStore::new(pool)))
+            Some(Arc::new(execution_engine::storage::pg_store::PgStore::new(
+                pool,
+            )))
         }
         Err(e) => {
             error!("PostgreSQL connection failed: {:?}", e);
+            None
+        }
+    };
+
+    // Step 5b: Initialize Redis Client
+    info!("Connecting to Redis...");
+    let redis_client = match redis::Client::open(config.redis_url.clone()) {
+        Ok(client) => {
+            info!("Redis client initialized successfully");
+            Some(client)
+        }
+        Err(e) => {
+            error!("Redis client initialization failed: {:?}", e);
             None
         }
     };
@@ -93,7 +106,9 @@ async fn main() -> anyhow::Result<()> {
         Arc::clone(&mt5_adapter),
         Arc::clone(&binance_adapter),
         pg_store,
-    ).await;
+        redis_client,
+    )
+    .await;
 
     // Step 7: Publish readiness
     readiness::set_ready(true);

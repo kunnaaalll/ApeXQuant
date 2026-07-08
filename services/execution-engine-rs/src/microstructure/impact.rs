@@ -23,7 +23,7 @@ impl MarketImpact {
 
         use rust_decimal::prelude::ToPrimitive;
         let slippage_u64 = expected_slippage_bps.to_u64().unwrap_or(100);
-        
+
         let (grade, score) = if slippage_u64 <= 1 {
             (MarketImpactGrade::Negligible, 0)
         } else if slippage_u64 <= 5 {

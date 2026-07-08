@@ -39,38 +39,28 @@ pub enum BOSDirection {
 }
 
 /// Detect BOS patterns from candles and swings
-pub fn detect_bos(
-    candles: &[Candle],
-    swings: &[SwingPoint],
-    timeframe: &str,
-) -> Vec<BOS> {
+pub fn detect_bos(candles: &[Candle], swings: &[SwingPoint], timeframe: &str) -> Vec<BOS> {
     if candles.len() < 5 || swings.len() < 2 {
         return Vec::new();
     }
 
     let mut bos_patterns = Vec::new();
-    let swing_highs: Vec<&SwingPoint> = swings.iter()
+    let swing_highs: Vec<&SwingPoint> = swings
+        .iter()
         .filter(|s| s.swing_type == SwingType::High)
         .collect();
-    let swing_lows: Vec<&SwingPoint> = swings.iter()
+    let swing_lows: Vec<&SwingPoint> = swings
+        .iter()
         .filter(|s| s.swing_type == SwingType::Low)
         .collect();
 
-    // Look for bullish BOS (close above prior swing high)
-    for window in swing_highs.windows(2) {
-        let prior = window[0];
-        let recent = window[1];
-
-        if recent.index <= prior.index {
-            continue;
-        }
-
-        // Check for break between these swings
-        for i in (prior.index + 1)..recent.index.min(candles.len()) {
+    // Look for bullish BOS (close above a swing high)
+    for prior in &swing_highs {
+        for i in (prior.index + 1)..candles.len() {
             let candle = &candles[i];
 
             // Bullish BOS: close above prior swing high
-            if candle.close > prior.price && candle.index >= recent.index {
+            if candle.close > prior.price {
                 let strength = calculate_bos_strength(candle.close, prior.price, candles, i);
 
                 bos_patterns.push(BOS {
@@ -80,7 +70,7 @@ pub fn detect_bos(
                     level: prior.price,
                     break_price: candle.close,
                     strength,
-                    prior_swing: *prior,
+                    prior_swing: **prior,
                     timeframe: timeframe.to_string(),
                 });
                 break;
@@ -89,19 +79,12 @@ pub fn detect_bos(
     }
 
     // Look for bearish BOS
-    for window in swing_lows.windows(2) {
-        let prior = window[0];
-        let recent = window[1];
-
-        if recent.index <= prior.index {
-            continue;
-        }
-
-        for i in (prior.index + 1)..recent.index.min(candles.len()) {
+    for prior in &swing_lows {
+        for i in (prior.index + 1)..candles.len() {
             let candle = &candles[i];
 
             // Bearish BOS: close below prior swing low
-            if candle.close < prior.price && candle.index >= recent.index {
+            if candle.close < prior.price {
                 let strength = calculate_bos_strength(prior.price, candle.close, candles, i);
 
                 bos_patterns.push(BOS {
@@ -111,7 +94,7 @@ pub fn detect_bos(
                     level: prior.price,
                     break_price: candle.close,
                     strength,
-                    prior_swing: *prior,
+                    prior_swing: **prior,
                     timeframe: timeframe.to_string(),
                 });
                 break;
@@ -183,7 +166,8 @@ pub fn has_recent_bos(
 ) -> Option<BOS> {
     let patterns = detect_bos(candles, swings, "unknown");
 
-    patterns.into_iter()
+    patterns
+        .into_iter()
         .filter(|bos| candles.len().saturating_sub(bos.break_index) <= lookback)
         .filter(|bos| bos.direction == direction)
         .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
@@ -216,8 +200,18 @@ mod tests {
         ];
 
         let swings = vec![
-            SwingPoint { index: 0, timestamp: OffsetDateTime::now_utc(), price: Decimal::new(10000, 2), swing_type: SwingType::High },
-            SwingPoint { index: 2, timestamp: OffsetDateTime::now_utc(), price: Decimal::new(10400, 2), swing_type: SwingType::High },
+            SwingPoint {
+                index: 0,
+                timestamp: OffsetDateTime::now_utc(),
+                price: Decimal::new(10000, 2),
+                swing_type: SwingType::High,
+            },
+            SwingPoint {
+                index: 2,
+                timestamp: OffsetDateTime::now_utc(),
+                price: Decimal::new(10400, 2),
+                swing_type: SwingType::High,
+            },
         ];
 
         let bos = detect_bos(&candles, &swings, "M15");

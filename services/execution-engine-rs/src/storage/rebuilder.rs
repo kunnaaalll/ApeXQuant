@@ -1,7 +1,7 @@
 use crate::storage::aggregate::Aggregatable;
 use crate::storage::events::EventRecord;
-use crate::storage::snapshots::SnapshotRecord;
 use crate::storage::sequence::validate_sequence_strict;
+use crate::storage::snapshots::SnapshotRecord;
 use crate::storage::StorageError;
 
 pub struct ExecutionEventRebuilder;

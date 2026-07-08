@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use crate::storage::events::EventRecord;
 use crate::storage::snapshots::SnapshotRecord;
+use uuid::Uuid;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ConsistencyStatus {
@@ -19,7 +19,7 @@ impl ConsistencyEngine {
     ) -> ConsistencyStatus {
         let count = events.len() as u64;
         let expected_count = expected_end.saturating_sub(expected_start);
-        
+
         if count != expected_count {
             ConsistencyStatus::Broken(format!(
                 "Event count mismatch: expected {}, got {}",
@@ -68,7 +68,7 @@ impl ConsistencyEngine {
         if events.is_empty() {
             return ConsistencyStatus::Healthy;
         }
-        
+
         let mut last_version = events[0].version;
         for event in events {
             if event.version < last_version {

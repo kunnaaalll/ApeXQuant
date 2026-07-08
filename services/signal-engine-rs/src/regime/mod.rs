@@ -26,11 +26,12 @@ impl RegimeDetector {
         // Use execution timeframe for regime detection
         let tf = "M15"; // Default execution timeframe
 
-        let candles = candles.get(tf).ok_or_else(|| {
-            crate::SignalEngineError::MissingTimeframe {
-                timeframe: tf.to_string(),
-            }
-        })?;
+        let candles =
+            candles
+                .get(tf)
+                .ok_or_else(|| crate::SignalEngineError::MissingTimeframe {
+                    timeframe: tf.to_string(),
+                })?;
 
         if candles.len() < self.volatility_lookback {
             return Ok(MarketRegime {
@@ -44,7 +45,7 @@ impl RegimeDetector {
         let volatility = self.calculate_volatility(candles);
         let trend_strength = self.calculate_trend_strength(candles);
 
-        let (regime_type, confidence) = self.classify(volatility, trend_strength, candles);
+        let (regime_type, confidence) = self.classify(volatility.clone(), trend_strength, candles);
 
         Ok(MarketRegime {
             regime_type,

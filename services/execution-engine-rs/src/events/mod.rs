@@ -1,7 +1,7 @@
+pub mod microstructure_events;
 pub mod order_events;
 pub mod position_events;
 pub mod smart_execution_events;
-pub mod microstructure_events;
 
 pub use order_events::OrderEvent;
 pub use position_events::PositionEvent;

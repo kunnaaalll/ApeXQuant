@@ -24,7 +24,9 @@ impl LatencyGuards {
     }
 
     pub fn total_latency_ms(&self) -> u32 {
-        self.broker_latency_ms.saturating_add(self.exchange_latency_ms).saturating_add(self.network_latency_ms)
+        self.broker_latency_ms
+            .saturating_add(self.exchange_latency_ms)
+            .saturating_add(self.network_latency_ms)
     }
 
     pub fn get_state(&self) -> LatencyState {

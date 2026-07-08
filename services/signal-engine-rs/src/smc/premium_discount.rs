@@ -133,10 +133,7 @@ pub fn calculate_premium_discount(candles: &[Candle]) -> PremiumDiscount {
 }
 
 /// Check if price is seeking equilibrium
-pub fn is_seeking_equilibrium(
-    candles: &[Candle],
-    direction: SeekingDirection,
-) -> bool {
+pub fn is_seeking_equilibrium(candles: &[Candle], direction: SeekingDirection) -> bool {
     let pd = calculate_premium_discount(candles);
 
     match direction {
@@ -153,10 +150,16 @@ pub fn is_seeking_equilibrium(
             // In premium and moving down, or in discount and moving up
             match pd.zone {
                 PriceZone::Premium | PriceZone::DeepPremium => {
-                    end_price < start_price && end_price < pd.equilibrium + pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default()
+                    end_price < start_price
+                        && end_price
+                            < pd.equilibrium
+                                + pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default()
                 }
                 PriceZone::Discount | PriceZone::DeepDiscount => {
-                    end_price > start_price && end_price > pd.equilibrium - pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default()
+                    end_price > start_price
+                        && end_price
+                            > pd.equilibrium
+                                - pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default()
                 }
                 _ => false,
             }
@@ -172,12 +175,8 @@ pub fn is_seeking_equilibrium(
             let end_price = recent[recent.len() - 1].close;
 
             match pd.zone {
-                PriceZone::Premium | PriceZone::DeepPremium => {
-                    end_price > start_price
-                }
-                PriceZone::Discount | PriceZone::DeepDiscount => {
-                    end_price < start_price
-                }
+                PriceZone::Premium | PriceZone::DeepPremium => end_price > start_price,
+                PriceZone::Discount | PriceZone::DeepDiscount => end_price < start_price,
                 _ => false,
             }
         }
@@ -204,7 +203,8 @@ pub fn optimize_entry_in_zone(
     let optimized_entry = match zone {
         PriceZone::DeepDiscount => {
             // Wait for deeper discount or take current
-            let ideal = pd.discount_start - pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default();
+            let ideal =
+                pd.discount_start - pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default();
             entry_price.min(ideal)
         }
         PriceZone::Discount => {
@@ -215,11 +215,10 @@ pub fn optimize_entry_in_zone(
             // May want to wait for better zone
             entry_price
         }
-        PriceZone::Premium => {
-            entry_price
-        }
+        PriceZone::Premium => entry_price,
         PriceZone::DeepPremium => {
-            let ideal = pd.premium_start + pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default();
+            let ideal =
+                pd.premium_start + pd.range * Decimal::from_f64_retain(0.05).unwrap_or_default();
             entry_price.max(ideal)
         }
     };
@@ -303,7 +302,10 @@ mod tests {
         let candles = create_candles_with_range(10000, 11000, 10800);
         let pd = calculate_premium_discount(&candles);
 
-        assert!(matches!(pd.zone, PriceZone::Premium | PriceZone::DeepPremium));
+        assert!(matches!(
+            pd.zone,
+            PriceZone::Premium | PriceZone::DeepPremium
+        ));
         assert!(pd.score < 0.0);
     }
 
@@ -312,7 +314,10 @@ mod tests {
         let candles = create_candles_with_range(10000, 11000, 10200);
         let pd = calculate_premium_discount(&candles);
 
-        assert!(matches!(pd.zone, PriceZone::Discount | PriceZone::DeepDiscount));
+        assert!(matches!(
+            pd.zone,
+            PriceZone::Discount | PriceZone::DeepDiscount
+        ));
         assert!(pd.score > 0.0);
     }
 }

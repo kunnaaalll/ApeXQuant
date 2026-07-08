@@ -1,8 +1,8 @@
 use std::task::{Context, Poll};
-use tower::{Layer, Service};
-use tracing::{info, span, Level};
 use std::time::Instant;
 use tonic::codegen::http;
+use tower::{Layer, Service};
+use tracing::{info, span, Level};
 
 #[derive(Clone)]
 pub struct LoggingLayer;
@@ -43,16 +43,13 @@ where
             let start = Instant::now();
             let span = span!(Level::INFO, "request", method = %method, path = %path);
             let _enter = span.enter();
-            
+
             info!("Incoming request");
 
             let result = inner.call(req).await;
-            
+
             let duration = start.elapsed();
-            info!(
-                duration_ms = duration.as_millis(),
-                "Request completed"
-            );
+            info!(duration_ms = duration.as_millis(), "Request completed");
 
             result
         })

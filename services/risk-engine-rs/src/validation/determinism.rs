@@ -21,8 +21,6 @@ use crate::var::parametric_var::ParametricVaR;
 
 /// Deterministic returns sequence used for both replay runs.
 /// Fixed at compile time — never generated at runtime.
-const TEST_RETURNS: &[(Decimal, bool)] = &[];
-
 fn test_returns() -> Vec<(Decimal, bool)> {
     vec![
         (dec!(0.012),  false),

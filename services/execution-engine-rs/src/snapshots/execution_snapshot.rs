@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::order::{OrderId, OrderType, OrderSide, OrderStatus, TimeInForce};
+use crate::order::{OrderId, OrderSide, OrderStatus, OrderType, TimeInForce};
 use crate::position::Position;
 use crate::state::ExecutionState;
 use rust_decimal::Decimal;

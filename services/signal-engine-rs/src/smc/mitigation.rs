@@ -87,13 +87,14 @@ pub fn check_mitigation(
                 Decimal::ZERO
             };
 
-            let mitigation_type = if penetration > range * Decimal::from_f64_retain(0.5).unwrap_or_default() {
-                MitigationType::Full
-            } else if penetration > Decimal::ZERO {
-                MitigationType::Partial
-            } else {
-                MitigationType::Wick
-            };
+            let mitigation_type =
+                if penetration > range * Decimal::from_f64_retain(0.5).unwrap_or_default() {
+                    MitigationType::Full
+                } else if penetration > Decimal::ZERO {
+                    MitigationType::Partial
+                } else {
+                    MitigationType::Wick
+                };
 
             // Determine direction based on close relative to level
             let mid = (level_top + level_bottom) / Decimal::from(2);
@@ -104,12 +105,8 @@ pub fn check_mitigation(
             };
 
             // Calculate strength
-            let strength = calculate_mitigation_strength(
-                candle,
-                reaction_direction,
-                level_bottom,
-                level_top,
-            );
+            let strength =
+                calculate_mitigation_strength(candle, reaction_direction, level_bottom, level_top);
 
             return Some(Mitigation {
                 level: mid,
@@ -213,14 +210,19 @@ pub fn analyze_mitigations(
     // Sort by recency
     mitigations.sort_by(|a, b| b.index.cmp(&a.index));
 
-    let bullish_count = mitigations.iter()
+    let bullish_count = mitigations
+        .iter()
         .filter(|m| m.reaction_direction == ReactionDirection::BounceUp)
         .count();
-    let bearish_count = mitigations.iter()
+    let bearish_count = mitigations
+        .iter()
         .filter(|m| m.reaction_direction == ReactionDirection::RejectDown)
         .count();
 
-    let strongest = mitigations.iter().max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap()).cloned();
+    let strongest = mitigations
+        .iter()
+        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
+        .cloned();
 
     let bias = if bullish_count > bearish_count * 2 {
         Some(ReactionDirection::BounceUp)
@@ -240,11 +242,7 @@ pub fn analyze_mitigations(
 }
 
 /// Check if a specific level is currently being tested
-pub fn is_level_being_tested(
-    candles: &[Candle],
-    bottom: Decimal,
-    top: Decimal,
-) -> bool {
+pub fn is_level_being_tested(candles: &[Candle], bottom: Decimal, top: Decimal) -> bool {
     if let Some(last) = candles.last() {
         last.low <= top && last.high >= bottom
     } else {
@@ -253,10 +251,7 @@ pub fn is_level_being_tested(
 }
 
 /// Get distance to nearest untested level
-pub fn distance_to_level(
-    candles: &[Candle],
-    level: Decimal,
-) -> Option<(Decimal, bool)> {
+pub fn distance_to_level(candles: &[Candle], level: Decimal) -> Option<(Decimal, bool)> {
     let last = candles.last()?;
     let current_price = last.close;
 
@@ -293,9 +288,13 @@ mod tests {
         let level_bottom = Decimal::new(10200, 2);
         let level_top = Decimal::new(10300, 2);
 
-        let mitigation = check_mitigation(&candles, level_bottom, level_top, LevelType::OrderBlock, 0);
+        let mitigation =
+            check_mitigation(&candles, level_bottom, level_top, LevelType::OrderBlock, 0);
 
         assert!(mitigation.is_some());
-        assert_eq!(mitigation.unwrap().reaction_direction, ReactionDirection::BounceUp);
+        assert_eq!(
+            mitigation.unwrap().reaction_direction,
+            ReactionDirection::BounceUp
+        );
     }
 }

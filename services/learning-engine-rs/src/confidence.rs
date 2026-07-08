@@ -89,11 +89,11 @@ impl ConfidenceEngine {
                 .unwrap_or(Decimal::new(5, 1))
                 .round_dp(4),
             wilson_lower_bound: Decimal::from_f64(wilson_lower)
-                .unwrap_or(Decimal::ZERO)
+                .unwrap_or(Decimal::new(0, 0))
                 .round_dp(4),
             composite_score,
             sample_adequacy: Decimal::from_f64(sample_adequacy)
-                .unwrap_or(Decimal::ZERO)
+                .unwrap_or(Decimal::new(0, 0))
                 .round_dp(4),
         }
     }

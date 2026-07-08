@@ -72,10 +72,12 @@ pub fn detect_order_blocks(
         return obs;
     }
 
-    let swing_highs: Vec<&SwingPoint> = swings.iter()
+    let swing_highs: Vec<&SwingPoint> = swings
+        .iter()
         .filter(|s| s.swing_type == SwingType::High)
         .collect();
-    let swing_lows: Vec<&SwingPoint> = swings.iter()
+    let swing_lows: Vec<&SwingPoint> = swings
+        .iter()
         .filter(|s| s.swing_type == SwingType::Low)
         .collect();
 
@@ -93,11 +95,7 @@ pub fn detect_order_blocks(
                 let ob_candidate = &candles[i - 1];
 
                 if ob_candidate.is_bearish() {
-                    let strength = calculate_ob_strength(
-                        ob_candidate,
-                        candle,
-                        &swing_lows,
-                    );
+                    let strength = calculate_ob_strength(ob_candidate, candle, &swing_lows);
 
                     if strength > 0.3 {
                         obs.push(OrderBlock {
@@ -113,7 +111,10 @@ pub fn detect_order_blocks(
                             mitigated: false,
                             mitigation_index: None,
                             timeframe: timeframe.to_string(),
-                            ob_type: classify_ob_type(ob_candidate, &candles[i..i.min(candles.len())]),
+                            ob_type: classify_ob_type(
+                                ob_candidate,
+                                &candles[i..i.min(candles.len())],
+                            ),
                         });
                     }
                 }
@@ -126,11 +127,7 @@ pub fn detect_order_blocks(
                 let ob_candidate = &candles[i - 1];
 
                 if ob_candidate.is_bullish() {
-                    let strength = calculate_ob_strength(
-                        ob_candidate,
-                        candle,
-                        &swing_highs,
-                    );
+                    let strength = calculate_ob_strength(ob_candidate, candle, &swing_highs);
 
                     if strength > 0.3 {
                         obs.push(OrderBlock {
@@ -146,7 +143,10 @@ pub fn detect_order_blocks(
                             mitigated: false,
                             mitigation_index: None,
                             timeframe: timeframe.to_string(),
-                            ob_type: classify_ob_type(ob_candidate, &candles[i..i.min(candles.len())]),
+                            ob_type: classify_ob_type(
+                                ob_candidate,
+                                &candles[i..i.min(candles.len())],
+                            ),
                         });
                     }
                 }
@@ -269,11 +269,13 @@ pub fn find_nearest_obs(
 ) -> (Option<&OrderBlock>, Option<&OrderBlock>) {
     let fresh = find_fresh_obs(obs, 50);
 
-    let bullish = fresh.iter()
+    let bullish = fresh
+        .iter()
         .filter(|ob| ob.direction == OBDirection::Bullish)
         .min_by_key(|ob| (ob.bottom - current_price).abs());
 
-    let bearish = fresh.iter()
+    let bearish = fresh
+        .iter()
         .filter(|ob| ob.direction == OBDirection::Bearish)
         .min_by_key(|ob| (ob.top - current_price).abs());
 
@@ -312,10 +314,12 @@ mod tests {
 
     #[test]
     fn test_order_block_detection() {
-        let candles = vec![
+        let mut candles = vec![create_candle_direction(true, 10000, 10000); 3];
+
+        candles.extend(vec![
             create_candle_direction(false, 10500, 10400), // Bearish OB candidate
             create_candle_direction(true, 10400, 10600),  // Strong bullish impulse
-        ];
+        ]);
 
         let swings = vec![];
 

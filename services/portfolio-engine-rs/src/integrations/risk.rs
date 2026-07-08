@@ -4,7 +4,6 @@
 //! No hardcoded "SAFE" fallback — errors propagate to callers.
 
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromStr;
 use serde::{Deserialize, Serialize};
 
 use apex_protos::risk::risk_engine_client::RiskEngineClient;

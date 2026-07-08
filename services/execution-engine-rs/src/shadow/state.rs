@@ -1,7 +1,7 @@
-use super::statistics::ShadowStatistics;
-use super::parity::ParityScore;
 use super::drift::DriftAnalysis;
 use super::health::ShadowHealth;
+use super::parity::ParityScore;
+use super::statistics::ShadowStatistics;
 use super::validator::GoLiveValidator;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

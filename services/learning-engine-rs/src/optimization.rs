@@ -53,7 +53,7 @@ impl Optimizer {
         let magnitude = match action {
             AllocationRecommendation::Increase => Decimal::new(15, 0),
             AllocationRecommendation::Reduce => Decimal::new(15, 0),
-            AllocationRecommendation::Maintain => Decimal::ZERO,
+            AllocationRecommendation::Maintain => Decimal::new(0, 0),
         };
 
         OptimizationResult {

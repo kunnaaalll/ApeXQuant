@@ -1,8 +1,7 @@
 use crate::brokers::errors::BrokerError;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ConnectionState {
     #[default]
     Disconnected,
@@ -12,7 +11,6 @@ pub enum ConnectionState {
     Reconnecting,
     Failed,
 }
-
 
 impl ConnectionState {
     pub fn transition_to(&mut self, new_state: ConnectionState) -> Result<(), BrokerError> {

@@ -57,7 +57,9 @@ impl FillQualityGuards {
 
     pub fn get_state(&self) -> ExecutionProtectionState {
         match self.get_grade() {
-            FillGrade::Elite | FillGrade::Good | FillGrade::Normal => ExecutionProtectionState::Normal,
+            FillGrade::Elite | FillGrade::Good | FillGrade::Normal => {
+                ExecutionProtectionState::Normal
+            }
             FillGrade::Poor => ExecutionProtectionState::Restricted,
             FillGrade::Broken => ExecutionProtectionState::Critical,
         }

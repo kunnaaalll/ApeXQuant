@@ -100,18 +100,19 @@ pub fn detect_displacements(
     let mut i = min_bars;
     while i < candles.len() {
         // Look for consecutive moves in same direction with momentum
-        let result = analyze_displacement_window(&candles[i.saturating_sub(max_bars)..=i], atr, i.saturating_sub(max_bars));
+        let result = analyze_displacement_window(
+            &candles[i.saturating_sub(max_bars)..=i],
+            atr,
+            i.saturating_sub(max_bars),
+        );
 
         if let Some((direction, start_idx, strength, atr_mult)) = result {
             if atr_mult >= min_atr_multiple {
                 let start_candle = &candles[start_idx];
                 let end_candle = &candles[i];
 
-                let displacement_type = classify_displacement_type(
-                    &candles[..start_idx],
-                    direction,
-                    start_idx,
-                );
+                let displacement_type =
+                    classify_displacement_type(&candles[..start_idx], direction, start_idx);
 
                 displacements.push(Displacement {
                     direction,
@@ -188,9 +189,16 @@ fn analyze_displacement_window(
     // Calculate strength
     let bars = candles.len();
     let directional_bias = (up_bars.max(down_bars) as f64) / (bars as f64);
-    let magnitude_score = (price_change / atr).min(Decimal::from(5)).to_f64().unwrap_or(1.0) / 5.0;
+    let magnitude_score = (price_change / atr)
+        .min(Decimal::from(5))
+        .to_f64()
+        .unwrap_or(1.0)
+        / 5.0;
     let consistency_score = if max_shallow_pullback > Decimal::ZERO {
-        1.0 - (max_shallow_pullback / price_change).min(Decimal::ONE).to_f64().unwrap_or(0.0)
+        1.0 - (max_shallow_pullback / price_change)
+            .min(Decimal::ONE)
+            .to_f64()
+            .unwrap_or(0.0)
     } else {
         1.0
     };
@@ -220,10 +228,16 @@ fn classify_displacement_type(
     };
 
     // Check for consolidation (low volatility)
-    let range = recent.iter().map(|c| c.high).fold(Decimal::MIN, |a, b| a.max(b))
-        - recent.iter().map(|c| c.low).fold(Decimal::MAX, |a, b| a.min(b));
-    let avg_range: Decimal = recent.iter().map(|c| c.range()).sum::<Decimal>()
-        / Decimal::from(recent.len() as i64);
+    let range = recent
+        .iter()
+        .map(|c| c.high)
+        .fold(Decimal::MIN, |a, b| a.max(b))
+        - recent
+            .iter()
+            .map(|c| c.low)
+            .fold(Decimal::MAX, |a, b| a.min(b));
+    let avg_range: Decimal =
+        recent.iter().map(|c| c.range()).sum::<Decimal>() / Decimal::from(recent.len() as i64);
 
     let is_consolidation = range < avg_range * Decimal::from(5);
 
@@ -263,16 +277,15 @@ pub fn has_recent_displacement(
 ) -> Option<Displacement> {
     let displacements = detect_displacements(candles, "unknown", 2, 5, min_atr_multiple);
 
-    displacements.into_iter()
+    displacements
+        .into_iter()
         .filter(|d| candles.len().saturating_sub(d.end_index) <= lookback)
         .filter(|d| d.direction == direction)
         .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
 }
 
 /// Get most recent displacement info
-pub fn get_recent_displacement_info(
-    candles: &[Candle],
-) -> (Option<DisplacementDirection>, f64) {
+pub fn get_recent_displacement_info(candles: &[Candle]) -> (Option<DisplacementDirection>, f64) {
     let displacements = detect_displacements(candles, "unknown", 2, 5, 1.5);
 
     if let Some(recent) = displacements.last() {
@@ -300,28 +313,43 @@ pub fn analyze_displacement_bias(candles: &[Candle]) -> DisplacementBias {
     let displacements = detect_displacements(candles, "unknown", 2, 5, 1.5);
 
     let lookback = 10;
-    let recent: Vec<_> = displacements.iter()
+    let recent: Vec<_> = displacements
+        .iter()
         .filter(|d| candles.len().saturating_sub(d.end_index) <= lookback)
         .collect();
 
-    let up_count = recent.iter().filter(|d| d.direction == DisplacementDirection::Up).count();
-    let down_count = recent.iter().filter(|d| d.direction == DisplacementDirection::Down).count();
+    let up_count = recent
+        .iter()
+        .filter(|d| d.direction == DisplacementDirection::Up)
+        .count();
+    let down_count = recent
+        .iter()
+        .filter(|d| d.direction == DisplacementDirection::Down)
+        .count();
 
     let (bias, strength) = if up_count > down_count && up_count >= 2 {
-        (Some(DisplacementDirection::Up), up_count as f64 / (up_count + down_count) as f64)
+        (
+            Some(DisplacementDirection::Up),
+            up_count as f64 / (up_count + down_count) as f64,
+        )
     } else if down_count > up_count && down_count >= 2 {
-        (Some(DisplacementDirection::Down), down_count as f64 / (up_count + down_count) as f64)
+        (
+            Some(DisplacementDirection::Down),
+            down_count as f64 / (up_count + down_count) as f64,
+        )
     } else {
         (None, 0.0)
     };
 
-    let strongest = displacements.iter().max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
+    let strongest = displacements
+        .iter()
+        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
 
     DisplacementBias {
         bias,
         strength,
         recent_count: recent.len(),
-        strongest: strongest.cloned().cloned(),
+        strongest: strongest.cloned(),
     }
 }
 

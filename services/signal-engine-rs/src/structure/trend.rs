@@ -50,20 +50,20 @@ pub fn classify_trend(
     let recent_lows: Vec<_> = swing_lows.iter().rev().take(3).collect();
 
     // Check for uptrend: HH, HL pattern
-    let higher_highs = recent_highs.len() >= 2
-        && recent_highs.windows(2).all(|w| w[0].price > w[1].price);
-    let higher_lows = recent_lows.len() >= 2
-        && recent_lows.windows(2).all(|w| w[0].price > w[1].price);
+    let higher_highs =
+        recent_highs.len() >= 2 && recent_highs.windows(2).all(|w| w[0].price > w[1].price);
+    let higher_lows =
+        recent_lows.len() >= 2 && recent_lows.windows(2).all(|w| w[0].price > w[1].price);
 
     if higher_highs && higher_lows {
         return TrendDirection::Up;
     }
 
     // Check for downtrend: LH, LL pattern
-    let lower_highs = recent_highs.len() >= 2
-        && recent_highs.windows(2).all(|w| w[0].price < w[1].price);
-    let lower_lows = recent_lows.len() >= 2
-        && recent_lows.windows(2).all(|w| w[0].price < w[1].price);
+    let lower_highs =
+        recent_highs.len() >= 2 && recent_highs.windows(2).all(|w| w[0].price < w[1].price);
+    let lower_lows =
+        recent_lows.len() >= 2 && recent_lows.windows(2).all(|w| w[0].price < w[1].price);
 
     if lower_highs && lower_lows {
         return TrendDirection::Down;
@@ -148,7 +148,17 @@ mod tests {
 
     #[test]
     fn test_uptrend_detection() {
-        let candles = vec![]; // Not used directly
+        let candles = vec![
+            Candle::new(
+                OffsetDateTime::now_utc(),
+                Decimal::ZERO,
+                Decimal::ZERO,
+                Decimal::ZERO,
+                Decimal::ZERO,
+                0
+            );
+            10
+        ];
 
         let highs = vec![
             SwingPoint {
@@ -186,7 +196,17 @@ mod tests {
 
     #[test]
     fn test_downtrend_detection() {
-        let candles = vec![];
+        let candles = vec![
+            Candle::new(
+                OffsetDateTime::now_utc(),
+                Decimal::ZERO,
+                Decimal::ZERO,
+                Decimal::ZERO,
+                Decimal::ZERO,
+                0
+            );
+            10
+        ];
 
         let highs = vec![
             SwingPoint {

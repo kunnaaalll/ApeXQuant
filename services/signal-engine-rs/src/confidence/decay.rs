@@ -105,7 +105,7 @@ impl TimeAdjustment {
     /// Get multiplier for current time
     pub fn current_multiplier(&self) -> f64 {
         let now = OffsetDateTime::now_utc();
-        let minutes = now.hour() * 60 + now.minute();
+        let minutes = now.hour() as u32 * 60 + now.minute() as u32;
 
         if self.is_in_session(minutes) {
             self.session_multiplier

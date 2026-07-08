@@ -9,10 +9,7 @@ pub enum BrokerError {
     #[error("Connection failure: {0}")]
     ConnectionFailure(String),
     #[error("Invalid state transition from {from} to {to}")]
-    InvalidStateTransition {
-        from: String,
-        to: String,
-    },
+    InvalidStateTransition { from: String, to: String },
     #[error("Order submission failed: {0}")]
     OrderSubmissionFailed(String),
     #[error("Order modification failed: {0}")]

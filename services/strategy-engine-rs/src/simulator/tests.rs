@@ -1,4 +1,5 @@
 use super::variant_runner::VariantComparison;
+use super::replay_engine::ReplayEngine;
 
 #[test]
 fn test_variant_selection() {
@@ -9,6 +10,6 @@ fn test_variant_selection() {
 
 #[test]
 fn test_replay() {
-    // Placeholder test for replay engine logic
-    assert_eq!(1, 1);
+    let engine = ReplayEngine::new();
+    assert!(engine.active, "ReplayEngine should be active upon initialization");
 }

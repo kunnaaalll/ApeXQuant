@@ -36,14 +36,15 @@ impl ParityEngine {
         let critical_dec = Decimal::from(stats.critical_mismatch_count);
 
         let mut score = dec!(100.0);
-        
+
         let exact_penalty = dec!(0.0);
         let close_penalty = (close_dec / total_dec) * dec!(5.0);
         let warning_penalty = (warning_dec / total_dec) * dec!(15.0);
         let mismatch_penalty = (mismatch_dec / total_dec) * dec!(40.0);
         let critical_penalty = (critical_dec / total_dec) * dec!(100.0);
 
-        let total_penalty = exact_penalty + close_penalty + warning_penalty + mismatch_penalty + critical_penalty;
+        let total_penalty =
+            exact_penalty + close_penalty + warning_penalty + mismatch_penalty + critical_penalty;
 
         score -= total_penalty;
 

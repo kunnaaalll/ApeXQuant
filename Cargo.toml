@@ -83,7 +83,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "parki
 tracing-opentelemetry = "0.24"
 tracing-log = "0.2"
 valuable = { version = "0.1", features = ["derive"] }
-opentelemetry = { version = "0.23", features = ["trace", "metrics", "metricsgen"] }
+opentelemetry = { version = "0.23", features = ["trace", "metrics"] }
 opentelemetry_sdk = { version = "0.23", features = ["rt-tokio", "metrics"] }
 opentelemetry-otlp = { version = "0.16", features = ["tonic", "metrics", "trace"] }
 prometheus = { version = "0.13", features = ["process"] }

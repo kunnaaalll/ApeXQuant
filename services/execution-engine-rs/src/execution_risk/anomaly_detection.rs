@@ -1,13 +1,13 @@
 use rust_decimal_macros::dec;
 
-use super::severity::Severity;
-use super::spread_guards::SpreadGuards;
-use super::slippage_guards::SlippageGuards;
-use super::liquidity_guards::LiquidityGuards;
-use super::latency_guards::LatencyGuards;
-use super::fill_quality_guards::FillQualityGuards;
-use super::rejection_tracker::RejectionTracker;
 use super::failure_tracker::FailureTracker;
+use super::fill_quality_guards::FillQualityGuards;
+use super::latency_guards::LatencyGuards;
+use super::liquidity_guards::LiquidityGuards;
+use super::rejection_tracker::RejectionTracker;
+use super::severity::Severity;
+use super::slippage_guards::SlippageGuards;
+use super::spread_guards::SpreadGuards;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AnomalyType {
@@ -74,7 +74,9 @@ impl AnomalyDetectionEngine {
         }
     }
 
-    pub fn detect_liquidity_anomalies(liquidity: &LiquidityGuards) -> Option<ExecutionAnomalyReport> {
+    pub fn detect_liquidity_anomalies(
+        liquidity: &LiquidityGuards,
+    ) -> Option<ExecutionAnomalyReport> {
         if liquidity.available_liquidity <= dec!(0.1) || liquidity.imbalance >= dec!(0.9) {
             Some(ExecutionAnomalyReport {
                 anomaly_type: AnomalyType::LiquidityCollapse,
@@ -111,7 +113,9 @@ impl AnomalyDetectionEngine {
         }
     }
 
-    pub fn detect_fill_anomalies(fill_quality: &FillQualityGuards) -> Option<ExecutionAnomalyReport> {
+    pub fn detect_fill_anomalies(
+        fill_quality: &FillQualityGuards,
+    ) -> Option<ExecutionAnomalyReport> {
         if fill_quality.total_orders >= 10 && fill_quality.fill_ratio <= dec!(0.5) {
             Some(ExecutionAnomalyReport {
                 anomaly_type: AnomalyType::FillDeterioration,
@@ -129,7 +133,9 @@ impl AnomalyDetectionEngine {
         }
     }
 
-    pub fn detect_rejection_anomalies(rejections: &RejectionTracker) -> Option<ExecutionAnomalyReport> {
+    pub fn detect_rejection_anomalies(
+        rejections: &RejectionTracker,
+    ) -> Option<ExecutionAnomalyReport> {
         if rejections.consecutive_rejections >= 5 {
             Some(ExecutionAnomalyReport {
                 anomaly_type: AnomalyType::RejectionBurst,
@@ -176,13 +182,27 @@ impl AnomalyDetectionEngine {
     ) -> Vec<ExecutionAnomalyReport> {
         let mut reports = Vec::new();
 
-        if let Some(r) = Self::detect_spread_anomalies(spread) { reports.push(r); }
-        if let Some(r) = Self::detect_slippage_anomalies(slippage) { reports.push(r); }
-        if let Some(r) = Self::detect_liquidity_anomalies(liquidity) { reports.push(r); }
-        if let Some(r) = Self::detect_latency_anomalies(latency) { reports.push(r); }
-        if let Some(r) = Self::detect_fill_anomalies(fill_quality) { reports.push(r); }
-        if let Some(r) = Self::detect_rejection_anomalies(rejections) { reports.push(r); }
-        if let Some(r) = Self::detect_failure_anomalies(failures) { reports.push(r); }
+        if let Some(r) = Self::detect_spread_anomalies(spread) {
+            reports.push(r);
+        }
+        if let Some(r) = Self::detect_slippage_anomalies(slippage) {
+            reports.push(r);
+        }
+        if let Some(r) = Self::detect_liquidity_anomalies(liquidity) {
+            reports.push(r);
+        }
+        if let Some(r) = Self::detect_latency_anomalies(latency) {
+            reports.push(r);
+        }
+        if let Some(r) = Self::detect_fill_anomalies(fill_quality) {
+            reports.push(r);
+        }
+        if let Some(r) = Self::detect_rejection_anomalies(rejections) {
+            reports.push(r);
+        }
+        if let Some(r) = Self::detect_failure_anomalies(failures) {
+            reports.push(r);
+        }
 
         reports
     }

@@ -88,3 +88,26 @@ impl CandleAggregator {
         }
     }
 }
+
+pub struct MultiTimeframeAggregator {
+    aggregators: Vec<CandleAggregator>,
+}
+
+impl MultiTimeframeAggregator {
+    pub fn new(timeframes: Vec<Timeframe>) -> Self {
+        let aggregators = timeframes.into_iter().map(CandleAggregator::new).collect();
+        Self { aggregators }
+    }
+
+    pub fn process_tick(&mut self, tick: &Tick) -> Vec<(Timeframe, OHLCV)> {
+        let mut completed_candles = Vec::new();
+        
+        for agg in &mut self.aggregators {
+            if let Some(candle) = agg.process_tick(tick) {
+                completed_candles.push((agg.timeframe, candle));
+            }
+        }
+        
+        completed_candles
+    }
+}

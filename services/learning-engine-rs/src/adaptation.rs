@@ -31,14 +31,25 @@ impl AdaptationResult {
         Self {
             strategy_id,
             state: AdaptationState::Learning,
-            score: Decimal::ZERO,
+            score: Decimal::new(50, 0), // Base score of 50
             metrics: AdaptationMetrics {
-                regime_adaptation: Decimal::ZERO,
-                volatility_adaptation: Decimal::ZERO,
-                session_adaptation: Decimal::ZERO,
-                symbol_adaptation: Decimal::ZERO,
+                regime_adaptation: Decimal::new(50, 0),
+                volatility_adaptation: Decimal::new(50, 0),
+                session_adaptation: Decimal::new(50, 0),
+                symbol_adaptation: Decimal::new(50, 0),
             },
         }
+    }
+
+    pub fn with_metrics(strategy_id: String, metrics: AdaptationMetrics) -> Self {
+        let mut result = Self {
+            strategy_id,
+            state: AdaptationState::Learning,
+            score: Decimal::new(50, 0),
+            metrics,
+        };
+        let _ = result.calculate_score();
+        result
     }
 
     pub fn calculate_score(&mut self) -> Result<(), &'static str> {

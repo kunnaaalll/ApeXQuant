@@ -2,8 +2,8 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::order::OrderSide;
 use super::position_state::PositionState;
+use crate::order::OrderSide;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PositionId(Uuid);

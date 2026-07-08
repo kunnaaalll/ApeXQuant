@@ -1,6 +1,6 @@
+use crate::brokers::responses::AccountInfo;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::brokers::responses::AccountInfo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BinanceAccount {

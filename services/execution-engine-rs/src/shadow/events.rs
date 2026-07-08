@@ -1,8 +1,8 @@
 use super::comparison::ComparisonResult;
 use super::drift::DriftAnalysis;
-use super::statistics::ShadowStatistics;
-use super::parity::ParityScore;
 use super::health::ShadowHealth;
+use super::parity::ParityScore;
+use super::statistics::ShadowStatistics;
 use super::validator::ValidatorState;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,6 +12,12 @@ pub enum ShadowEvent {
     StatisticsUpdated(ShadowStatistics),
     ParityUpdated(ParityScore),
     HealthUpdated(ShadowHealth),
-    ValidatorPromoted { from: ValidatorState, to: ValidatorState },
-    ValidatorDemoted { from: ValidatorState, to: ValidatorState },
+    ValidatorPromoted {
+        from: ValidatorState,
+        to: ValidatorState,
+    },
+    ValidatorDemoted {
+        from: ValidatorState,
+        to: ValidatorState,
+    },
 }

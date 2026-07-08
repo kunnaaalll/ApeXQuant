@@ -77,10 +77,7 @@ impl FairValueGap {
 }
 
 /// Detect Fair Value Gaps from candle series
-pub fn detect_fvgs(
-    candles: &[Candle],
-    timeframe: &str,
-) -> Vec<FairValueGap> {
+pub fn detect_fvgs(candles: &[Candle], timeframe: &str) -> Vec<FairValueGap> {
     let mut fvgs = Vec::new();
 
     if candles.len() < 3 {
@@ -145,12 +142,7 @@ pub fn detect_fvgs(
     fvgs
 }
 
-fn calculate_fvg_strength(
-    c1: &Candle,
-    c2: &Candle,
-    c3: &Candle,
-    bullish: bool,
-) -> f64 {
+fn calculate_fvg_strength(c1: &Candle, c2: &Candle, c3: &Candle, bullish: bool) -> f64 {
     let mut score = 0.0;
 
     // Factor 1: Body size of displacement candle (c2)
@@ -220,9 +212,11 @@ pub fn find_relevant_fvgs(
     current_price: Decimal,
     max_distance_multiple: f64,
 ) -> Vec<&FairValueGap> {
-    let avg_fvg_size = fvgs.iter()
+    let avg_fvg_size = fvgs
+        .iter()
         .map(|f| f.size.to_f64().unwrap_or(0.0))
-        .sum::<f64>() / fvgs.len().max(1) as f64;
+        .sum::<f64>()
+        / fvgs.len().max(1) as f64;
 
     fvgs.iter()
         .filter(|f| f.is_fresh(50))
@@ -244,7 +238,8 @@ pub fn get_nearest_fvgs(
 ) -> (Option<&FairValueGap>, Option<&FairValueGap>) {
     let fresh = fvgs.iter().filter(|f| f.is_fresh(50));
 
-    let bullish = fresh.clone()
+    let bullish = fresh
+        .clone()
         .filter(|f| f.direction == FVGDirection::Bullish)
         .min_by(|a, b| {
             let da = (a.bottom - current_price).abs();
@@ -281,10 +276,12 @@ pub fn analyze_fvgs(fvgs: &[FairValueGap], current_price: Decimal) -> FVGAnalysi
     let fresh: Vec<_> = fvgs.iter().filter(|f| f.is_fresh(50)).cloned().collect();
     let (bullish, bearish) = get_nearest_fvgs(&fresh, current_price);
 
-    let bullish_count = fresh.iter()
+    let bullish_count = fresh
+        .iter()
         .filter(|f| f.direction == FVGDirection::Bullish)
         .count() as f64;
-    let bearish_count = fresh.iter()
+    let bearish_count = fresh
+        .iter()
         .filter(|f| f.direction == FVGDirection::Bearish)
         .count() as f64;
 

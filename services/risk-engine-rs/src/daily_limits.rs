@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 
 pub struct DailyLimits {
     pub max_trades_per_day: u32,

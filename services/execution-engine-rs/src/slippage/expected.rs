@@ -3,7 +3,11 @@ use rust_decimal::Decimal;
 pub struct ExpectedSlippage;
 
 impl ExpectedSlippage {
-    pub fn calculate(volatility: Decimal, order_size: Decimal, liquidity_depth: Decimal) -> Decimal {
+    pub fn calculate(
+        volatility: Decimal,
+        order_size: Decimal,
+        liquidity_depth: Decimal,
+    ) -> Decimal {
         if liquidity_depth == Decimal::ZERO {
             return Decimal::MAX;
         }

@@ -119,7 +119,8 @@ impl TimeSeriesDriftTracker {
             };
         }
 
-        let ts_mean = self.points.iter().map(|p| p.ts_value).sum::<f64>() / self.points.len() as f64;
+        let ts_mean =
+            self.points.iter().map(|p| p.ts_value).sum::<f64>() / self.points.len() as f64;
         let rust_mean =
             self.points.iter().map(|p| p.rust_value).sum::<f64>() / self.points.len() as f64;
 
@@ -156,7 +157,10 @@ impl TimeSeriesDriftTracker {
 
         let first = self.points.front().unwrap();
         let last = self.points.back().unwrap();
-        let duration_hours = last.timestamp.signed_duration_since(first.timestamp).num_seconds() as f64
+        let duration_hours = last
+            .timestamp
+            .signed_duration_since(first.timestamp)
+            .num_seconds() as f64
             / 3600.0;
 
         if duration_hours <= 0.0 {
@@ -278,21 +282,24 @@ impl DriftAnalyzer {
         );
 
         // Record price values if available
-        if let (Some(ts_entry), Some(rust_entry)) =
-            (comparison.ts_output.entry_price, comparison.rust_output.entry_price)
-        {
+        if let (Some(ts_entry), Some(rust_entry)) = (
+            comparison.ts_output.entry_price,
+            comparison.rust_output.entry_price,
+        ) {
             self.entry_tracker.record(ts_entry, rust_entry);
         }
 
-        if let (Some(ts_sl), Some(rust_sl)) =
-            (comparison.ts_output.stop_loss, comparison.rust_output.stop_loss)
-        {
+        if let (Some(ts_sl), Some(rust_sl)) = (
+            comparison.ts_output.stop_loss,
+            comparison.rust_output.stop_loss,
+        ) {
             self.stop_tracker.record(ts_sl, rust_sl);
         }
 
-        if let (Some(ts_tp), Some(rust_tp)) =
-            (comparison.ts_output.take_profit, comparison.rust_output.take_profit)
-        {
+        if let (Some(ts_tp), Some(rust_tp)) = (
+            comparison.ts_output.take_profit,
+            comparison.rust_output.take_profit,
+        ) {
             self.target_tracker.record(ts_tp, rust_tp);
         }
 
@@ -310,7 +317,11 @@ impl DriftAnalyzer {
         self.pattern_tracker.record(100.0, pattern_agreement_pct);
 
         // Regime agreement
-        let regime_agreement = if comparison.regime_comparison.agreement { 100.0 } else { 0.0 };
+        let regime_agreement = if comparison.regime_comparison.agreement {
+            100.0
+        } else {
+            0.0
+        };
         self.regime_tracker.record(100.0, regime_agreement);
 
         Ok(())

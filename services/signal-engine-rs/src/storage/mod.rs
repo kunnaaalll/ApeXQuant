@@ -2,12 +2,15 @@
 
 use crate::parity::{ComparisonType, SignalComparisonRecord, SignalDirection, SignalOutput};
 use chrono::{DateTime, Utc};
-use rusqlite::{Connection, OptionalExtension, Result as SqliteResult};
+use rusqlite::{Connection, Result as SqliteResult};
 use std::path::Path;
 use std::sync::Mutex;
 
 pub mod repository;
+pub mod signal_repository;
+
 pub use repository::ComparisonRepository;
+pub use signal_repository::SignalRepository;
 
 /// Database connection manager
 pub struct Storage {
@@ -134,37 +137,37 @@ impl Storage {
                 comparison_type, direction_match, confidence_diff, entry_diff, stop_diff, target_diff,
                 agreement_score, notes
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30)",
-            &[
-                &record.comparison_id,
-                &record.timestamp.to_rfc3339(),
-                &record.symbol,
-                &record.timeframe,
-                &format!("{:?}", record.ts_output.direction),
-                &record.ts_output.confidence.to_string(),
-                &record.ts_output.confluence_score.to_string(),
-                &record.ts_output.entry_price.map(|p| p.to_string()),
-                &record.ts_output.stop_loss.map(|p| p.to_string()),
-                &record.ts_output.take_profit.map(|p| p.to_string()),
-                &Some(record.ts_output.patterns.join(",")),
-                &record.ts_output.regime,
-                &record.ts_output.session,
-                &format!("{:?}", record.rust_output.direction),
-                &record.rust_output.confidence.to_string(),
-                &record.rust_output.confluence_score.to_string(),
-                &record.rust_output.entry_price.map(|p| p.to_string()),
-                &record.rust_output.stop_loss.map(|p| p.to_string()),
-                &record.rust_output.take_profit.map(|p| p.to_string()),
-                &Some(record.rust_output.patterns.join(",")),
-                &record.rust_output.regime,
-                &record.rust_output.session,
-                &format!("{:?}", record.comparison_type),
-                &(if record.direction_match { 1 } else { 0 }).to_string(),
-                &record.confidence_diff.to_string(),
-                &record.entry_diff.map(|d| d.to_string()),
-                &record.stop_diff.map(|d| d.to_string()),
-                &record.target_diff.map(|d| d.to_string()),
-                &record.agreement_score.to_string(),
-                &record.notes,
+            rusqlite::params![
+                record.comparison_id,
+                record.timestamp.to_rfc3339(),
+                record.symbol,
+                record.timeframe,
+                format!("{:?}", record.ts_output.direction),
+                record.ts_output.confidence,
+                record.ts_output.confluence_score,
+                record.ts_output.entry_price,
+                record.ts_output.stop_loss,
+                record.ts_output.take_profit,
+                record.ts_output.patterns.join(","),
+                record.ts_output.regime,
+                record.ts_output.session,
+                format!("{:?}", record.rust_output.direction),
+                record.rust_output.confidence,
+                record.rust_output.confluence_score,
+                record.rust_output.entry_price,
+                record.rust_output.stop_loss,
+                record.rust_output.take_profit,
+                record.rust_output.patterns.join(","),
+                record.rust_output.regime,
+                record.rust_output.session,
+                format!("{:?}", record.comparison_type),
+                if record.direction_match { 1 } else { 0 },
+                record.confidence_diff,
+                record.entry_diff,
+                record.stop_diff,
+                record.target_diff,
+                record.agreement_score,
+                record.notes,
             ],
         )?;
 
@@ -223,7 +226,11 @@ impl Storage {
     }
 
     /// Get aggregate statistics
-    pub fn get_statistics(&self, from: DateTime<Utc>, to: DateTime<Utc>) -> SqliteResult<StoredStatistics> {
+    pub fn get_statistics(
+        &self,
+        from: DateTime<Utc>,
+        to: DateTime<Utc>,
+    ) -> SqliteResult<StoredStatistics> {
         let conn = self.conn.lock().unwrap();
 
         let stats = conn.query_row(
@@ -243,25 +250,25 @@ impl Storage {
             WHERE timestamp >= ?1 AND timestamp <= ?2",
             [&from.to_rfc3339(), &to.to_rfc3339()],
             |row| {
-                let total: i64 = row.get(0)?;
-                let dir_match: i64 = row.get(8)?;
+                let total: i64 = row.get::<_, Option<i64>>(0)?.unwrap_or(0);
+                let dir_match: i64 = row.get::<_, Option<i64>>(8)?.unwrap_or(0);
 
                 Ok(StoredStatistics {
                     total_comparisons: total as u64,
-                    exact_matches: row.get::<_, i64>(1)? as u64,
-                    close_matches: row.get::<_, i64>(2)? as u64,
-                    partial_matches: row.get::<_, i64>(3)? as u64,
-                    disagreements: row.get::<_, i64>(4)? as u64,
-                    misses: row.get::<_, i64>(5)? as u64,
-                    false_positives: row.get::<_, i64>(6)? as u64,
-                    false_negatives: row.get::<_, i64>(7)? as u64,
+                    exact_matches: row.get::<_, Option<i64>>(1)?.unwrap_or(0) as u64,
+                    close_matches: row.get::<_, Option<i64>>(2)?.unwrap_or(0) as u64,
+                    partial_matches: row.get::<_, Option<i64>>(3)?.unwrap_or(0) as u64,
+                    disagreements: row.get::<_, Option<i64>>(4)?.unwrap_or(0) as u64,
+                    misses: row.get::<_, Option<i64>>(5)?.unwrap_or(0) as u64,
+                    false_positives: row.get::<_, Option<i64>>(6)?.unwrap_or(0) as u64,
+                    false_negatives: row.get::<_, Option<i64>>(7)?.unwrap_or(0) as u64,
                     direction_agreement_pct: if total > 0 {
                         (dir_match as f64 / total as f64) * 100.0
                     } else {
                         0.0
                     },
-                    avg_confidence_diff: row.get(9).unwrap_or(0.0),
-                    avg_agreement_score: row.get(10).unwrap_or(0.0),
+                    avg_confidence_diff: row.get::<_, Option<f64>>(9)?.unwrap_or(0.0),
+                    avg_agreement_score: row.get::<_, Option<f64>>(10)?.unwrap_or(0.0),
                 })
             },
         )?;
@@ -269,11 +276,16 @@ impl Storage {
         Ok(stats)
     }
 
-    fn row_to_record(&self, row: &rusqlite::Row) -> SqliteResult<SignalComparisonRecord> {
+    fn row_to_record(&self, row: &rusqlite::Row<'_>) -> SqliteResult<SignalComparisonRecord> {
         // Simplified - would need full deserialization
         let timestamp_str: String = row.get("timestamp")?;
-        let timestamp = DateTime::parse_from_rfc3339(&timestamp_str)
-            .map_err(|e| rusqlite::Error::InvalidColumnType(0, "timestamp".to_string(), rusqlite::types::Type::Text))?;
+        let timestamp = DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
+            rusqlite::Error::InvalidColumnType(
+                0,
+                "timestamp".to_string(),
+                rusqlite::types::Type::Text,
+            )
+        })?;
 
         Ok(SignalComparisonRecord {
             comparison_id: row.get("comparison_id")?,
@@ -290,7 +302,8 @@ impl Storage {
                 entry_price: row.get("ts_entry")?,
                 stop_loss: row.get("ts_stop")?,
                 take_profit: row.get("ts_target")?,
-                patterns: row.get::<_, Option<String>>("ts_patterns")?
+                patterns: row
+                    .get::<_, Option<String>>("ts_patterns")?
                     .map(|p| p.split(',').map(|s| s.to_string()).collect())
                     .unwrap_or_default(),
                 regime: row.get("ts_regime")?,
@@ -307,7 +320,8 @@ impl Storage {
                 entry_price: row.get("rust_entry")?,
                 stop_loss: row.get("rust_stop")?,
                 take_profit: row.get("rust_target")?,
-                patterns: row.get::<_, Option<String>>("rust_patterns")?
+                patterns: row
+                    .get::<_, Option<String>>("rust_patterns")?
                     .map(|p| p.split(',').map(|s| s.to_string()).collect())
                     .unwrap_or_default(),
                 regime: row.get("rust_regime")?,
@@ -324,7 +338,8 @@ impl Storage {
             regime_comparison: crate::parity::RegimeComparison {
                 rust_regime: row.get("rust_regime")?,
                 ts_regime: row.get("ts_regime")?,
-                agreement: row.get::<_, String>("rust_regime")? == row.get::<_, String>("ts_regime")?,
+                agreement: row.get::<_, String>("rust_regime")?
+                    == row.get::<_, String>("ts_regime")?,
             },
             agreement_score: row.get("agreement_score")?,
             notes: row.get::<_, Option<String>>("notes")?.unwrap_or_default(),

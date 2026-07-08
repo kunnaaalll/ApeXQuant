@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use rust_decimal::Decimal;
 use sqlx::PgPool;
 use strategy_engine_rs::storage::events::{HealthEvent, StrategyEventWrapper};
 use strategy_engine_rs::storage::pg_store::PgStore;
@@ -21,8 +22,8 @@ async fn get_test_pool() -> Result<PgPool, sqlx::Error> {
 #[test]
 fn test_event_ordering() -> Result<(), Box<dyn std::error::Error>> {
     let mut aggregate = StrategyAggregate::default();
-    let e1 = StrategyEventWrapper::Health(HealthEvent { details: "1".into() });
-    let e2 = StrategyEventWrapper::Health(HealthEvent { details: "2".into() });
+    let e1 = StrategyEventWrapper::Health(HealthEvent { health_score: Decimal::new(100, 2), status: "1".into(), streak: 0 });
+    let e2 = StrategyEventWrapper::Health(HealthEvent { health_score: Decimal::new(100, 2), status: "2".into(), streak: 0 });
 
     aggregate.apply_event(&e1)?;
     aggregate.apply_event(&e2)?;
@@ -42,7 +43,7 @@ fn test_replay_equals_snapshot() -> Result<(), Box<dyn std::error::Error>> {
     let mut a1 = StrategyAggregate::default();
     let mut a2 = StrategyAggregate::default();
 
-    let event = StrategyEventWrapper::Health(HealthEvent { details: "test".into() });
+    let event = StrategyEventWrapper::Health(HealthEvent { health_score: Decimal::new(100, 2), status: "test".into(), streak: 0 });
     
     a1.apply_event(&event)?;
     a1.apply_event(&event)?;

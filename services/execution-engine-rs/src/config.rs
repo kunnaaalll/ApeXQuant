@@ -55,10 +55,7 @@ impl EnvironmentConfiguration {
     pub fn from_env() -> Self {
         Self {
             mt5_bridge_url: env_or("MT5_BRIDGE_URL", "http://localhost:8001"),
-            binance_base_url: env_or(
-                "BINANCE_BASE_URL",
-                "https://testnet.binancefuture.com",
-            ),
+            binance_base_url: env_or("BINANCE_BASE_URL", "https://testnet.binancefuture.com"),
             binance_api_key: env_or("BINANCE_API_KEY", ""),
             binance_secret: env_or("BINANCE_SECRET", ""),
             grpc_port: env_u16("GRPC_PORT", 50052),

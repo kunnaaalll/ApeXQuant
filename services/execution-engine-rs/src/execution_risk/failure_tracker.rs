@@ -17,7 +17,12 @@ pub struct FailureTracker {
 }
 
 impl FailureTracker {
-    pub fn new(broker_errors: u32, timeouts: u32, routing_failures: u32, connection_drops: u32) -> Self {
+    pub fn new(
+        broker_errors: u32,
+        timeouts: u32,
+        routing_failures: u32,
+        connection_drops: u32,
+    ) -> Self {
         Self {
             broker_errors,
             timeouts,
@@ -28,13 +33,13 @@ impl FailureTracker {
 
     pub fn get_score(&self) -> u32 {
         let mut score = 0;
-        
+
         // Weights
         score += self.broker_errors.saturating_mul(10);
         score += self.timeouts.saturating_mul(5);
         score += self.routing_failures.saturating_mul(15);
         score += self.connection_drops.saturating_mul(25);
-        
+
         score.min(100)
     }
 

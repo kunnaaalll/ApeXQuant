@@ -58,7 +58,7 @@ mod tests {
 
     #[test]
     fn test_determinism_validator() {
-        let mut events = Vec::new();
+        let mut events = vec![];
         let strategy_id = Uuid::new_v4();
         
         for i in 0..100 {

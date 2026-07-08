@@ -13,11 +13,14 @@ impl DegradationDetector {
         current_expectancy: Decimal,
         historical_stability: Decimal,
         current_stability: Decimal,
+        historical_quality: Decimal,
+        current_quality: Decimal,
         duration: u32,
     ) -> DegradationAssessment {
         let edge_decay = historical_edge - current_edge;
         let expectancy_decay = historical_expectancy - current_expectancy;
         let stability_deterioration = historical_stability - current_stability;
+        let quality_deterioration = historical_quality - current_quality;
         
         // Simple heuristic for performance drift
         let performance_drift = if historical_expectancy.is_zero() {
@@ -43,7 +46,7 @@ impl DegradationDetector {
         let metrics = DegradationMetrics {
             edge_decay: edge_decay.max(Decimal::ZERO), // Only track decay, not improvement here
             expectancy_decay: expectancy_decay.max(Decimal::ZERO),
-            quality_deterioration: Decimal::ZERO, // Placeholder for external quality scores
+            quality_deterioration: quality_deterioration.max(Decimal::ZERO),
             stability_deterioration: stability_deterioration.max(Decimal::ZERO),
             performance_drift,
             duration,

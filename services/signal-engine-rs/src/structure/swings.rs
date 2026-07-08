@@ -83,12 +83,18 @@ pub fn recent_swings(swings: &[SwingPoint], n: usize) -> Vec<SwingPoint> {
 
 /// Get the most recent swing high
 pub fn last_swing_high(swings: &[SwingPoint]) -> Option<&SwingPoint> {
-    swings.iter().filter(|s| s.swing_type == SwingType::High).last()
+    swings
+        .iter()
+        .filter(|s| s.swing_type == SwingType::High)
+        .last()
 }
 
 /// Get the most recent swing low
 pub fn last_swing_low(swings: &[SwingPoint]) -> Option<&SwingPoint> {
-    swings.iter().filter(|s| s.swing_type == SwingType::Low).last()
+    swings
+        .iter()
+        .filter(|s| s.swing_type == SwingType::Low)
+        .last()
 }
 
 #[cfg(test)]

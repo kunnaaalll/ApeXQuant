@@ -32,11 +32,11 @@ impl ReinforcementEngine {
         if evaluation.is_successful {
             ReinforcementOutput {
                 reward_score: evaluation.action_quality,
-                penalty_score: Decimal::ZERO,
+                penalty_score: Decimal::new(0, 0),
             }
         } else {
             ReinforcementOutput {
-                reward_score: Decimal::ZERO,
+                reward_score: Decimal::new(0, 0),
                 // Inverse quality as penalty
                 penalty_score: Decimal::ONE - evaluation.action_quality,
             }

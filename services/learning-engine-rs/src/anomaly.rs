@@ -28,20 +28,25 @@ impl AnomalyDetector {
         &self,
         current_slippage: Decimal,
         historical_avg_slippage: Decimal,
+        historical_std_dev: Decimal,
     ) -> Option<AnomalyReport> {
-        let three = Decimal::new(3, 0);
-        let five = Decimal::new(5, 0);
-        
-        let ratio = if historical_avg_slippage.is_zero() {
-            Decimal::ZERO
+        let z_score = if historical_std_dev.is_zero() {
+            // Fallback if no variance: if current is more than 3x avg, alert
+            if current_slippage > historical_avg_slippage * Decimal::new(3, 0) {
+                Decimal::new(3, 0)
+            } else {
+                return None;
+            }
         } else {
-            current_slippage / historical_avg_slippage
+            (current_slippage - historical_avg_slippage) / historical_std_dev
         };
 
-        let severity = if ratio > five {
+        let severity = if z_score > Decimal::new(5, 0) {
             AnomalySeverity::Critical
-        } else if ratio > three {
+        } else if z_score > Decimal::new(3, 0) {
             AnomalySeverity::High
+        } else if z_score > Decimal::new(2, 0) {
+            AnomalySeverity::Medium
         } else {
             return None;
         };
@@ -50,7 +55,7 @@ impl AnomalyDetector {
             anomaly_type: "abnormal_slippage".to_string(),
             severity,
             confidence: Decimal::new(95, 0), // Highly confident if ratio is large
-            details: format!("Current slippage {} is {}x historical average", current_slippage, ratio),
+            details: format!("Current slippage {} has z-score of {} compared to historical std dev", current_slippage, z_score),
         })
     }
 }

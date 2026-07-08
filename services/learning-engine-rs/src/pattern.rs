@@ -40,7 +40,7 @@ impl PatternTracker {
         let pattern = self.patterns.entry(pattern_id).or_insert(Pattern {
             id: pattern_id,
             state: PatternState::Emerging,
-            win_rate: Decimal::ZERO,
+            win_rate: Decimal::new(0, 0),
             observation_count: 0,
         });
         

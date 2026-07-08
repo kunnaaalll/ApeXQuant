@@ -1,10 +1,10 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
+use crate::validation::benchmark::BenchmarkResult;
 use crate::validation::certification::CertificationState;
 use crate::validation::health::ValidationHealth;
 use crate::validation::score::ValidationScore;
-use crate::validation::benchmark::BenchmarkResult;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidationState {

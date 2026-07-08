@@ -3,6 +3,8 @@
 use super::*;
 use crate::parity::AgreementMetrics;
 use chrono::Duration;
+use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 
 /// Repository for comparison data operations
 pub struct ComparisonRepository {
@@ -44,11 +46,16 @@ impl ComparisonRepository {
 
     /// Get recent comparisons
     pub fn get_recent(&self, limit: usize) -> SqliteResult<Vec<SignalComparisonRecord>> {
-        self.storage.get_comparisons(ComparisonFilter::default(), limit)
+        self.storage
+            .get_comparisons(ComparisonFilter::default(), limit)
     }
 
     /// Get comparisons for a specific symbol
-    pub fn get_by_symbol(&self, symbol: &str, limit: usize) -> SqliteResult<Vec<SignalComparisonRecord>> {
+    pub fn get_by_symbol(
+        &self,
+        symbol: &str,
+        limit: usize,
+    ) -> SqliteResult<Vec<SignalComparisonRecord>> {
         let filter = ComparisonFilter {
             symbol: Some(symbol.to_string()),
             ..Default::default()
@@ -94,7 +101,11 @@ impl ComparisonRepository {
     }
 
     /// Get statistics for a time range
-    pub fn get_statistics(&self, from: DateTime<Utc>, to: DateTime<Utc>) -> SqliteResult<AgreementMetrics> {
+    pub fn get_statistics(
+        &self,
+        from: DateTime<Utc>,
+        to: DateTime<Utc>,
+    ) -> SqliteResult<AgreementMetrics> {
         let stored = self.storage.get_statistics(from, to)?;
 
         Ok(AgreementMetrics {
@@ -161,7 +172,8 @@ impl ComparisonRepository {
                     .filter(|r| matches!(r.comparison_type, ComparisonType::Disagreement))
                     .count() as u64;
 
-                let avg_agreement = recs.iter().map(|r| r.agreement_score).sum::<f64>() / recs.len() as f64;
+                let avg_agreement =
+                    recs.iter().map(|r| r.agreement_score).sum::<f64>() / recs.len() as f64;
 
                 HourlyMetrics {
                     hour,
@@ -191,7 +203,10 @@ impl ComparisonRepository {
         let mut failing = Vec::new();
 
         if metrics.direction_agreement_pct >= 95.0 {
-            passing.push(format!("Direction agreement: {:.1}%", metrics.direction_agreement_pct));
+            passing.push(format!(
+                "Direction agreement: {:.1}%",
+                metrics.direction_agreement_pct
+            ));
         } else {
             failing.push(format!(
                 "Direction agreement: {:.1}% < 95%",
@@ -200,9 +215,15 @@ impl ComparisonRepository {
         }
 
         if metrics.avg_confidence_diff < 10.0 {
-            passing.push(format!("Confidence drift: {:.1}%", metrics.avg_confidence_diff));
+            passing.push(format!(
+                "Confidence drift: {:.1}%",
+                metrics.avg_confidence_diff
+            ));
         } else {
-            failing.push(format!("Confidence drift: {:.1}% >= 10%", metrics.avg_confidence_diff));
+            failing.push(format!(
+                "Confidence drift: {:.1}% >= 10%",
+                metrics.avg_confidence_diff
+            ));
         }
 
         let total_actionable = metrics.total_comparisons - metrics.false_negatives;
@@ -215,7 +236,10 @@ impl ComparisonRepository {
         if disagreement_rate < 5.0 {
             passing.push(format!("Disagreement rate: {:.1}%", disagreement_rate));
         } else {
-            failing.push(format!("Disagreement rate: {:.1}% >= 5%", disagreement_rate));
+            failing.push(format!(
+                "Disagreement rate: {:.1}% >= 5%",
+                disagreement_rate
+            ));
         }
 
         Ok(GoLiveCheck {
@@ -234,9 +258,18 @@ impl ComparisonRepository {
         let mut report = String::new();
         report.push_str("# Signal Comparison Summary Report\n\n");
         report.push_str("## Last 24 Hours\n\n");
-        report.push_str(&format!("- Total comparisons: {}\n", recent.total_comparisons));
-        report.push_str(&format!("- Direction agreement: {:.1}%\n", recent.direction_agreement_pct));
-        report.push_str(&format!("- Avg confidence diff: {:.1}%\n", recent.avg_confidence_diff));
+        report.push_str(&format!(
+            "- Total comparisons: {}\n",
+            recent.total_comparisons
+        ));
+        report.push_str(&format!(
+            "- Direction agreement: {:.1}%\n",
+            recent.direction_agreement_pct
+        ));
+        report.push_str(&format!(
+            "- Avg confidence diff: {:.1}%\n",
+            recent.avg_confidence_diff
+        ));
         report.push_str(&format!("- Exact matches: {}\n", recent.exact_matches));
         report.push_str(&format!("- Close matches: {}\n", recent.close_matches));
         report.push_str(&format!("- Disagreements: {}\n", recent.disagreements));
@@ -244,8 +277,14 @@ impl ComparisonRepository {
         report.push_str(&format!("- False positives: {}\n", recent.false_positives));
 
         report.push_str("\n## Today\n\n");
-        report.push_str(&format!("- Total comparisons: {}\n", today.total_comparisons));
-        report.push_str(&format!("- Direction agreement: {:.1}%\n", today.direction_agreement_pct));
+        report.push_str(&format!(
+            "- Total comparisons: {}\n",
+            today.total_comparisons
+        ));
+        report.push_str(&format!(
+            "- Direction agreement: {:.1}%\n",
+            today.direction_agreement_pct
+        ));
 
         // Go-live check
         let check = self.check_go_live_criteria()?;
@@ -292,7 +331,8 @@ impl ComparisonRepository {
         let mut csv = "timestamp,symbol,timeframe,ts_direction,ts_confidence,rust_direction,rust_confidence,comparison_type,direction_match,agreement_score\n".to_string();
 
         for rec in records {
-            writeln!( &mut csv,
+            writeln!(
+                &mut csv,
                 "{},{},{},{},{},{},{},{},{},{}",
                 rec.timestamp.to_rfc3339(),
                 rec.symbol,

@@ -27,7 +27,7 @@ impl ShadowSnapshot {
         for event in &self.events {
             match event {
                 ShadowEvent::ComparisonRecorded(_) => {
-                    // No direct mutation to state purely from ComparisonRecorded here, 
+                    // No direct mutation to state purely from ComparisonRecorded here,
                     // it affects statistics in the overarching logic before being emitted.
                 }
                 ShadowEvent::DriftCalculated(drift) => {

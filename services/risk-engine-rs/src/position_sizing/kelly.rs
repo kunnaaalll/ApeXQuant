@@ -1,5 +1,4 @@
 use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal_macros::dec;
 
 pub struct KellySizer {
@@ -20,8 +19,7 @@ impl KellySizer {
 
         let one = dec!(1.0);
         let kelly = win_probability - (one - win_probability) / win_loss_ratio;
-        let clamped = kelly.max(Decimal::ZERO).min(self.max_risk_fraction);
-        clamped
+        kelly.max(Decimal::ZERO).min(self.max_risk_fraction)
     }
 
     /// Calculate size: (equity * kelly_fraction) / stop_loss_distance

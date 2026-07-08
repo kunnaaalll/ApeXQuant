@@ -91,7 +91,7 @@ impl WeightAdjuster {
         let mut ranging = HashMap::new();
         ranging.insert(FactorType::OrderBlock, 1.2);
         ranging.insert(FactorType::FairValueGap, 1.1);
-        ranging.insert(FactorType::PremiumDiscount, 1.2);
+        ranging.insert(FactorType::RiskReward, 1.2);
         ranging.insert(FactorType::TrendQuality, 0.6);
         ranging.insert(FactorType::Displacement, 0.8);
         adjustments.insert(RegimeType::Ranging, ranging);

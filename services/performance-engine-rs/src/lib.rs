@@ -5,7 +5,7 @@ pub mod confidence;
 pub mod degradation;
 pub mod drawdown;
 pub mod edge;
-pub mod event_bus_subscriber;
+pub mod event_bus;
 pub mod events;
 pub mod expectancy;
 pub mod health;

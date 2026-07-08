@@ -1,6 +1,6 @@
+use crate::brokers::responses::SymbolInfo;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::brokers::responses::SymbolInfo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Mt5Symbol {

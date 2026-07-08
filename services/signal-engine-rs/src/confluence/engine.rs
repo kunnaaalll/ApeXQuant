@@ -4,9 +4,9 @@ use num_traits::ToPrimitive;
 use crate::confluence::factors::{ConfluenceFactor, FactorBuilder};
 use crate::confluence::ConfluenceScore;
 use crate::market_data::Candle;
-use crate::mtf::types::{MarketBias, MTFAlignmentResult};
+use crate::mtf::types::{MTFAlignmentResult, MarketBias};
 use crate::regime::MarketRegime;
-use crate::signals::SignalDirection;
+use crate::signals::result::SignalDirection;
 use crate::smc::SMCAnalysis;
 use crate::structure::StructureAnalysis;
 use rust_decimal::Decimal;
@@ -87,7 +87,7 @@ impl ConfluenceEngine {
         let total = calculate_weighted_total(&factors);
 
         ConfluenceScore {
-            total: total.min(100) as u8,
+            total: total.min(100.0) as u8,
             factors,
         }
     }
@@ -99,9 +99,13 @@ impl ConfluenceEngine {
 
     // Private calculation methods
 
-    fn calculate_timeframe_factor(&self, mtf: &MTFAlignmentResult, direction: SignalDirection) -> f64 {
+    fn calculate_timeframe_factor(
+        &self,
+        mtf: &MTFAlignmentResult,
+        direction: SignalDirection,
+    ) -> f64 {
         // Check alignment with directional bias
-        let aligned = match (mtf.bias, direction) {
+        let aligned = match (mtf.bias, &direction) {
             (MarketBias::StrongBullish, SignalDirection::Long) => true,
             (MarketBias::Bullish, SignalDirection::Long) => true,
             (MarketBias::StrongBearish, SignalDirection::Short) => true,
@@ -116,10 +120,14 @@ impl ConfluenceEngine {
         }
     }
 
-    fn calculate_trend_factor(&self, structure: &StructureAnalysis, direction: SignalDirection) -> (f64, bool) {
+    fn calculate_trend_factor(
+        &self,
+        structure: &StructureAnalysis,
+        direction: SignalDirection,
+    ) -> (f64, bool) {
         use crate::structure::trend::TrendDirection;
 
-        let trend_aligned = match (structure.trend, direction) {
+        let trend_aligned = match (structure.trend, &direction) {
             (TrendDirection::Up, SignalDirection::Long) => true,
             (TrendDirection::Down, SignalDirection::Short) => true,
             _ => false,
@@ -138,15 +146,19 @@ impl ConfluenceEngine {
         (trend_strength, trend_aligned)
     }
 
-    fn calculate_regime_factor(&self, regime: &MarketRegime, direction: SignalDirection) -> (f64, bool) {
+    fn calculate_regime_factor(
+        &self,
+        regime: &MarketRegime,
+        direction: SignalDirection,
+    ) -> (f64, bool) {
         use crate::regime::RegimeType;
 
         let favorable = match regime.regime_type {
             RegimeType::TrendingUp => matches!(direction, SignalDirection::Long),
             RegimeType::TrendingDown => matches!(direction, SignalDirection::Short),
-            RegimeType::Ranging => true, // Mean reversion works
+            RegimeType::Ranging => true,         // Mean reversion works
             RegimeType::HighVolatility => false, // Avoid
-            RegimeType::LowVolatility => true, // Breakout potential
+            RegimeType::LowVolatility => true,   // Breakout potential
             RegimeType::Transition => false,
             RegimeType::Breakout => true,
             RegimeType::Undefined => false,
@@ -171,7 +183,11 @@ impl ConfluenceEngine {
         (quality, clear_structure)
     }
 
-    fn calculate_order_block_factor(&self, smc: &SMCAnalysis, direction: SignalDirection) -> (f64, bool, bool) {
+    fn calculate_order_block_factor(
+        &self,
+        smc: &SMCAnalysis,
+        direction: SignalDirection,
+    ) -> (f64, bool, bool) {
         let (ob, aligned, fresh) = match direction {
             SignalDirection::Long => {
                 let ob = smc.freshest_bullish_ob();
@@ -187,21 +203,26 @@ impl ConfluenceEngine {
                 let strength = ob.map(|o| o.strength).unwrap_or(0.0);
                 (strength, aligned, fresh)
             }
+            SignalDirection::Neutral => (0.0, false, false),
         };
 
         (ob, aligned, fresh)
     }
 
-    fn calculate_fvg_factor(&self, smc: &SMCAnalysis, direction: SignalDirection, entry: Decimal) -> (f64, bool) {
+    fn calculate_fvg_factor(
+        &self,
+        smc: &SMCAnalysis,
+        direction: SignalDirection,
+        entry: Decimal,
+    ) -> (f64, bool) {
         use crate::smc::fvg::FVGDirection;
 
         let fresh_fvgs = smc.fresh_fvgs(30);
 
-        let relevant_fvg = fresh_fvgs.iter().find(|f| {
-            match direction {
-                SignalDirection::Long => matches!(f.direction, FVGDirection::Bullish),
-                SignalDirection::Short => matches!(f.direction, FVGDirection::Bearish),
-            }
+        let relevant_fvg = fresh_fvgs.iter().find(|f| match direction {
+            SignalDirection::Long => matches!(f.direction, FVGDirection::Bullish),
+            SignalDirection::Short => matches!(f.direction, FVGDirection::Bearish),
+            SignalDirection::Neutral => false,
         });
 
         let strength = relevant_fvg.map(|f| f.strength).unwrap_or(0.0);
@@ -210,15 +231,22 @@ impl ConfluenceEngine {
         (strength, aligned)
     }
 
-    fn calculate_liquidity_factor(&self, smc: &SMCAnalysis, direction: SignalDirection) -> (f64, bool) {
+    fn calculate_liquidity_factor(
+        &self,
+        smc: &SMCAnalysis,
+        direction: SignalDirection,
+    ) -> (f64, bool) {
         use crate::smc::liquidity::SweepDirection;
 
-        let aligned_sweep = smc.sweeps.iter().filter(|s| {
-            match direction {
+        let aligned_sweep = smc
+            .sweeps
+            .iter()
+            .filter(|s| match direction {
                 SignalDirection::Long => matches!(s.direction, SweepDirection::Low),
                 SignalDirection::Short => matches!(s.direction, SweepDirection::High),
-            }
-        }).max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
+                SignalDirection::Neutral => false,
+            })
+            .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
 
         let strength = aligned_sweep.map(|s| s.strength).unwrap_or(0.0);
         let aligned = aligned_sweep.is_some();
@@ -226,25 +254,33 @@ impl ConfluenceEngine {
         (strength, aligned)
     }
 
-    fn calculate_displacement_factor(&self, smc: &SMCAnalysis, direction: SignalDirection) -> (f64, bool) {
+    fn calculate_displacement_factor(
+        &self,
+        smc: &SMCAnalysis,
+        direction: SignalDirection,
+    ) -> (f64, bool) {
         use crate::smc::displacement::DisplacementDirection;
 
         let recent_disp = smc.displacements.last();
 
-        let aligned = recent_disp.map(|d| {
-            match (d.direction, direction) {
+        let aligned = recent_disp
+            .map(|d| match (d.direction, &direction) {
                 (DisplacementDirection::Up, SignalDirection::Long) => true,
                 (DisplacementDirection::Down, SignalDirection::Short) => true,
                 _ => false,
-            }
-        }).unwrap_or(false);
+            })
+            .unwrap_or(false);
 
         let strength = recent_disp.map(|d| d.strength).unwrap_or(0.0);
 
         (strength, aligned)
     }
 
-    fn calculate_momentum_factor(&self, candles: &HashMap<String, Vec<Candle>>, direction: SignalDirection) -> (f64, bool) {
+    fn calculate_momentum_factor(
+        &self,
+        candles: &HashMap<String, Vec<Candle>>,
+        direction: SignalDirection,
+    ) -> (f64, bool) {
         let execution_tf = "M15";
         let tf_candles = candles.get(execution_tf);
 
@@ -266,6 +302,7 @@ impl ConfluenceEngine {
         let (score, aligned) = match direction {
             SignalDirection::Long => (bullish_ratio, bullish_ratio > 0.6),
             SignalDirection::Short => (bearish_ratio, bearish_ratio > 0.6),
+            SignalDirection::Neutral => (0.0, false),
         };
 
         (score, aligned)
@@ -315,8 +352,6 @@ fn calculate_risk_reward(entry: Decimal, stop: Decimal, target: Decimal) -> f64 
         (reward / risk).to_f64().unwrap_or(0.0)
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {

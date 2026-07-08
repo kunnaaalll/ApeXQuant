@@ -1,14 +1,12 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum RoutingState {
     #[default]
     Primary,
     Secondary,
     Fallback,
 }
-
 
 impl Display for RoutingState {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {

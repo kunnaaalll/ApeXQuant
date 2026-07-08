@@ -19,7 +19,7 @@ redis.workspace = true
 tonic.workspace = true
 tonic-health.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 anyhow.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
@@ -30,13 +30,16 @@ nalgebra.workspace = true
 rayon.workspace = true
 dashmap.workspace = true
 metrics.workspace = true
-axum = "0.6"
+metrics-exporter-prometheus = "0.14"
+axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
 prost.workspace = true
 tokio-stream = "0.1"
 tonic-reflection.workspace = true
 rust_decimal_macros = "1.35.0"
+statrs.workspace = true
+rand = "0.8"
 # Local dependencies
 apex-protos = { path = "../../shared/apex-protos" }
 
@@ -45,7 +48,7 @@ tokio-test.workspace = true
 mockall.workspace = true
 proptest.workspace = true
 
-criterion = "0.5" # For benchmarking
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 [[bin]]
 name = "performance-engine"

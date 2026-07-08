@@ -5,7 +5,7 @@ use rust_decimal_macros::dec;
 #[test]
 fn test_event_rebuild() {
     let order_id = OrderId::new();
-    
+
     let event = OrderEvent::OrderCreated {
         order_id,
         symbol: "TSLA".to_string(),

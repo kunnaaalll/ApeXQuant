@@ -22,20 +22,25 @@ impl MicrostructureScore {
         volatility_score: u8,
         cost_score: u8,
     ) -> Result<Self, &'static str> {
-        if spread_score > 100 || imbalance_score > 100 || depth_score > 100 
-            || resiliency_score > 100 || volatility_score > 100 || cost_score > 100 {
+        if spread_score > 100
+            || imbalance_score > 100
+            || depth_score > 100
+            || resiliency_score > 100
+            || volatility_score > 100
+            || cost_score > 100
+        {
             return Err("Scores must be bounded between 0 and 100");
         }
 
-        let total = spread_score as u16 
-            + imbalance_score as u16 
-            + depth_score as u16 
-            + resiliency_score as u16 
-            + volatility_score as u16 
+        let total = spread_score as u16
+            + imbalance_score as u16
+            + depth_score as u16
+            + resiliency_score as u16
+            + volatility_score as u16
             + cost_score as u16;
-        
+
         let avg = (total / 6) as u8;
-        
+
         let grade = if avg >= 90 {
             MicrostructureGrade::Elite
         } else if avg >= 75 {
@@ -48,9 +53,6 @@ impl MicrostructureScore {
             MicrostructureGrade::Poor
         };
 
-        Ok(Self {
-            score: avg,
-            grade,
-        })
+        Ok(Self { score: avg, grade })
     }
 }

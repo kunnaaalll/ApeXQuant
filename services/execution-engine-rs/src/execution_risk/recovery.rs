@@ -26,7 +26,10 @@ impl RecoveryEngine {
         self.cooldown.reset();
     }
 
-    pub fn attempt_recovery(&mut self, protection_state: &mut ExecutionProtectionState) -> Result<(), super::circuit_breaker::ExecutionError> {
+    pub fn attempt_recovery(
+        &mut self,
+        protection_state: &mut ExecutionProtectionState,
+    ) -> Result<(), super::circuit_breaker::ExecutionError> {
         if self.current_state == RecoveryState::Locked {
             if self.cooldown.is_ready_for_recovery() {
                 self.current_state = RecoveryState::Recovering;

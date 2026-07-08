@@ -1,5 +1,6 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RebalanceTarget {
@@ -73,18 +74,84 @@ impl RebalanceEngine {
         actions
     }
     
-    pub fn spawn_reconciliation_loop(interval_secs: u64) {
+    pub fn spawn_reconciliation_loop(
+        interval_secs: u64,
+        exposure_registry: crate::exposure::registry::ExposureRegistry,
+        pool: sqlx::PgPool,
+        _publisher: Option<std::sync::Arc<crate::event_bus::EventBusPublisher>>,
+    ) {
+        let engine = Self::new(Decimal::new(2, 2)); // 2% drift tolerance
         tokio::spawn(async move {
             tracing::info!("PortfolioEngine: Reconciliation loop started ({}s)", interval_secs);
             loop {
                 tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
                 
-                // Fetch simulated state
-                let simulated_holdings = vec![("AAPL".to_string(), rust_decimal::Decimal::new(5, 1))];
-                let targets = vec![RebalanceTarget { symbol: "AAPL".to_string(), target_weight: rust_decimal::Decimal::new(6, 1) }];
-                
-                tracing::info!("Reconciling portfolio state against targets: {} holdings", simulated_holdings.len());
-                // In a real scenario, we'd trigger calculate_actions and dispatch them here
+                let exp_state = match exposure_registry.get_state() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        tracing::error!("Failed to fetch exposure state in reconciliation loop: {:?}", e);
+                        continue;
+                    }
+                };
+
+                let mut current_weights = Vec::new();
+                for (sym, exp) in &exp_state.symbols {
+                    current_weights.push((sym.clone(), exp.weight));
+                }
+
+                // Query target allocations from DB
+                let row_opt = match sqlx::query("SELECT allocations FROM portfolio_allocations ORDER BY timestamp DESC LIMIT 1")
+                    .fetch_optional(&pool)
+                    .await
+                {
+                    Ok(opt) => opt,
+                    Err(e) => {
+                        tracing::error!("Failed to fetch target allocations in reconciliation loop: {:?}", e);
+                        None
+                    }
+                };
+
+                let mut targets = Vec::new();
+                if let Some(row) = row_opt {
+                    if let Ok(allocs_val) = row.try_get::<serde_json::Value, _>("allocations") {
+                        if let Ok(parsed_targets) = serde_json::from_value::<Vec<RebalanceTarget>>(allocs_val) {
+                            targets = parsed_targets;
+                        }
+                    }
+                }
+
+                if targets.is_empty() {
+                    // Fallback: Equal weight across active symbols
+                    let active_symbols = current_weights.len();
+                    if active_symbols > 0 {
+                        let eq_weight = Decimal::ONE / Decimal::from(active_symbols);
+                        for (sym, _) in &current_weights {
+                            targets.push(RebalanceTarget {
+                                symbol: sym.clone(),
+                                target_weight: eq_weight,
+                            });
+                        }
+                    }
+                }
+
+                let actions = engine.calculate_actions(&current_weights, &targets);
+                if !actions.is_empty() {
+                    tracing::info!(
+                        "Rebalanced state check complete. Drift detected! {} actions required.",
+                        actions.len()
+                    );
+                    for action in &actions {
+                        tracing::info!(
+                            "Rebalance Recommended: {} current_weight={} target_weight={} delta={}",
+                            action.symbol,
+                            action.current_weight,
+                            action.target_weight,
+                            action.weight_delta
+                        );
+                    }
+                } else {
+                    tracing::debug!("Portfolio state is balanced, no drift detected.");
+                }
             }
         });
     }

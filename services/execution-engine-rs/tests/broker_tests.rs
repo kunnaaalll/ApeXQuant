@@ -110,7 +110,7 @@ fn test_snapshot_rebuild() {
         state: ConnectionState::Connected,
         timestamp: 1620000000,
     };
-    
+
     let json = serde_json::to_string(&snap).unwrap();
     let rebuilt: ConnectionSnapshot = serde_json::from_str(&json).unwrap();
     assert_eq!(snap, rebuilt);
@@ -125,23 +125,31 @@ fn test_event_determinism() {
         uptime_percentage: dec!(99.99),
         timestamp: 1620000000,
     });
-    
+
     let event2 = BrokerEvent::Health(HealthEvent {
         broker_id: "BINANCE-1".to_string(),
         latency_ms: dec!(150.5),
         uptime_percentage: dec!(99.99),
         timestamp: 1620000000,
     });
-    
+
     assert_eq!(event1, event2);
 }
 
 #[tokio::test]
 async fn test_registry_states() {
     let mut registry = BrokerRegistry::new();
-    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new("MT5-1".to_string(), "http://localhost:8080".to_string()));
-    let binance: Arc<dyn BrokerAdapter> = Arc::new(BinanceAdapter::new("BINANCE-1".to_string(), "http://localhost".to_string(), "key".to_string(), "sec".to_string()));
-    
+    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new(
+        "MT5-1".to_string(),
+        "http://localhost:8080".to_string(),
+    ));
+    let binance: Arc<dyn BrokerAdapter> = Arc::new(BinanceAdapter::new(
+        "BINANCE-1".to_string(),
+        "http://localhost".to_string(),
+        "key".to_string(),
+        "sec".to_string(),
+    ));
+
     registry.register("MT5-1".to_string(), mt5, BrokerRole::Primary);
     registry.register("BINANCE-1".to_string(), binance, BrokerRole::Secondary);
 
@@ -152,12 +160,15 @@ async fn test_registry_states() {
 #[tokio::test]
 async fn test_router_selection() {
     let mut registry = BrokerRegistry::new();
-    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new("MT5-1".to_string(), "http://localhost".to_string()));
+    let mt5: Arc<dyn BrokerAdapter> = Arc::new(Mt5Adapter::new(
+        "MT5-1".to_string(),
+        "http://localhost".to_string(),
+    ));
     registry.register("MT5-1".to_string(), mt5, BrokerRole::Primary);
 
     let registry_arc = Arc::new(registry);
     let router = ExecutionRouter::new(registry_arc);
-    
+
     let selected = router.route().await;
     assert!(selected.is_ok());
 }
@@ -165,7 +176,7 @@ async fn test_router_selection() {
 #[test]
 fn test_determinism_100k_iterations() {
     let mut state = ConnectionState::Disconnected;
-    
+
     for i in 0..100_000 {
         if i % 4 == 0 {
             let _ = state.transition_to(ConnectionState::Connecting);
@@ -177,6 +188,6 @@ fn test_determinism_100k_iterations() {
             let _ = state.transition_to(ConnectionState::Disconnected);
         }
     }
-    
+
     assert_eq!(state, ConnectionState::Disconnected);
 }

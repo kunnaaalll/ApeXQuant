@@ -101,12 +101,11 @@ impl PatternQuality {
     /// Calculate overall pattern quality
     pub fn overall(&self) -> f64 {
         // Weighted average of pattern scores
-        let weighted =
-            self.order_block * 0.30 +
-            self.fair_value_gap * 0.20 +
-            self.liquidity_sweep * 0.20 +
-            self.displacement * 0.20 +
-            self.imbalance * 0.10;
+        let weighted = self.order_block * 0.30
+            + self.fair_value_gap * 0.20
+            + self.liquidity_sweep * 0.20
+            + self.displacement * 0.20
+            + self.imbalance * 0.10;
 
         weighted.min(1.0)
     }
@@ -148,7 +147,8 @@ pub struct StructureQuality {
 impl StructureQuality {
     /// Calculate overall structure quality
     pub fn overall(&self) -> f64 {
-        let mut score = self.swing_clarity * 0.4 + self.trend_strength * 0.35 + self.structure_break * 0.25;
+        let mut score =
+            self.swing_clarity * 0.4 + self.trend_strength * 0.35 + self.structure_break * 0.25;
 
         // Range bonus if applicable
         if let Some(range_quality) = self.range_quality {

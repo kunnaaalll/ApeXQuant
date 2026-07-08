@@ -8,7 +8,7 @@ pub struct ShadowStatistics {
     pub warning_count: u64,
     pub mismatch_count: u64,
     pub critical_mismatch_count: u64,
-    
+
     pub daily_match_rate: Decimal,
     pub weekly_match_rate: Decimal,
     pub monthly_match_rate: Decimal,
@@ -22,7 +22,7 @@ impl ShadowStatistics {
             warning_count: 0,
             mismatch_count: 0,
             critical_mismatch_count: 0,
-            
+
             daily_match_rate: dec!(100),
             weekly_match_rate: dec!(100),
             monthly_match_rate: dec!(100),
@@ -43,9 +43,11 @@ impl ShadowStatistics {
             return dec!(100);
         }
 
-        let good_matches = self.exact_match_count.saturating_add(self.close_match_count);
+        let good_matches = self
+            .exact_match_count
+            .saturating_add(self.close_match_count);
         let percent = (Decimal::from(good_matches) / Decimal::from(total)) * dec!(100);
-        
+
         if percent > dec!(100) {
             dec!(100)
         } else if percent < dec!(0) {

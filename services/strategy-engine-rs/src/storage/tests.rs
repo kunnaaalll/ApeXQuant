@@ -1,10 +1,13 @@
 use super::events::{HealthEvent, StrategyEventWrapper};
 use super::serializer::Serializer;
+use rust_decimal::Decimal;
 
 #[test]
 fn test_serializer_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
     let event = StrategyEventWrapper::Health(HealthEvent {
-        details: "Roundtrip test".to_string(),
+        health_score: Decimal::new(95, 2),
+        status: "HEALTHY".to_string(),
+        streak: 10,
     });
 
     let serialized = Serializer::serialize(&event)?;
@@ -17,7 +20,9 @@ fn test_serializer_roundtrip() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_deterministic_serialization() -> Result<(), Box<dyn std::error::Error>> {
     let event = StrategyEventWrapper::Health(HealthEvent {
-        details: "Determinism check".to_string(),
+        health_score: Decimal::new(100, 2),
+        status: "PERFECT".to_string(),
+        streak: 50,
     });
 
     let serialized1 = Serializer::serialize(&event)?;
@@ -35,7 +40,9 @@ fn test_deterministic_serialization() -> Result<(), Box<dyn std::error::Error>> 
 #[test]
 fn test_determinism_100k_iterations() -> Result<(), Box<dyn std::error::Error>> {
     let event = StrategyEventWrapper::Health(HealthEvent {
-        details: "Stress test".to_string(),
+        health_score: Decimal::new(100, 2),
+        status: "STRESS".to_string(),
+        streak: 100,
     });
 
     let reference = serde_json::to_string(&Serializer::serialize(&event)?)?;

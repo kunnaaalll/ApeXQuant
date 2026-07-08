@@ -10,7 +10,7 @@ impl LatencyScore {
         } else {
             (total_latency_ms / 2) as u8
         };
-        
+
         let score = 100u8.saturating_sub(penalty);
         Ok(Self { score })
     }
