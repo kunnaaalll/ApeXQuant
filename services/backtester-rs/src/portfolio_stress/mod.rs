@@ -3,8 +3,8 @@
 //! Models 6 market stress scenarios and computes survival/ruin probabilities
 //! from real portfolio state. No hardcoded zero outputs.
 
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 /// Available stress scenarios.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -125,7 +125,8 @@ impl PortfolioStressTester {
             StressScenario::FlashCrash,
         ];
 
-        scenarios.iter()
+        scenarios
+            .iter()
             .map(|s| Self::run_scenario(s, portfolio))
             .collect()
     }

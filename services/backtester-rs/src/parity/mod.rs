@@ -48,7 +48,9 @@ pub struct RiskParityValidator {
 
 impl RiskParityValidator {
     pub fn new(max_exposure_deviation: Decimal) -> Self {
-        Self { max_exposure_deviation }
+        Self {
+            max_exposure_deviation,
+        }
     }
 }
 
@@ -58,7 +60,9 @@ pub struct StrategyParityValidator {
 
 impl StrategyParityValidator {
     pub fn new(max_signal_timing_deviation_ms: i64) -> Self {
-        Self { max_signal_timing_deviation_ms }
+        Self {
+            max_signal_timing_deviation_ms,
+        }
     }
 }
 
@@ -78,7 +82,9 @@ pub struct MarketParityValidator {
 
 impl MarketParityValidator {
     pub fn new(max_price_deviation: Decimal) -> Self {
-        Self { max_price_deviation }
+        Self {
+            max_price_deviation,
+        }
     }
 }
 
@@ -93,7 +99,11 @@ impl ParityValidator for MarketParityValidator {
             parity_score: rust_decimal_macros::dec!(100.0) - diff,
             drift_score: diff,
             confidence_score: rust_decimal_macros::dec!(0.99),
-            state: if diff == rust_decimal_macros::dec!(0) { ParityState::ExactMatch } else { ParityState::CloseMatch },
+            state: if diff == rust_decimal_macros::dec!(0) {
+                ParityState::ExactMatch
+            } else {
+                ParityState::CloseMatch
+            },
             max_deviation: diff,
             errors: vec![],
         }

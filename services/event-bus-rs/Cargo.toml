@@ -32,6 +32,15 @@ hyper.workspace = true
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
+async-nats.workspace = true
+redis.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
+tracing-opentelemetry.workspace = true
+metrics-exporter-prometheus.workspace = true
+deadpool-redis = "0.14.0"
+backoff = { version = "0.4.0", features = ["tokio"] }
 
 # Local dependencies
 apex-protos = { path = "../../shared/apex-protos" }

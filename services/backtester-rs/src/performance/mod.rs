@@ -4,7 +4,6 @@
 //! All arithmetic uses `rust_decimal::Decimal` — zero float business logic.
 
 use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
 
 /// A single completed trade.
 #[derive(Debug, Clone)]
@@ -60,12 +59,14 @@ impl PerformanceMetrics {
         let winning_trades = trades.iter().filter(|t| t.pnl > Decimal::ZERO).count() as u32;
         let losing_trades = total_trades - winning_trades;
 
-        let gross_profit: Decimal = trades.iter()
+        let gross_profit: Decimal = trades
+            .iter()
             .filter(|t| t.pnl > Decimal::ZERO)
             .map(|t| t.pnl)
             .sum();
 
-        let gross_loss: Decimal = trades.iter()
+        let gross_loss: Decimal = trades
+            .iter()
             .filter(|t| t.pnl < Decimal::ZERO)
             .map(|t| t.pnl.abs())
             .sum();
@@ -77,7 +78,11 @@ impl PerformanceMetrics {
 
         // Profit factor
         let profit_factor = if gross_loss == Decimal::ZERO {
-            if gross_profit > Decimal::ZERO { Decimal::new(999, 0) } else { Decimal::ZERO }
+            if gross_profit > Decimal::ZERO {
+                Decimal::new(999, 0)
+            } else {
+                Decimal::ZERO
+            }
         } else {
             gross_profit / gross_loss
         };
@@ -156,20 +161,29 @@ mod tests {
     use super::*;
 
     fn make_trades(data: &[(i64, i64)]) -> Vec<TradeRecord> {
-        data.iter().map(|&(pnl, r_mul)| TradeRecord {
-            pnl: Decimal::new(pnl, 0),
-            r_multiple: Decimal::new(r_mul, 1), // r_mul tenths
-            mae: Decimal::ZERO,
-        }).collect()
+        data.iter()
+            .map(|&(pnl, r_mul)| TradeRecord {
+                pnl: Decimal::new(pnl, 0),
+                r_multiple: Decimal::new(r_mul, 1), // r_mul tenths
+                mae: Decimal::ZERO,
+            })
+            .collect()
     }
 
     #[test]
     fn test_win_rate() {
         // 6 wins, 4 losses
         let trades = make_trades(&[
-            (100, 10), (200, 20), (-50, -5), (150, 15),
-            (-80, -8), (120, 12), (-30, -3), (90, 9),
-            (-40, -4), (110, 11),
+            (100, 10),
+            (200, 20),
+            (-50, -5),
+            (150, 15),
+            (-80, -8),
+            (120, 12),
+            (-30, -3),
+            (90, 9),
+            (-40, -4),
+            (110, 11),
         ]);
         let m = PerformanceMetrics::calculate(&trades).expect("failed");
         assert_eq!(m.winning_trades, 6);
@@ -197,8 +211,16 @@ mod tests {
     fn test_expectancy_positive() {
         // win_rate=0.6, avg_win=100, avg_loss=50 → expectancy=(0.6×100)-(0.4×50)=40
         let trades = make_trades(&[
-            (100, 10), (100, 10), (100, 10), (100, 10), (100, 10), (100, 10),
-            (-50, -5), (-50, -5), (-50, -5), (-50, -5),
+            (100, 10),
+            (100, 10),
+            (100, 10),
+            (100, 10),
+            (100, 10),
+            (100, 10),
+            (-50, -5),
+            (-50, -5),
+            (-50, -5),
+            (-50, -5),
         ]);
         let m = PerformanceMetrics::calculate(&trades).expect("failed");
         assert_eq!(m.expectancy, Decimal::new(40, 0));

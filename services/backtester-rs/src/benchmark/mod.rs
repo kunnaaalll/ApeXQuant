@@ -44,7 +44,7 @@ impl BenchmarkEngine {
         benchmark_risk: Decimal,
     ) -> BenchmarkReport {
         let relative_performance = strategy_return - benchmark_return;
-        
+
         // Simplified Risk Adjusted Return (e.g. Sharpe-like comparison)
         // Ensure no division by zero or panic if benchmark_risk is zero
         let risk_adjusted_outperformance = if benchmark_risk.is_zero() || strategy_risk.is_zero() {
@@ -52,7 +52,7 @@ impl BenchmarkEngine {
         } else {
             (strategy_return / strategy_risk) - (benchmark_return / benchmark_risk)
         };
-        
+
         // Alpha could be more complex, simplistic for now
         let alpha_score = relative_performance;
 

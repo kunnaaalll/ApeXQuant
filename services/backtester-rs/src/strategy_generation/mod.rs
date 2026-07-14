@@ -1,6 +1,6 @@
 use rust_decimal::Decimal;
-use uuid::Uuid;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StrategyFamily {
@@ -43,7 +43,9 @@ impl StrategyGenerator for MomentumGenerator {
         StrategyBlueprint {
             id: Uuid::new_v4(),
             family: StrategyFamily::Momentum,
-            required_features: RequiredFeatures { features: vec!["price_momentum".to_string()] },
+            required_features: RequiredFeatures {
+                features: vec!["price_momentum".to_string()],
+            },
             parameter_template: ParameterTemplate {
                 bounds: HashMap::new(),
                 step_sizes: HashMap::new(),

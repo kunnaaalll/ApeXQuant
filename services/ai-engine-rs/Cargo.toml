@@ -17,6 +17,17 @@ time = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+sqlx = { workspace = true }
+redis = { workspace = true }
+tonic = { workspace = true }
+prost = { workspace = true }
+config = { workspace = true }
+prometheus = { workspace = true }
+opentelemetry = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+axum = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }

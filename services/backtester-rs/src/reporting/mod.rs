@@ -51,13 +51,13 @@ pub struct PerformanceReport {
     pub max_drawdown: Decimal,
     pub equity_curve: Vec<EquityPoint>,
     pub drawdown_curve: Vec<DrawdownPoint>,
-    
+
     // Phase 3 additions
     pub regime_breakdown: Vec<RegimeBreakdown>,
     pub session_breakdown: Vec<SessionBreakdown>,
     pub symbol_breakdown: Vec<SymbolBreakdown>,
     pub promotion_recommendation: PromotionRecommendation,
-    
+
     // Phase 4 additions
     pub account_equity_curves: std::collections::HashMap<String, Vec<EquityPoint>>,
     pub portfolio_equity_curve: Vec<EquityPoint>,

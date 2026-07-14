@@ -1,6 +1,6 @@
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryType {
@@ -51,7 +51,10 @@ impl ResearchMemoryStore for InMemoryResearchStore {
     }
 
     fn query(&self, memory_type: MemoryType) -> Vec<&ResearchMemoryEntry> {
-        self.entries.iter().filter(|e| e.memory_type == memory_type).collect()
+        self.entries
+            .iter()
+            .filter(|e| e.memory_type == memory_type)
+            .collect()
     }
 
     fn check_duplicate_idea(&self, hypothesis_hash: &str) -> bool {

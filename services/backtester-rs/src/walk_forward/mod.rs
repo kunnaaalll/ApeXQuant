@@ -5,8 +5,8 @@
 //!
 //! All scores are computed from real per-window trade statistics — no hardcoded values.
 
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 /// A single walk-forward window with IS and OOS date boundaries (Unix ms).
 #[derive(Debug, Clone)]
@@ -40,7 +40,11 @@ impl WindowStats {
     /// Profit factor: gross_profit / gross_loss (returns 0 if no losses)
     pub fn profit_factor(&self) -> Decimal {
         if self.gross_loss == Decimal::ZERO {
-            return if self.gross_profit > Decimal::ZERO { Decimal::new(999, 0) } else { Decimal::ZERO };
+            return if self.gross_profit > Decimal::ZERO {
+                Decimal::new(999, 0)
+            } else {
+                Decimal::ZERO
+            };
         }
         self.gross_profit / self.gross_loss
     }
@@ -147,17 +151,24 @@ impl WalkForwardEngine {
 
         // --- Stability Score ---
         // Fraction of OOS windows with positive expectancy
-        let oos_positive = windows.iter()
+        let oos_positive = windows
+            .iter()
             .filter(|w| w.oos_stats.expectancy() > Decimal::ZERO)
             .count();
         let stability_score = Decimal::from(oos_positive) / Decimal::from(n);
 
         // --- OOS and IS mean expectancy ---
         let mean_oos_exp = mean_decimal(
-            &windows.iter().map(|w| w.oos_stats.expectancy()).collect::<Vec<_>>()
+            &windows
+                .iter()
+                .map(|w| w.oos_stats.expectancy())
+                .collect::<Vec<_>>(),
         );
         let mean_is_exp = mean_decimal(
-            &windows.iter().map(|w| w.is_stats.expectancy()).collect::<Vec<_>>()
+            &windows
+                .iter()
+                .map(|w| w.is_stats.expectancy())
+                .collect::<Vec<_>>(),
         );
 
         // --- Robustness Score: OOS/IS expectancy ratio (clipped 0–1) ---
@@ -169,10 +180,12 @@ impl WalkForwardEngine {
         };
 
         // --- Generalization Score: Pearson correlation IS vs OOS profit factor ---
-        let is_pfs: Vec<f64> = windows.iter()
+        let is_pfs: Vec<f64> = windows
+            .iter()
             .map(|w| w.is_stats.profit_factor().to_f64().unwrap_or(0.0))
             .collect();
-        let oos_pfs: Vec<f64> = windows.iter()
+        let oos_pfs: Vec<f64> = windows
+            .iter()
             .map(|w| w.oos_stats.profit_factor().to_f64().unwrap_or(0.0))
             .collect();
         let generalization_score = pearson_correlation(&is_pfs, &oos_pfs)
@@ -180,7 +193,8 @@ impl WalkForwardEngine {
             .unwrap_or(Decimal::ZERO);
 
         // --- Drawdown Stability: coefficient of variation of OOS max drawdowns ---
-        let oos_dds: Vec<f64> = windows.iter()
+        let oos_dds: Vec<f64> = windows
+            .iter()
             .map(|w| w.oos_stats.max_drawdown.to_f64().unwrap_or(0.0))
             .collect();
         let drawdown_stability = coefficient_of_variation(&oos_dds)
@@ -189,12 +203,15 @@ impl WalkForwardEngine {
 
         // Mean OOS profit factor
         let mean_oos_profit_factor = mean_decimal(
-            &windows.iter().map(|w| w.oos_stats.profit_factor()).collect::<Vec<_>>()
+            &windows
+                .iter()
+                .map(|w| w.oos_stats.profit_factor())
+                .collect::<Vec<_>>(),
         );
 
         // Passes validation: stability ≥ 0.6 and robustness ≥ 0.5
-        let passes_validation = stability_score >= Decimal::new(60, 2)
-            && robustness_score >= Decimal::new(50, 2);
+        let passes_validation =
+            stability_score >= Decimal::new(60, 2) && robustness_score >= Decimal::new(50, 2);
 
         Ok(WalkForwardResult {
             stability_score,
@@ -230,7 +247,11 @@ fn pearson_correlation(x: &[f64], y: &[f64]) -> Option<f64> {
     let mean_x = x.iter().sum::<f64>() / n;
     let mean_y = y.iter().sum::<f64>() / n;
 
-    let cov = x.iter().zip(y.iter()).map(|(&xi, &yi)| (xi - mean_x) * (yi - mean_y)).sum::<f64>();
+    let cov = x
+        .iter()
+        .zip(y.iter())
+        .map(|(&xi, &yi)| (xi - mean_x) * (yi - mean_y))
+        .sum::<f64>();
     let std_x = (x.iter().map(|&xi| (xi - mean_x).powi(2)).sum::<f64>() / n).sqrt();
     let std_y = (y.iter().map(|&yi| (yi - mean_y).powi(2)).sum::<f64>() / n).sqrt();
 
@@ -279,12 +300,22 @@ mod tests {
     fn test_stability_score_all_positive() {
         let windows = vec![
             WalkForwardWindowData {
-                window: WalkForwardWindow { is_start_ms: 0, is_end_ms: 100, oos_start_ms: 100, oos_end_ms: 200 },
+                window: WalkForwardWindow {
+                    is_start_ms: 0,
+                    is_end_ms: 100,
+                    oos_start_ms: 100,
+                    oos_end_ms: 200,
+                },
                 is_stats: win_stats(100, 60, 6000, 4000, 500),
                 oos_stats: win_stats(30, 18, 1800, 1200, 200),
             },
             WalkForwardWindowData {
-                window: WalkForwardWindow { is_start_ms: 100, is_end_ms: 200, oos_start_ms: 200, oos_end_ms: 300 },
+                window: WalkForwardWindow {
+                    is_start_ms: 100,
+                    is_end_ms: 200,
+                    oos_start_ms: 200,
+                    oos_end_ms: 300,
+                },
                 is_stats: win_stats(100, 60, 6000, 4000, 500),
                 oos_stats: win_stats(30, 18, 1800, 1200, 150),
             },
@@ -298,14 +329,18 @@ mod tests {
     #[test]
     fn test_passes_validation() {
         // Build 5 windows with solid OOS performance
-        let windows: Vec<_> = (0..5).map(|i| WalkForwardWindowData {
-            window: WalkForwardWindow {
-                is_start_ms: i * 100, is_end_ms: i * 100 + 100,
-                oos_start_ms: i * 100 + 100, oos_end_ms: i * 100 + 200,
-            },
-            is_stats: win_stats(100, 60, 6000, 3000, 400),
-            oos_stats: win_stats(30, 20, 2000, 1000, 150),
-        }).collect();
+        let windows: Vec<_> = (0..5)
+            .map(|i| WalkForwardWindowData {
+                window: WalkForwardWindow {
+                    is_start_ms: i * 100,
+                    is_end_ms: i * 100 + 100,
+                    oos_start_ms: i * 100 + 100,
+                    oos_end_ms: i * 100 + 200,
+                },
+                is_stats: win_stats(100, 60, 6000, 3000, 400),
+                oos_stats: win_stats(30, 20, 2000, 1000, 150),
+            })
+            .collect();
         let result = WalkForwardEngine::evaluate(&windows).expect("evaluate failed");
         assert!(result.passes_validation);
     }

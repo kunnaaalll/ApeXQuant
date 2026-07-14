@@ -33,7 +33,10 @@ pub struct OptimizationResult {
 pub struct ParameterOptimizer;
 
 impl ParameterOptimizer {
-    pub fn optimize(space: &ParameterSpace, _method: OptimizationMethod) -> Result<OptimizationResult, &'static str> {
+    pub fn optimize(
+        space: &ParameterSpace,
+        _method: OptimizationMethod,
+    ) -> Result<OptimizationResult, &'static str> {
         let mut best_result = None;
         let mut best_fitness = Decimal::from(-1000);
 
@@ -44,20 +47,24 @@ impl ParameterOptimizer {
                         for &risk in &space.risk_per_trade {
                             let sl_dec = Decimal::from(sl);
                             let tp_dec = Decimal::from(tp);
-                            let ratio = if sl == 0 { Decimal::ZERO } else { tp_dec / sl_dec };
-                            
+                            let ratio = if sl == 0 {
+                                Decimal::ZERO
+                            } else {
+                                tp_dec / sl_dec
+                            };
+
                             // Target a healthy risk-to-reward ratio of 2.0
                             let target_ratio = Decimal::from(2);
                             let ratio_diff = (ratio - target_ratio).abs();
-                            
+
                             // Calculate deterministic fitness score
                             let mut fitness = Decimal::from(50) - ratio_diff * Decimal::from(10);
-                            
+
                             // Penalize absolute parameter ranges that are too tight or loose
-                            if sl < 15 || sl > 25 {
+                            if !(15..=25).contains(&sl) {
                                 fitness -= Decimal::from(5);
                             }
-                            if tp < 30 || tp > 50 {
+                            if !(30..=50).contains(&tp) {
                                 fitness -= Decimal::from(5);
                             }
 

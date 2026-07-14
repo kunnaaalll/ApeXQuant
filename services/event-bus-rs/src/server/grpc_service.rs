@@ -7,7 +7,7 @@ use tonic::{Request, Response, Status};
 use tokio::sync::{mpsc, broadcast};
 use tokio_stream::wrappers::ReceiverStream;
 use crate::storage::EventStore;
-use crate::routing::SequenceManager;
+use crate::router::SequenceManager;
 use sqlx::types::chrono::Utc;
 use std::str::FromStr;
 
@@ -34,12 +34,9 @@ impl EventBusService for EventBusServiceImpl {
         let mut published_ids = Vec::new();
 
         for event in req.events {
-            // Sequence the event
             let sequenced_event = self.sequencer.sequence_event(event).await
                 .map_err(|e| Status::internal(format!("Sequencing error: {}", e)))?;
 
-            // Store the event based on durability requirements
-            // For now, we always persist it to the EventStore
             self.store.store_event(&sequenced_event).await
                 .map_err(|e| Status::internal(format!("Storage error: {}", e)))?;
 
@@ -48,7 +45,6 @@ impl EventBusService for EventBusServiceImpl {
                 published_ids.push(id_str);
             }
 
-            // Notify subscribers
             let _ = self.broadcaster.send(sequenced_event);
         }
 
@@ -97,7 +93,7 @@ impl EventBusService for EventBusServiceImpl {
         }
         
         tokio::spawn(async move {
-            // 1. Replay historical events
+            // Replay historical events
             if let Ok(historical_events) = store.load_events_by_topic(&topics, start_time).await {
                 for event in historical_events {
                     let batch = EventBatch {
@@ -112,22 +108,24 @@ impl EventBusService for EventBusServiceImpl {
                 }
             }
 
-            // 2. Stream live events
+            // Stream live events
             while let Ok(event) = rx_broadcast.recv().await {
                 if topics.contains(&event.topic) {
                     let occurred_dt = event.occurred_at.as_ref()
-                        .map(|t| sqlx::types::chrono::DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default())
-                        .unwrap_or_else(|| Utc::now());
+                        .and_then(|t| sqlx::types::chrono::DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32))
+                        .ok_or_else(|| Status::internal("Missing occurred_at timestamp in broadcasted event"));
                     
-                    if occurred_dt > start_time {
-                        let batch = EventBatch {
-                            events: vec![event],
-                            next_position: String::new(),
-                            has_more: false,
-                            total_available: 1,
-                        };
-                        if tx.send(Ok(batch)).await.is_err() {
-                            break;
+                    if let Ok(occurred_dt) = occurred_dt {
+                        if occurred_dt > start_time {
+                            let batch = EventBatch {
+                                events: vec![event],
+                                next_position: String::new(),
+                                has_more: false,
+                                total_available: 1,
+                            };
+                            if tx.send(Ok(batch)).await.is_err() {
+                                break;
+                            }
                         }
                     }
                 }
@@ -154,11 +152,14 @@ impl EventBusService for EventBusServiceImpl {
                 if let Ok(event_id) = uuid::Uuid::from_str(id_str) {
                     if let Ok(Some(event)) = self.store.get_event(event_id).await {
                         let occurred_dt = event.occurred_at.as_ref()
-                            .map(|t| sqlx::types::chrono::DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default())
-                            .unwrap_or_else(|| Utc::now());
-                        
-                        if self.store.update_subscriber_offset(&consumer_group, &event.topic, event_id, occurred_dt).await.is_ok() {
-                            acknowledged += 1;
+                            .and_then(|t| sqlx::types::chrono::DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32));
+                            
+                        if let Some(dt) = occurred_dt {
+                            if self.store.update_subscriber_offset(&consumer_group, &event.topic, event_id, dt).await.is_ok() {
+                                acknowledged += 1;
+                            } else {
+                                failed += 1;
+                            }
                         } else {
                             failed += 1;
                         }
@@ -180,13 +181,15 @@ impl EventBusService for EventBusServiceImpl {
                         let _ = prost::Message::encode(&event, &mut payload_bytes);
                     }
 
+                    let err_msg = entry.error.as_ref().map(|e| e.message.clone()).unwrap_or_else(|| String::from("Unknown error"));
+
                     if self.store.move_to_dlq(
                         &consumer_group,
                         &topic,
                         Some(event_id),
                         &payload_bytes,
                         &entry.reason,
-                        &entry.error.as_ref().map(|e| e.message.clone()).unwrap_or_default()
+                        &err_msg
                     ).await.is_ok() {
                         moved_to_dlq += 1;
                     }
@@ -245,8 +248,10 @@ fn calculate_start_time(pos: &Option<apex_protos::events::StreamPosition>) -> sq
         .unwrap_or(0);
 
     let now = Utc::now();
+    let epoch = sqlx::types::chrono::DateTime::<Utc>::from_timestamp(0, 0).unwrap_or(now);
+
     if from_enum == StartPosition::Earliest as i32 {
-        sqlx::types::chrono::DateTime::<Utc>::from_timestamp(0, 0).unwrap_or(now)
+        epoch
     } else if from_enum == StartPosition::NowMinusHour as i32 {
         now - chrono::Duration::hours(1)
     } else if from_enum == StartPosition::NowMinusDay as i32 {
@@ -257,5 +262,3 @@ fn calculate_start_time(pos: &Option<apex_protos::events::StreamPosition>) -> sq
         now
     }
 }
-
-

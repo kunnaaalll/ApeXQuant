@@ -1,33 +1,33 @@
-use serde::{Deserialize, Serialize};
-use rust_decimal::Decimal;
+use anyhow::Result;
+use sqlx::PgPool;
+use crate::nats::NatsManager;
+use crate::redis::RedisManager;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum HealthGrade {
-    Healthy,
-    Warning,
-    Critical,
-    Failed,
+#[derive(Clone)]
+pub struct HealthChecker {
+    db_pool: PgPool,
+    nats: NatsManager,
+    redis: RedisManager,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SystemHealth {
-    pub grade: HealthGrade,
-    pub queue_depth: u64,
-    pub subscriber_lag: u64,
-    pub replay_lag: u64,
-    pub throughput: Decimal, // Events per second
-    pub latency_ms: Decimal,
-}
+impl HealthChecker {
+    pub fn new(db_pool: PgPool, nats: NatsManager, redis: RedisManager) -> Self {
+        Self { db_pool, nats, redis }
+    }
 
-impl Default for SystemHealth {
-    fn default() -> Self {
-        Self {
-            grade: HealthGrade::Healthy,
-            queue_depth: 0,
-            subscriber_lag: 0,
-            replay_lag: 0,
-            throughput: Decimal::ZERO,
-            latency_ms: Decimal::ZERO,
-        }
+    pub async fn check_postgres(&self) -> bool {
+        sqlx::query("SELECT 1").execute(&self.db_pool).await.is_ok()
+    }
+
+    pub async fn check_nats(&self) -> bool {
+        self.nats.client.connection_state() == async_nats::connection::State::Connected
+    }
+
+    pub async fn check_redis(&self) -> bool {
+        self.redis.get_connection().await.is_ok()
+    }
+    
+    pub async fn is_healthy(&self) -> bool {
+        self.check_postgres().await && self.check_nats().await && self.check_redis().await
     }
 }

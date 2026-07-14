@@ -3,5 +3,5 @@ pub mod engine;
 pub mod models;
 
 pub use clock::{ReplayClock, ReplaySpeed};
-pub use engine::{TickReplayEngine, CandleReplayEngine, MultiSymbolReplayEngine};
-pub use models::{Tick, Candle, ReplayEvent};
+pub use engine::{CandleReplayEngine, MultiSymbolReplayEngine, TickReplayEngine};
+pub use models::{Candle, ReplayEvent, Tick};

@@ -35,12 +35,12 @@ pub mod portfolio_stress;
 pub mod prop_constraints;
 
 // Phase 5 additions
-pub mod shadow_validation;
-pub mod drift_detection;
-pub mod certification;
 pub mod benchmark;
-pub mod production_validator;
+pub mod certification;
+pub mod drift_detection;
 pub mod institutional_reporting;
+pub mod production_validator;
+pub mod shadow_validation;
 
 // Phase 6 additions
 pub mod adversarial_testing;

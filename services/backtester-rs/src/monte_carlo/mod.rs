@@ -6,12 +6,12 @@
 //! All financial outputs use `rust_decimal::Decimal`. Internal simulation uses
 //! f64 via `rand` / `statrs` only for statistical sampling, converted on exit.
 
-use rand::SeedableRng;
 use rand::seq::SliceRandom;
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
 use rayon::prelude::*;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 /// A single historical trade result used as simulation input.
 #[derive(Debug, Clone)]
@@ -103,7 +103,10 @@ impl MonteCarloEngine {
     /// Each simulation run randomly resamples (with replacement) from the provided
     /// trade history and replays the equity curve. ChaCha8Rng ensures byte-perfect
     /// reproducibility given the same seed.
-    pub fn run(trades: &[TradeResult], params: &MonteCarloParams) -> Result<MonteCarloResult, String> {
+    pub fn run(
+        trades: &[TradeResult],
+        params: &MonteCarloParams,
+    ) -> Result<MonteCarloResult, String> {
         if trades.is_empty() {
             return Err("Monte Carlo requires at least 1 trade in history".to_string());
         }
@@ -111,14 +114,19 @@ impl MonteCarloEngine {
             return Err("num_simulations must be > 0".to_string());
         }
 
-        let initial_equity_f64 = params.initial_equity.to_f64()
+        let initial_equity_f64 = params
+            .initial_equity
+            .to_f64()
             .ok_or("initial_equity out of f64 range")?;
-        let ruin_threshold_f64 = params.ruin_threshold.to_f64()
+        let ruin_threshold_f64 = params
+            .ruin_threshold
+            .to_f64()
             .ok_or("ruin_threshold out of f64 range")?;
         let path_length = trades.len();
 
         // Convert PnL to f64 for simulation math
-        let pnl_f64: Vec<f64> = trades.iter()
+        let pnl_f64: Vec<f64> = trades
+            .iter()
             .map(|t| t.pnl.to_f64().unwrap_or(0.0))
             .collect();
 
@@ -128,7 +136,9 @@ impl MonteCarloEngine {
             .into_par_iter()
             .map(|sim_idx| {
                 // Derive deterministic sub-seed: combine root seed with simulation index
-                let sub_seed = params.seed.wrapping_add((sim_idx as u64).wrapping_mul(6_364_136_223_846_793_005));
+                let sub_seed = params
+                    .seed
+                    .wrapping_add((sim_idx as u64).wrapping_mul(6_364_136_223_846_793_005));
                 let mut rng = ChaCha8Rng::seed_from_u64(sub_seed);
 
                 // Bootstrap: sample path_length trades with replacement
@@ -141,10 +151,15 @@ impl MonteCarloEngine {
                     .collect();
 
                 // Compute equity curve and max drawdown
-                let (max_drawdown, final_equity) = compute_equity_curve(initial_equity_f64, &sampled);
+                let (max_drawdown, final_equity) =
+                    compute_equity_curve(initial_equity_f64, &sampled);
                 let reached_ruin = final_equity <= ruin_threshold_f64;
 
-                SimRun { final_equity, max_drawdown, reached_ruin }
+                SimRun {
+                    final_equity,
+                    max_drawdown,
+                    reached_ruin,
+                }
             })
             .collect();
 
@@ -198,14 +213,16 @@ impl MonteCarloEngine {
             return Err("Need at least 2 trades for permutation test".to_string());
         }
         let obs_f64 = observed_sharpe.to_f64().ok_or("Sharpe out of range")?;
-        let pnls: Vec<f64> = trades.iter()
+        let pnls: Vec<f64> = trades
+            .iter()
             .map(|t| t.pnl.to_f64().unwrap_or(0.0))
             .collect();
 
         let exceed_count: usize = (0..num_permutations)
             .into_par_iter()
             .filter(|&i| {
-                let sub_seed = seed.wrapping_add((i as u64).wrapping_mul(2_862_933_555_777_941_757));
+                let sub_seed =
+                    seed.wrapping_add((i as u64).wrapping_mul(2_862_933_555_777_941_757));
                 let mut rng = ChaCha8Rng::seed_from_u64(sub_seed);
                 let mut shuffled = pnls.clone();
                 shuffled.shuffle(&mut rng);
@@ -300,7 +317,11 @@ mod tests {
     use super::*;
 
     fn make_trades(pnls: &[i64]) -> Vec<TradeResult> {
-        pnls.iter().map(|&p| TradeResult { pnl: Decimal::new(p, 0) }).collect()
+        pnls.iter()
+            .map(|&p| TradeResult {
+                pnl: Decimal::new(p, 0),
+            })
+            .collect()
     }
 
     #[test]
@@ -343,7 +364,8 @@ mod tests {
             Decimal::new(15, 1), // 1.5 Sharpe
             1000,
             99,
-        ).expect("failed");
+        )
+        .expect("failed");
         assert!(p >= Decimal::ZERO);
         assert!(p <= Decimal::ONE);
     }

@@ -1,6 +1,6 @@
 use crate::market_replay::engine::ReplayEngine;
-use crate::simulation::state::SimulationState;
 use crate::simulation::metrics::SimulationMetrics;
+use crate::simulation::state::SimulationState;
 
 pub struct SimulationSession<T: ReplayEngine> {
     pub id: String,

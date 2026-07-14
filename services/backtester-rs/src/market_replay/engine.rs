@@ -1,7 +1,7 @@
-use crate::market_replay::models::{Candle, ReplayEvent, Tick};
 use crate::market_replay::clock::{ReplayClock, ReplaySpeed};
-use time::OffsetDateTime;
+use crate::market_replay::models::{Candle, ReplayEvent, Tick};
 use std::collections::VecDeque;
+use time::OffsetDateTime;
 
 pub trait ReplayEngine {
     fn next_event(&mut self) -> Result<Option<ReplayEvent>, &'static str>;
@@ -18,10 +18,14 @@ pub struct TickReplayEngine {
 }
 
 impl TickReplayEngine {
-    pub fn new(start_time: OffsetDateTime, speed: ReplaySpeed, events: impl IntoIterator<Item = Tick>) -> Self {
+    pub fn new(
+        start_time: OffsetDateTime,
+        speed: ReplaySpeed,
+        events: impl IntoIterator<Item = Tick>,
+    ) -> Self {
         let mut sorted_events: Vec<Tick> = events.into_iter().collect();
         sorted_events.sort_by_key(|t| t.timestamp);
-        
+
         Self {
             clock: ReplayClock::new(start_time, speed),
             events: sorted_events.into(),
@@ -68,10 +72,14 @@ pub struct CandleReplayEngine {
 }
 
 impl CandleReplayEngine {
-    pub fn new(start_time: OffsetDateTime, speed: ReplaySpeed, events: impl IntoIterator<Item = Candle>) -> Self {
+    pub fn new(
+        start_time: OffsetDateTime,
+        speed: ReplaySpeed,
+        events: impl IntoIterator<Item = Candle>,
+    ) -> Self {
         let mut sorted_events: Vec<Candle> = events.into_iter().collect();
         sorted_events.sort_by_key(|c| c.timestamp);
-        
+
         Self {
             clock: ReplayClock::new(start_time, speed),
             events: sorted_events.into(),
@@ -118,10 +126,14 @@ pub struct MultiSymbolReplayEngine {
 }
 
 impl MultiSymbolReplayEngine {
-    pub fn new(start_time: OffsetDateTime, speed: ReplaySpeed, events: impl IntoIterator<Item = ReplayEvent>) -> Self {
+    pub fn new(
+        start_time: OffsetDateTime,
+        speed: ReplaySpeed,
+        events: impl IntoIterator<Item = ReplayEvent>,
+    ) -> Self {
         let mut sorted_events: Vec<ReplayEvent> = events.into_iter().collect();
         sorted_events.sort_by_key(|e| e.timestamp());
-        
+
         Self {
             clock: ReplayClock::new(start_time, speed),
             events: sorted_events.into(),

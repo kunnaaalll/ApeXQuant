@@ -1,13 +1,13 @@
+use backtester::market_replay::clock::ReplaySpeed;
+use backtester::market_replay::engine::{ReplayEngine, TickReplayEngine};
+use backtester::market_replay::models::Tick;
 use rust_decimal::Decimal;
 use time::OffsetDateTime;
-use backtester::market_replay::models::Tick;
-use backtester::market_replay::clock::ReplaySpeed;
-use backtester::market_replay::engine::{TickReplayEngine, ReplayEngine};
 
 #[test]
 fn test_tick_replay_engine_100k() {
     let start_time = OffsetDateTime::now_utc();
-    
+
     // Create 100k dummy ticks
     let mut ticks = Vec::with_capacity(100_000);
     for i in 0..100_000 {
@@ -22,19 +22,19 @@ fn test_tick_replay_engine_100k() {
     }
 
     let mut engine = TickReplayEngine::new(start_time, ReplaySpeed::Unlimited, ticks);
-    
+
     let mut count = 0;
     while let Ok(Some(_)) = engine.next_event() {
         count += 1;
     }
-    
+
     assert_eq!(count, 100_000);
 }
 
 #[test]
 fn test_tick_replay_engine_1m() {
     let start_time = OffsetDateTime::now_utc();
-    
+
     // Create 1m dummy ticks
     let mut ticks = Vec::with_capacity(1_000_000);
     for i in 0..1_000_000 {
@@ -49,12 +49,12 @@ fn test_tick_replay_engine_1m() {
     }
 
     let mut engine = TickReplayEngine::new(start_time, ReplaySpeed::Unlimited, ticks);
-    
+
     let mut count = 0;
     while let Ok(Some(_)) = engine.next_event() {
         count += 1;
     }
-    
+
     assert_eq!(count, 1_000_000);
 }
 

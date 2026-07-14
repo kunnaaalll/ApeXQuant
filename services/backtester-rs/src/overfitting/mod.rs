@@ -7,12 +7,12 @@
 //! - Bailey, Borwein, Lopez de Prado, Zhu (2015) — "The Probability of Backtest Overfitting"
 //! - White (2000) — Reality Check test (Sharpe p-value via permutation)
 
-use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
-use rayon::prelude::*;
+use rand::seq::SliceRandom;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use rand::seq::SliceRandom;
+use rayon::prelude::*;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OverfittingSeverity {
@@ -156,7 +156,8 @@ fn compute_parameter_sensitivity(points: &[ParameterPoint]) -> Decimal {
     if points.len() < 2 {
         return Decimal::ZERO;
     }
-    let sharpes: Vec<f64> = points.iter()
+    let sharpes: Vec<f64> = points
+        .iter()
         .map(|p| p.sharpe.to_f64().unwrap_or(0.0))
         .collect();
     let mean_sharpe = sharpes.iter().sum::<f64>() / sharpes.len() as f64;
@@ -165,10 +166,13 @@ fn compute_parameter_sensitivity(points: &[ParameterPoint]) -> Decimal {
     }
 
     // Normalized sensitivity: std_dev(sharpes) / mean_sharpe
-    let var = sharpes.iter().map(|&s| (s - mean_sharpe).powi(2)).sum::<f64>()
+    let var = sharpes
+        .iter()
+        .map(|&s| (s - mean_sharpe).powi(2))
+        .sum::<f64>()
         / (sharpes.len() - 1) as f64;
     let std = var.sqrt();
-    let sensitivity = (std / mean_sharpe.abs()).min(1.0).max(0.0);
+    let sensitivity = (std / mean_sharpe.abs()).clamp(0.0, 1.0);
 
     f64_to_decimal(sensitivity)
 }
@@ -181,7 +185,8 @@ fn compute_pbo(param_points: &[ParameterPoint], seed: u64) -> Decimal {
     if param_points.len() < 2 {
         return Decimal::ZERO;
     }
-    let sharpes: Vec<f64> = param_points.iter()
+    let sharpes: Vec<f64> = param_points
+        .iter()
         .map(|p| p.sharpe.to_f64().unwrap_or(0.0))
         .collect();
 
@@ -189,7 +194,8 @@ fn compute_pbo(param_points: &[ParameterPoint], seed: u64) -> Decimal {
     let lose_count: usize = (0..num_trials)
         .into_par_iter()
         .filter(|&trial| {
-            let sub_seed = seed.wrapping_add((trial as u64).wrapping_mul(3_202_034_522_624_059_733));
+            let sub_seed =
+                seed.wrapping_add((trial as u64).wrapping_mul(3_202_034_522_624_059_733));
             let mut rng = ChaCha8Rng::seed_from_u64(sub_seed);
 
             // Bootstrap sample of IS and OOS sharpes (simulate by permuting the array)
@@ -204,11 +210,17 @@ fn compute_pbo(param_points: &[ParameterPoint], seed: u64) -> Decimal {
             }
 
             // IS winner = index with highest IS Sharpe
-            let is_winner = is_set.iter().copied()
-                .max_by(|&a, &b| sharpes[a].partial_cmp(&sharpes[b]).unwrap_or(std::cmp::Ordering::Equal));
+            let is_winner = is_set.iter().copied().max_by(|&a, &b| {
+                sharpes[a]
+                    .partial_cmp(&sharpes[b])
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
-            let oos_winner = oos_set.iter().copied()
-                .max_by(|&a, &b| sharpes[a].partial_cmp(&sharpes[b]).unwrap_or(std::cmp::Ordering::Equal));
+            let oos_winner = oos_set.iter().copied().max_by(|&a, &b| {
+                sharpes[a]
+                    .partial_cmp(&sharpes[b])
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
             match (is_winner, oos_winner) {
                 (Some(iw), Some(ow)) => sharpes[iw] < sharpes[ow], // IS winner loses OOS
@@ -231,7 +243,8 @@ fn compute_permutation_p_value(
         return Err("Need at least 2 trades for permutation test".to_string());
     }
     let obs_f = observed_sharpe.to_f64().ok_or("Sharpe out of range")?;
-    let pnls: Vec<f64> = trades.iter()
+    let pnls: Vec<f64> = trades
+        .iter()
         .map(|t| t.pnl.to_f64().unwrap_or(0.0))
         .collect();
 
@@ -254,7 +267,8 @@ fn compute_regime_dependence(regime_sharpes: &[Decimal]) -> Decimal {
     if regime_sharpes.len() < 2 {
         return Decimal::ZERO;
     }
-    let vals: Vec<f64> = regime_sharpes.iter()
+    let vals: Vec<f64> = regime_sharpes
+        .iter()
         .map(|s| s.to_f64().unwrap_or(0.0))
         .collect();
     let n = vals.len() as f64;
@@ -264,16 +278,22 @@ fn compute_regime_dependence(regime_sharpes: &[Decimal]) -> Decimal {
     }
     let var = vals.iter().map(|&v| (v - mean).powi(2)).sum::<f64>() / n;
     let cv = var.sqrt() / mean.abs();
-    f64_to_decimal(cv.min(1.0).max(0.0))
+    f64_to_decimal(cv.clamp(0.0, 1.0))
 }
 
 fn sharpe_f64(pnls: &[f64]) -> f64 {
-    if pnls.len() < 2 { return 0.0; }
+    if pnls.len() < 2 {
+        return 0.0;
+    }
     let n = pnls.len() as f64;
     let mean = pnls.iter().sum::<f64>() / n;
     let var = pnls.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / (n - 1.0);
     let std = var.sqrt();
-    if std == 0.0 { 0.0 } else { (mean / std) * 252_f64.sqrt() }
+    if std == 0.0 {
+        0.0
+    } else {
+        (mean / std) * 252_f64.sqrt()
+    }
 }
 
 fn f64_to_decimal(v: f64) -> Decimal {
@@ -288,16 +308,28 @@ mod tests {
 
     #[test]
     fn test_severity_healthy() {
-        let trades: Vec<OATrade> = (0..50).map(|i| OATrade {
-            pnl: if i % 3 != 0 { Decimal::new(100, 0) } else { Decimal::new(-60, 0) },
-        }).collect();
+        let trades: Vec<OATrade> = (0..50)
+            .map(|i| OATrade {
+                pnl: if i % 3 != 0 {
+                    Decimal::new(100, 0)
+                } else {
+                    Decimal::new(-60, 0)
+                },
+            })
+            .collect();
         let result = OverfittingAnalyzer::analyze_from_trades(
             &trades,
             Decimal::new(15, 1), // 1.5 Sharpe
             42,
-        ).expect("analyze failed");
+        )
+        .expect("analyze failed");
         // Score and severity must be valid
-        assert!(matches!(result.severity, OverfittingSeverity::Healthy | OverfittingSeverity::Warning | OverfittingSeverity::Critical));
+        assert!(matches!(
+            result.severity,
+            OverfittingSeverity::Healthy
+                | OverfittingSeverity::Warning
+                | OverfittingSeverity::Critical
+        ));
         assert!(result.permutation_p_value >= Decimal::ZERO);
         assert!(result.permutation_p_value <= Decimal::ONE);
     }
@@ -305,8 +337,14 @@ mod tests {
     #[test]
     fn test_parameter_sensitivity_zero_for_equal_sharpes() {
         let points = vec![
-            ParameterPoint { sharpe: Decimal::new(15, 1), params_normalized: vec![Decimal::new(1, 1)] },
-            ParameterPoint { sharpe: Decimal::new(15, 1), params_normalized: vec![Decimal::new(5, 1)] },
+            ParameterPoint {
+                sharpe: Decimal::new(15, 1),
+                params_normalized: vec![Decimal::new(1, 1)],
+            },
+            ParameterPoint {
+                sharpe: Decimal::new(15, 1),
+                params_normalized: vec![Decimal::new(5, 1)],
+            },
         ];
         // All sharpes equal → sensitivity = 0
         let sens = super::compute_parameter_sensitivity(&points);

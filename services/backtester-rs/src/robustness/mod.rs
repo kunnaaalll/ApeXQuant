@@ -21,7 +21,10 @@ pub struct RobustnessEvaluation {
 pub struct RobustnessEvaluator;
 
 impl RobustnessEvaluator {
-    pub fn evaluate(_strategy_id: &str, profile: &DegradationProfile) -> Result<RobustnessEvaluation, &'static str> {
+    pub fn evaluate(
+        _strategy_id: &str,
+        profile: &DegradationProfile,
+    ) -> Result<RobustnessEvaluation, &'static str> {
         let mut score = Decimal::from(1); // Start at 1.0 (100%)
 
         // Penalize spread: 2.5% per additional spread tick

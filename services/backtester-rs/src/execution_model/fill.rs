@@ -35,7 +35,12 @@ impl FillEngine {
         Self { max_fill_size }
     }
 
-    pub fn process_fill(&self, req: &FillRequest, current_price: Decimal, available_liquidity: Decimal) -> FillResult {
+    pub fn process_fill(
+        &self,
+        req: &FillRequest,
+        current_price: Decimal,
+        available_liquidity: Decimal,
+    ) -> FillResult {
         if available_liquidity <= Decimal::ZERO {
             return FillResult {
                 order_id: req.order_id.clone(),

@@ -1,5 +1,5 @@
-use time::OffsetDateTime;
 use core::time::Duration as StdDuration;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReplaySpeed {
@@ -28,14 +28,14 @@ impl ReplayClock {
         if target_time < self.current_time {
             return Err("Cannot advance backwards in time");
         }
-        
+
         let delta = target_time - self.current_time;
         // In Unlimited mode, simulated time jumps directly.
         // In other modes, we could add real sleep here, but for a deterministic engine,
         // we often just advance simulated time and maybe throttle real time elsewhere.
-        // For now, we will simply jump the simulated time. Real-time throttling can be 
+        // For now, we will simply jump the simulated time. Real-time throttling can be
         // managed at the execution layer or engine layer.
-        
+
         // Example logic for real-time throttling if needed:
         if self.speed != ReplaySpeed::Unlimited {
             let speed_factor = match self.speed {
@@ -45,7 +45,7 @@ impl ReplayClock {
                 ReplaySpeed::OneThousandX => 1000,
                 ReplaySpeed::Unlimited => unreachable!(),
             };
-            
+
             let real_micros = delta.whole_microseconds() as u64 / speed_factor;
             if real_micros > 0 {
                 std::thread::sleep(StdDuration::from_micros(real_micros));

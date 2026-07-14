@@ -1,20 +1,41 @@
 use uuid::Uuid;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LearningEvent {
-    StrategyDiscovered { strategy_id: Uuid, blueprint_hash: String },
-    EdgeDecay { strategy_id: Uuid, decay_rate: rust_decimal::Decimal },
-    NewFeature { feature_id: Uuid, feature_name: String },
-    StrategyRetired { strategy_id: Uuid, reason: String },
+    StrategyDiscovered {
+        strategy_id: Uuid,
+        blueprint_hash: String,
+    },
+    EdgeDecay {
+        strategy_id: Uuid,
+        decay_rate: rust_decimal::Decimal,
+    },
+    NewFeature {
+        feature_id: Uuid,
+        feature_name: String,
+    },
+    StrategyRetired {
+        strategy_id: Uuid,
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConsumedLearningData {
-    RegimeMemory { regime_id: Uuid, confidence: rust_decimal::Decimal },
-    Anomaly { anomaly_id: Uuid, market: String },
-    Recommendation { target_id: Uuid, action: String },
+    RegimeMemory {
+        regime_id: Uuid,
+        confidence: rust_decimal::Decimal,
+    },
+    Anomaly {
+        anomaly_id: Uuid,
+        market: String,
+    },
+    Recommendation {
+        target_id: Uuid,
+        action: String,
+    },
 }
 
 pub trait LearningPublisher {

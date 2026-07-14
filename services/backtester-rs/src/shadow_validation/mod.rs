@@ -52,7 +52,8 @@ impl ShadowValidator {
             fill_size_diff: shadow.fill_size - live.fill_size,
             latency_diff_ms: shadow.latency_ms - live.latency_ms,
             slippage_diff: shadow.slippage - live.slippage,
-            risk_intervention_diff: (shadow.risk_interventions as i64) - (live.risk_interventions as i64),
+            risk_intervention_diff: (shadow.risk_interventions as i64)
+                - (live.risk_interventions as i64),
         }
     }
 }

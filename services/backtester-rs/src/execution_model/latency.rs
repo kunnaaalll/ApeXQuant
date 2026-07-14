@@ -27,13 +27,12 @@ impl LatencyModel {
     }
 
     pub fn total_latency(&self, ctx: &LatencyContext) -> Duration {
-        let mut total = self.base_network_latency
-            + self.base_broker_latency
-            + self.base_exchange_latency;
+        let mut total =
+            self.base_network_latency + self.base_broker_latency + self.base_exchange_latency;
 
         if ctx.is_high_load {
             // Under high load, latency doubles deterministically.
-            total *= 2; 
+            total *= 2;
         }
         total
     }

@@ -82,12 +82,12 @@ impl EventStore {
         let mut encoded = vec![];
         prost::Message::encode(event, &mut encoded)?;
 
-        let event_id_str = event.event_id.as_ref().map(|id| String::from_utf8_lossy(&id.value).into_owned()).unwrap_or_default();
-        let event_id = uuid::Uuid::from_str(&event_id_str).unwrap_or_else(|_| uuid::Uuid::new_v4());
+        let event_id_str = event.event_id.as_ref().map(|id| String::from_utf8_lossy(&id.value).into_owned()).ok_or_else(|| anyhow::anyhow!("Missing event ID"))?;
+        let event_id = uuid::Uuid::from_str(&event_id_str).context("Invalid event ID format")?;
         
         let occurred_at: DateTime<Utc> = event.occurred_at.as_ref()
-            .map(|t| DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default())
-            .unwrap_or_else(|| Utc::now());
+            .and_then(|t| DateTime::<Utc>::from_timestamp(t.seconds, t.nanos as u32))
+            .ok_or_else(|| anyhow::anyhow!("Missing or invalid occurred_at timestamp"))?;
 
         let published_at: DateTime<Utc> = Utc::now();
 
@@ -134,7 +134,12 @@ impl EventStore {
         .await
         .context("Failed to get stream stats")?;
 
-        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0), row.2, row.3))
+        Ok((
+            row.0.ok_or_else(|| anyhow::anyhow!("Missing total events"))?,
+            row.1.ok_or_else(|| anyhow::anyhow!("Missing byte size"))?,
+            row.2,
+            row.3
+        ))
     }
 
     pub async fn update_subscriber_offset(&self, consumer_group: &str, topic: &str, last_event_id: uuid::Uuid, last_occurred_at: DateTime<Utc>) -> Result<()> {

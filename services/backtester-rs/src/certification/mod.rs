@@ -41,7 +41,11 @@ impl CertificationEngine {
         Self { criteria }
     }
 
-    pub fn evaluate_promotion(&self, current_stage: CertificationStage, metrics: &StrategyMetrics) -> (bool, CertificationStage) {
+    pub fn evaluate_promotion(
+        &self,
+        current_stage: CertificationStage,
+        metrics: &StrategyMetrics,
+    ) -> (bool, CertificationStage) {
         let is_eligible = metrics.current_parity >= self.criteria.min_parity_threshold
             && metrics.current_robustness >= self.criteria.min_robustness_threshold
             && metrics.total_trades >= self.criteria.min_trades

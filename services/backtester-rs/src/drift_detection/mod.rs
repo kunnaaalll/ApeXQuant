@@ -31,7 +31,11 @@ pub struct DriftReport {
 
 pub trait DriftDetector {
     type InputSeries;
-    fn detect_drift(&self, historical: &Self::InputSeries, recent: &Self::InputSeries) -> DriftReport;
+    fn detect_drift(
+        &self,
+        historical: &Self::InputSeries,
+        recent: &Self::InputSeries,
+    ) -> DriftReport;
 }
 
 pub struct MarketBehaviourDriftDetector {

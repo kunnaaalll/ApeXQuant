@@ -51,36 +51,49 @@ pub struct BenchmarkSnapshot {
 
 pub trait EventPublisher {
     fn publish_market_event(&mut self, event: ReplayEvent) -> Result<(), &'static str>;
-    fn publish_execution_event(&mut self, order_id: &str, status: &str) -> Result<(), &'static str>;
-    
+    fn publish_execution_event(&mut self, order_id: &str, status: &str)
+        -> Result<(), &'static str>;
+
     // Phase 3 Learning Engine integration
     fn publish_learning_discovery(&mut self, data: &str) -> Result<(), &'static str>;
     fn publish_learning_optimization(&mut self, data: &str) -> Result<(), &'static str>;
-    fn publish_learning_promotion_candidate(&mut self, strategy_id: &str) -> Result<(), &'static str>;
-    fn publish_learning_retirement_candidate(&mut self, strategy_id: &str) -> Result<(), &'static str>;
-    
+    fn publish_learning_promotion_candidate(
+        &mut self,
+        strategy_id: &str,
+    ) -> Result<(), &'static str>;
+    fn publish_learning_retirement_candidate(
+        &mut self,
+        strategy_id: &str,
+    ) -> Result<(), &'static str>;
+
     // Phase 4 Learning Engine integration
-    fn publish_learning_account_optimization(&mut self, account_id: &str) -> Result<(), &'static str>;
+    fn publish_learning_account_optimization(
+        &mut self,
+        account_id: &str,
+    ) -> Result<(), &'static str>;
     fn publish_learning_capital_rotation(&mut self, account_id: &str) -> Result<(), &'static str>;
     fn publish_learning_payout_analysis(&mut self, account_id: &str) -> Result<(), &'static str>;
 
     // Phase 5 Learning Engine Integration
     fn publish_learning_parity_drift(&mut self, data: &str) -> Result<(), &'static str>;
-    fn publish_learning_production_candidate(&mut self, strategy_id: &str) -> Result<(), &'static str>;
+    fn publish_learning_production_candidate(
+        &mut self,
+        strategy_id: &str,
+    ) -> Result<(), &'static str>;
     fn publish_learning_certification_update(&mut self, data: &str) -> Result<(), &'static str>;
 }
 
 pub trait EventSubscriber {
     fn on_market_event(&mut self, event: ReplayEvent);
     fn on_execution_event(&mut self, order_id: &str, status: &str);
-    
+
     // Phase 3 & 5 Strategy Engine integration
     fn on_strategy_signal(&mut self, signal: &str);
     fn on_strategy_health(&mut self, health_status: &str);
     fn on_strategy_regime(&mut self, regime: &str);
     fn on_strategy_performance(&mut self, data: &str);
     fn on_strategy_lifecycle(&mut self, data: &str);
-    
+
     // Phase 4 & 5 Portfolio Engine integration
     fn on_portfolio_exposure(&mut self, exposure_data: &str);
     fn on_portfolio_heat(&mut self, heat_data: &str);
