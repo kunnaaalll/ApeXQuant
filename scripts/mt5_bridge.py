@@ -528,6 +528,51 @@ def get_trade_history(limit: int = 1000):
     return result
 
 
+class RateRecord(BaseModel):
+    time: int
+    open: float
+    high: float
+    low: float
+    close: float
+    tick_volume: int
+    spread: int
+    real_volume: int
+
+@app.get("/history/rates/{symbol}", response_model=List[RateRecord])
+def get_historical_rates(symbol: str, timeframe: str = "M1", count: int = 10000):
+    """Return historical OHLC rates (candles) for a symbol."""
+    ensure_initialized()
+    mt5.symbol_select(symbol, True)
+    
+    tf_map = {
+        "M1": mt5.TIMEFRAME_M1,
+        "M5": mt5.TIMEFRAME_M5,
+        "M15": mt5.TIMEFRAME_M15,
+        "H1": mt5.TIMEFRAME_H1,
+        "D1": mt5.TIMEFRAME_D1,
+    }
+    tf = tf_map.get(timeframe.upper(), mt5.TIMEFRAME_M1)
+    
+    rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
+    if rates is None:
+        raise HTTPException(status_code=404, detail=f"Failed to fetch rates for {symbol}: {mt5.last_error()}")
+        
+    result = []
+    for r in rates:
+        result.append(RateRecord(
+            time=int(r[0]),
+            open=float(r[1]),
+            high=float(r[2]),
+            low=float(r[3]),
+            close=float(r[4]),
+            tick_volume=int(r[5]),
+            spread=int(r[6]),
+            real_volume=int(r[7])
+        ))
+        
+    return result
+
+
 @app.get("/health/full")
 def full_health_check():
     """Comprehensive health check — terminal info, connection state, account snapshot. Stage 1 & Stage 7."""

@@ -42,6 +42,8 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/${APP}/node_modules ./apps/${APP}/node_modules
+COPY --from=deps /app/shared/contracts/node_modules ./shared/contracts/node_modules
+COPY --from=deps /app/shared/events/node_modules ./shared/events/node_modules
 
 # Copy workspace
 COPY package.json pnpm-workspace.yaml turbo.json tsconfig.json ./
@@ -107,7 +109,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
 # Start application
-CMD ["node", "apps/${APP}/dist/index.js"]
+CMD node apps/${APP}/dist/index.js
 
 # ---------------- Development Stage ----------------
 FROM node:${NODE_VERSION}-alpine AS development
@@ -133,4 +135,4 @@ RUN pnpm install --no-frozen-lockfile
 # Copy source code
 COPY . .
 
-CMD ["pnpm", "dev", "--filter=@apex-v3/${APP}"]
+CMD pnpm dev --filter=@apex-v3/${APP}

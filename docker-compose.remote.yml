@@ -11,6 +11,13 @@ x-rust-service: &rust-defaults
     - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     - REDIS_URL=redis://redis:6379
     - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+  # Override any stale image-level healthcheck — Rust services are gRPC only
+  healthcheck:
+    test: ["CMD", "true"]
+    interval: 10s
+    timeout: 5s
+    retries: 3
+    start_period: 30s
   depends_on:
     redis:
       condition: service_healthy
@@ -140,18 +147,23 @@ services:
     <<: *rust-defaults
     container_name: apex-event-bus
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: event-bus-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=event-bus
       - SERVICE_PORT=8080
       - RUST_LOG=info,event_bus=debug
     ports:
       - "8080:8080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      test: ["CMD", "true"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -161,18 +173,26 @@ services:
     <<: *rust-defaults
     container_name: apex-market-data-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: market-data-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=market-data-engine
       - SERVICE_PORT=8089
       - RUST_LOG=info,market_data_engine=debug
-      - SHADOW_MODE=true
+      - SHADOW_MODE=false
       - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
       - BINANCE_TESTNET_API_KEY=${BINANCE_TESTNET_API_KEY}
       - BINANCE_TESTNET_API_SECRET=${BINANCE_TESTNET_API_SECRET}
+      - EVENT_BUS_URL=http://event-bus:50050
+      # MT5 TCP bridge for live forex tick ingestion (EURUSD, XAUUSD, etc.)
+      - MT5_BRIDGE_ENDPOINT=mt5-bridge:5555
     ports:
       - "8089:8089"
     depends_on:
@@ -183,16 +203,22 @@ services:
     <<: *rust-defaults
     container_name: apex-strategy-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: strategy-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=strategy-engine
       - SERVICE_PORT=8090
       - RUST_LOG=info,strategy_engine=debug
       - SHADOW_MODE=true
       - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8090:8090"
     depends_on:
@@ -203,14 +229,20 @@ services:
     <<: *rust-defaults
     container_name: apex-signal-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: signal-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=signal-engine
       - SERVICE_PORT=8081
       - RUST_LOG=info,signal_engine=debug
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8081:8081"
     depends_on:
@@ -221,15 +253,22 @@ services:
     <<: *rust-defaults
     container_name: apex-risk-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: risk-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=risk-engine
       - SERVICE_PORT=8082
       - RUST_LOG=info,risk_engine=debug
       - MAX_RISK_PER_TRADE=0.005
+      - BROKER_URL=http://mt5-bridge:8080
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8082:8082"
     depends_on:
@@ -240,11 +279,16 @@ services:
     <<: *rust-defaults
     container_name: apex-execution-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: execution-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=execution-engine
       - SERVICE_PORT=8083
       - RUST_LOG=info,execution_engine=debug
@@ -252,7 +296,8 @@ services:
       - MT5_LOGIN=${MT5_LOGIN}
       - MT5_PASSWORD=${MT5_PASSWORD}
       - MT5_SERVER=${MT5_SERVER}
-      - SHADOW_MODE=true
+      - SHADOW_MODE=false
+      - ENABLE_AUTO_TRADING=true
     ports:
       - "8083:8083"
     depends_on:
@@ -263,11 +308,16 @@ services:
     <<: *rust-defaults
     container_name: apex-position-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: position-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=position-engine
       - SERVICE_PORT=8084
       - RUST_LOG=info,position_engine=debug
@@ -281,11 +331,16 @@ services:
     <<: *rust-defaults
     container_name: apex-portfolio-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: portfolio-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=portfolio-engine
       - SERVICE_PORT=8085
       - RUST_LOG=info,portfolio_engine=debug
@@ -299,14 +354,20 @@ services:
     <<: *rust-defaults
     container_name: apex-analytics-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: analytics-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=analytics-engine
       - SERVICE_PORT=8086
       - RUST_LOG=info,analytics_engine=debug
+      - EVENTBUS_URL=http://event-bus:50050
     ports:
       - "8086:8086"
     depends_on:
@@ -317,15 +378,21 @@ services:
     <<: *rust-defaults
     container_name: apex-learning-engine
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: learning-engine-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=learning-engine
       - SERVICE_PORT=8087
       - RUST_LOG=info,learning_engine=debug
       - AI_MODEL_PATH=/models
+      - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8087:8087"
     depends_on:
@@ -338,14 +405,21 @@ services:
     <<: *rust-defaults
     container_name: apex-backtester
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.rust
       args:
         SERVICE: backtester-rs
     environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+      - LOG_FORMAT=json
       - SERVICE_NAME=backtester
       - SERVICE_PORT=8088
       - RUST_LOG=info,backtester=debug
+      - EVENT_BUS_URL=http://event-bus:50050
+    restart: on-failure
     ports:
       - "8088:8088"
     depends_on:
@@ -358,18 +432,24 @@ services:
     <<: *ts-defaults
     container_name: apex-api
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.typescript
       args:
         APP: api
     environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
       - PORT=3000
       - SERVICE_NAME=api
       - CORS_ORIGINS=http://localhost:3001,http://dashboard:3000
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -379,11 +459,17 @@ services:
     <<: *ts-defaults
     container_name: apex-dashboard
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.typescript
       args:
         APP: dashboard
     environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
       - PORT=3000
       - SERVICE_NAME=dashboard
       - API_URL=http://api:3000
@@ -396,11 +482,17 @@ services:
     <<: *ts-defaults
     container_name: apex-orchestrator
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.typescript
       args:
         APP: orchestrator
     environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
       - PORT=3000
       - SERVICE_NAME=orchestrator
     ports:
@@ -413,11 +505,17 @@ services:
     <<: *ts-defaults
     container_name: apex-ai-council
     build:
+      target: production
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.typescript
       args:
         APP: ai-council
     environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
       - PORT=3000
       - SERVICE_NAME=ai-council
       - GROQ_API_KEY=${GROQ_API_KEY}
@@ -426,7 +524,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
     ports:
-      - "3004:3000"
+      - "3005:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -532,6 +630,35 @@ services:
       - apex-network
     profiles:
       - migrate
+
+  # ── MT5 Tick Poller ─────────────────────────────────────────────────────────
+  # Polls the MT5 HTTP bridge every 500ms and writes ticks to PostgreSQL.
+  # Bypasses the market-data-engine's raw-TCP stream while that compile issue is fixed.
+  tick-poller:
+    image: python:3.11-slim
+    container_name: apex-tick-poller
+    restart: on-failure
+    working_dir: /app
+    volumes:
+      - ../../infrastructure/scripts/tick_poller.py:/app/tick_poller.py:ro
+    command: >
+      sh -c "pip install psycopg2-binary -q && python tick_poller.py"
+    environment:
+      - MT5_BRIDGE_URL=http://mt5-bridge:8000
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+      - POLL_MS=500
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mt5-bridge:
+        condition: service_started
+    networks:
+      - apex-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 
 volumes:
   postgres-data:

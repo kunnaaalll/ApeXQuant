@@ -12,7 +12,7 @@ dotenv.config();
 
 const logger = pino();
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Engine gRPC endpoints (from env or default local ports)
 const ENGINE_URLS = {
