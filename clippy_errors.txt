@@ -1,0 +1,52 @@
+warning: /Applications/My Mac/Development/Projects/APEX/apex-v3/Cargo.toml: unused manifest key: workspace.edition
+warning: /Applications/My Mac/Development/Projects/APEX/apex-v3/Cargo.toml: unused manifest key: workspace.name
+warning: /Applications/My Mac/Development/Projects/APEX/apex-v3/Cargo.toml: unused manifest key: workspace.profile
+warning: /Applications/My Mac/Development/Projects/APEX/apex-v3/Cargo.toml: unused manifest key: workspace.version
+warning: /Applications/My Mac/Development/Projects/APEX/apex-v3/services/portfolio-engine-rs/Cargo.toml: unused manifest key: dependencies.rust_decimal.maths
+    Checking performance-engine-rs v3.0.0 (/Applications/My Mac/Development/Projects/APEX/apex-v3/services/performance-engine-rs)
+services/performance-engine-rs/src/drawdown/mod.rs:3:5: error: unused import: `rust_decimal_macros::dec`
+services/performance-engine-rs/src/timeframe/calculator.rs:2:5: error: unused import: `rust_decimal::prelude::FromPrimitive`
+services/performance-engine-rs/src/validation/monte_carlo.rs:6:5: error: unused import: `std::collections::BTreeMap`
+services/performance-engine-rs/src/validation/monte_carlo.rs:10:5: error: unused import: `crate::analytics::engine::AnalyticsEngine`
+services/performance-engine-rs/src/analytics/ranking.rs:34:9: error: consider using `sort_by_key`
+services/performance-engine-rs/src/analytics/ranking.rs:38:9: error: consider using `sort_by_key`
+services/performance-engine-rs/src/analytics/ranking.rs:42:9: error: consider using `sort_by_key`
+services/performance-engine-rs/src/analytics/ranking.rs:46:9: error: consider using `sort_by_key`
+services/performance-engine-rs/src/confidence/score.rs:33:5: error: this function has too many arguments (10/7)
+services/performance-engine-rs/src/degradation/detector.rs:9:5: error: this function has too many arguments (9/7)
+services/performance-engine-rs/src/confidence/tests.rs:2:1: error: module has the same name as its containing module
+services/performance-engine-rs/src/edge/calculator.rs:34:9: error: manual implementation of an assign operation: help: replace it with: `edge_score *= edge_confidence`
+services/performance-engine-rs/src/regime/calculator.rs:12:5: error: this function has too many arguments (9/7)
+services/performance-engine-rs/src/session/calculator.rs:12:5: error: this function has too many arguments (9/7)
+services/performance-engine-rs/src/stability/calculator.rs:9:5: error: this function has too many arguments (8/7)
+services/performance-engine-rs/src/storage/mod.rs:337:20: error: unnecessary closure used to substitute value for `Option::None`
+services/performance-engine-rs/src/symbol/calculator.rs:12:5: error: this function has too many arguments (9/7)
+services/performance-engine-rs/src/timeframe/calculator.rs:12:5: error: this function has too many arguments (9/7)
+services/performance-engine-rs/src/streaks/tests.rs:2:1: error: module has the same name as its containing module
+services/performance-engine-rs/src/validation/benchmark.rs:15:5: error: you should consider adding a `Default` implementation for `PerformanceBenchmark`
+services/performance-engine-rs/src/validation/certification.rs:26:5: error: you should consider adding a `Default` implementation for `CertificationEngine`
+services/performance-engine-rs/src/validation/determinism.rs:13:5: error: you should consider adding a `Default` implementation for `DeterminismValidator`
+services/performance-engine-rs/src/validation/parity.rs:13:5: error: you should consider adding a `Default` implementation for `PerformanceParityValidator`
+services/performance-engine-rs/src/validation/replay.rs:13:5: error: you should consider adding a `Default` implementation for `ReplayValidator`
+services/performance-engine-rs/src/validation/reporter.rs:14:9: error: empty string literal in `writeln!`
+services/performance-engine-rs/src/validation/reporter.rs:17:9: error: empty string literal in `writeln!`
+services/performance-engine-rs/src/validation/stress.rs:15:5: error: you should consider adding a `Default` implementation for `StressSuite`
+services/performance-engine-rs/src/shadow/comparison.rs:22:1: error: this `impl` can be derived
+services/performance-engine-rs/src/shadow/reporter.rs:14:9: error: empty string literal in `writeln!`
+services/performance-engine-rs/src/shadow/reporter.rs:20:9: error: empty string literal in `writeln!`
+services/performance-engine-rs/src/shadow/reporter.rs:27:9: error: empty string literal in `writeln!`
+services/performance-engine-rs/src/intelligence/pattern_intelligence.rs:28:5: error: this function has too many arguments (9/7)
+services/performance-engine-rs/src/clustering/correlation_groups.rs:11:5: error: you should consider adding a `Default` implementation for `CorrelationGroups`
+services/performance-engine-rs/src/clustering/behavior_groups.rs:14:5: error: you should consider adding a `Default` implementation for `BehaviorGroups`
+services/performance-engine-rs/src/discovery/edge_discovery.rs:24:5: error: you should consider adding a `Default` implementation for `EdgeDiscovery`
+services/performance-engine-rs/src/memory/context_memory.rs:11:5: error: you should consider adding a `Default` implementation for `ContextMemory`
+services/performance-engine-rs/src/recommendations/focus_recommendation.rs:23:9: error: consider using `sort_by_key`
+services/performance-engine-rs/src/meta/strategy_state.rs:14:1: error: this `impl` can be derived
+services/performance-engine-rs/src/intelligence/tests.rs:2:1: error: module has the same name as its containing module
+services/performance-engine-rs/src/drift/tests.rs:2:1: error: module has the same name as its containing module
+services/performance-engine-rs/src/learning/tests.rs:2:1: error: module has the same name as its containing module
+services/performance-engine-rs/src/meta/meta_recommendation.rs:138:16: error: this `map_or` can be simplified
+services/performance-engine-rs/src/counterfactual/parameter_comparison.rs:35:9: error: consider using `sort_by_key`
+error: could not compile `performance-engine-rs` (lib) due to 38 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `performance-engine-rs` (lib test) due to 43 previous errors

@@ -1,0 +1,555 @@
+version: '3.9'
+
+x-rust-service: &rust-defaults
+  build:
+    context: ../..
+    dockerfile: infrastructure/docker/Dockerfile.rust
+    target: production
+  environment:
+    - RUST_LOG=info
+    - LOG_FORMAT=json
+    - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+    - REDIS_URL=redis://redis:6379
+    - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  networks:
+    - apex-network
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+x-typescript-service: &ts-defaults
+  build:
+    context: ../..
+    dockerfile: infrastructure/docker/Dockerfile.typescript
+    target: production
+  environment:
+    - NODE_ENV=production
+    - LOG_LEVEL=info
+    - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+    event-bus:
+      condition: service_started
+  networks:
+    - apex-network
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+services:
+  # ==================== CORE INFRASTRUCTURE ====================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: apex-postgres
+    environment:
+      POSTGRES_USER: apex
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: apex_v3
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apex -d apex_v3"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: apex-redis
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: apex-redis-exporter
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - apex-network
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: apex-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - apex-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  mt5-bridge:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.mt5_wine
+    container_name: apex-mt5-bridge
+    ports:
+      - "8000:8000"
+    environment:
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER}
+    networks:
+      - apex-network
+    restart: unless-stopped
+
+  # ==================== RUST SERVICES ====================
+  # Event Bus must start first as other services depend on it
+
+  event-bus:
+    <<: *rust-defaults
+    container_name: apex-event-bus
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: event-bus-rs
+    environment:
+      - SERVICE_NAME=event-bus
+      - SERVICE_PORT=8080
+      - RUST_LOG=info,event_bus=debug
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  market-data-engine:
+    <<: *rust-defaults
+    container_name: apex-market-data-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: market-data-engine-rs
+    environment:
+      - SERVICE_NAME=market-data-engine
+      - SERVICE_PORT=8089
+      - RUST_LOG=info,market_data_engine=debug
+      - SHADOW_MODE=true
+      - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
+      - BINANCE_TESTNET_API_KEY=${BINANCE_TESTNET_API_KEY}
+      - BINANCE_TESTNET_API_SECRET=${BINANCE_TESTNET_API_SECRET}
+    ports:
+      - "8089:8089"
+    depends_on:
+      event-bus:
+        condition: service_healthy
+
+  strategy-engine:
+    <<: *rust-defaults
+    container_name: apex-strategy-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: strategy-engine-rs
+    environment:
+      - SERVICE_NAME=strategy-engine
+      - SERVICE_PORT=8090
+      - RUST_LOG=info,strategy_engine=debug
+      - SHADOW_MODE=true
+      - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
+    ports:
+      - "8090:8090"
+    depends_on:
+      event-bus:
+        condition: service_healthy
+
+  signal-engine:
+    <<: *rust-defaults
+    container_name: apex-signal-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: signal-engine-rs
+    environment:
+      - SERVICE_NAME=signal-engine
+      - SERVICE_PORT=8081
+      - RUST_LOG=info,signal_engine=debug
+    ports:
+      - "8081:8081"
+    depends_on:
+      event-bus:
+        condition: service_healthy
+
+  risk-engine:
+    <<: *rust-defaults
+    container_name: apex-risk-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: risk-engine-rs
+    environment:
+      - SERVICE_NAME=risk-engine
+      - SERVICE_PORT=8082
+      - RUST_LOG=info,risk_engine=debug
+      - MAX_RISK_PER_TRADE=0.005
+    ports:
+      - "8082:8082"
+    depends_on:
+      event-bus:
+        condition: service_healthy
+
+  execution-engine:
+    <<: *rust-defaults
+    container_name: apex-execution-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: execution-engine-rs
+    environment:
+      - SERVICE_NAME=execution-engine
+      - SERVICE_PORT=8083
+      - RUST_LOG=info,execution_engine=debug
+      - MT5_BRIDGE_URL=http://mt5-bridge:8000
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER}
+      - SHADOW_MODE=true
+    ports:
+      - "8083:8083"
+    depends_on:
+      - risk-engine
+      - event-bus
+
+  position-engine:
+    <<: *rust-defaults
+    container_name: apex-position-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: position-engine-rs
+    environment:
+      - SERVICE_NAME=position-engine
+      - SERVICE_PORT=8084
+      - RUST_LOG=info,position_engine=debug
+    ports:
+      - "8084:8084"
+    depends_on:
+      - execution-engine
+      - event-bus
+
+  portfolio-engine:
+    <<: *rust-defaults
+    container_name: apex-portfolio-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: portfolio-engine-rs
+    environment:
+      - SERVICE_NAME=portfolio-engine
+      - SERVICE_PORT=8085
+      - RUST_LOG=info,portfolio_engine=debug
+    ports:
+      - "8085:8085"
+    depends_on:
+      - position-engine
+      - event-bus
+
+  analytics-engine:
+    <<: *rust-defaults
+    container_name: apex-analytics-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: analytics-engine-rs
+    environment:
+      - SERVICE_NAME=analytics-engine
+      - SERVICE_PORT=8086
+      - RUST_LOG=info,analytics_engine=debug
+    ports:
+      - "8086:8086"
+    depends_on:
+      - portfolio-engine
+      - event-bus
+
+  learning-engine:
+    <<: *rust-defaults
+    container_name: apex-learning-engine
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: learning-engine-rs
+    environment:
+      - SERVICE_NAME=learning-engine
+      - SERVICE_PORT=8087
+      - RUST_LOG=info,learning_engine=debug
+      - AI_MODEL_PATH=/models
+    ports:
+      - "8087:8087"
+    depends_on:
+      - analytics-engine
+      - event-bus
+    volumes:
+      - model-data:/models
+
+  backtester:
+    <<: *rust-defaults
+    container_name: apex-backtester
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.rust
+      args:
+        SERVICE: backtester-rs
+    environment:
+      - SERVICE_NAME=backtester
+      - SERVICE_PORT=8088
+      - RUST_LOG=info,backtester=debug
+    ports:
+      - "8088:8088"
+    depends_on:
+      - signal-engine
+      - event-bus
+
+  # ==================== TYPESCRIPT APPLICATIONS ====================
+
+  api:
+    <<: *ts-defaults
+    container_name: apex-api
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.typescript
+      args:
+        APP: api
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=api
+      - CORS_ORIGINS=http://localhost:3001,http://dashboard:3000
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  dashboard:
+    <<: *ts-defaults
+    container_name: apex-dashboard
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.typescript
+      args:
+        APP: dashboard
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=dashboard
+      - API_URL=http://api:3000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+
+  orchestrator:
+    <<: *ts-defaults
+    container_name: apex-orchestrator
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.typescript
+      args:
+        APP: orchestrator
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=orchestrator
+    ports:
+      - "3002:3000"
+    depends_on:
+      - api
+      - event-bus
+
+  ai-council:
+    <<: *ts-defaults
+    container_name: apex-ai-council
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.typescript
+      args:
+        APP: ai-council
+    environment:
+      - PORT=3000
+      - SERVICE_NAME=ai-council
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+    ports:
+      - "3004:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - event-bus
+
+  # ==================== OBSERVABILITY ====================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: apex-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    volumes:
+      - ../monitoring/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - apex-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: apex-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3003
+    volumes:
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3004:3000"
+    networks:
+      - apex-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: apex-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    networks:
+      - apex-network
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: apex-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../monitoring/loki:/etc/loki:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - apex-network
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: apex-promtail
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ../monitoring/promtail:/etc/promtail:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
+    networks:
+      - apex-network
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ==================== UTILITY ====================
+
+  migrate:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.typescript
+      target: builder
+      args:
+        APP: api
+    command: pnpm db:migrate
+    environment:
+      - DATABASE_URL=postgres://apex:${DB_PASSWORD}@postgres:5432/apex_v3
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - apex-network
+    profiles:
+      - migrate
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  model-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  loki-data:
+    driver: local
+
+networks:
+  apex-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

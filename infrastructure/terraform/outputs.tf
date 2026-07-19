@@ -1,24 +1,24 @@
-output "eks_cluster_name" {
-  description = "The name of the EKS cluster"
-  value       = module.eks.cluster_name
+output "gke_cluster_name" {
+  description = "The name of the GKE cluster"
+  value       = google_container_cluster.apex_cluster.name
 }
 
-output "eks_cluster_endpoint" {
-  description = "Endpoint for EKS control plane"
-  value       = module.eks.cluster_endpoint
+output "gke_cluster_endpoint" {
+  description = "Endpoint for GKE control plane"
+  value       = google_container_cluster.apex_cluster.endpoint
 }
 
-output "rds_endpoint" {
-  description = "RDS instance endpoint"
-  value       = module.db.db_instance_endpoint
+output "cloud_sql_connection_name" {
+  description = "Cloud SQL connection name"
+  value       = google_sql_database_instance.apex_postgres.connection_name
 }
 
-output "redis_endpoint" {
-  description = "Redis cluster endpoint"
-  value       = aws_elasticache_replication_group.apex_redis.configuration_endpoint_address
+output "redis_host" {
+  description = "Redis host"
+  value       = google_redis_instance.apex_redis.host
 }
 
-output "secrets_manager_arn" {
-  description = "ARN of the Secrets Manager secret"
-  value       = aws_secretsmanager_secret.apex_secrets.arn
+output "secret_id" {
+  description = "ID of the Secret Manager secret"
+  value       = google_secret_manager_secret.apex_secrets.secret_id
 }
