@@ -1,6 +1,6 @@
-use rust_decimal::Decimal;
 use super::events::VarRiskEvent;
 use super::Severity;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VarRiskSnapshot {

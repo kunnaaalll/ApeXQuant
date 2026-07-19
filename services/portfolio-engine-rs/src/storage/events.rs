@@ -59,7 +59,11 @@ pub struct EventRebuilder;
 impl EventRebuilder {
     /// Reconstructs the aggregate state given an initial state and a list of events.
     /// This is an example interface. Actual rebuilding will be domain-specific.
-    pub fn rebuild<S, F>(initial_state: S, events: &[EventRecord], mut apply_fn: F) -> Result<S, anyhow::Error>
+    pub fn rebuild<S, F>(
+        initial_state: S,
+        events: &[EventRecord],
+        mut apply_fn: F,
+    ) -> Result<S, anyhow::Error>
     where
         F: FnMut(S, &EventRecord) -> Result<S, anyhow::Error>,
     {

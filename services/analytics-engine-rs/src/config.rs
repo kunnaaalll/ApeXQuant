@@ -33,11 +33,19 @@ impl AnalyticsConfig {
             health_bind_addr: optional_var("HEALTH_BIND_ADDR")
                 .unwrap_or_else(|| "0.0.0.0:8084".to_string()),
             db_max_connections: optional_var("DB_MAX_CONNECTIONS")
-                .map(|v| v.parse::<u32>().map_err(|e| ConfigError::InvalidValue("DB_MAX_CONNECTIONS".to_string(), e.to_string())))
+                .map(|v| {
+                    v.parse::<u32>().map_err(|e| {
+                        ConfigError::InvalidValue("DB_MAX_CONNECTIONS".to_string(), e.to_string())
+                    })
+                })
                 .transpose()?
                 .unwrap_or(5),
             batch_size: optional_var("ANALYTICS_BATCH_SIZE")
-                .map(|v| v.parse::<usize>().map_err(|e| ConfigError::InvalidValue("ANALYTICS_BATCH_SIZE".to_string(), e.to_string())))
+                .map(|v| {
+                    v.parse::<usize>().map_err(|e| {
+                        ConfigError::InvalidValue("ANALYTICS_BATCH_SIZE".to_string(), e.to_string())
+                    })
+                })
                 .transpose()?
                 .unwrap_or(100),
         })

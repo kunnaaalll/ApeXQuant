@@ -28,7 +28,13 @@ impl CertificationEngine {
     }
 
     pub fn certify(&self, result: &CertificationResult) -> CertificationState {
-        if result.passes_parity && result.passes_determinism && result.passes_benchmark && result.passes_replay && result.passes_monte_carlo && result.passes_stress_tests {
+        if result.passes_parity
+            && result.passes_determinism
+            && result.passes_benchmark
+            && result.passes_replay
+            && result.passes_monte_carlo
+            && result.passes_stress_tests
+        {
             CertificationState::InstitutionalCertified
         } else if result.passes_parity && result.passes_determinism && result.passes_benchmark {
             CertificationState::ProductionCertified
@@ -39,5 +45,11 @@ impl CertificationEngine {
         } else {
             CertificationState::NotReady
         }
+    }
+}
+
+impl Default for CertificationEngine {
+    fn default() -> Self {
+        Self::new()
     }
 }

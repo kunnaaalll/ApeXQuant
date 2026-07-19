@@ -12,10 +12,10 @@ pub enum WeaknessState {
 /// Identifies the worst performers — must be avoided or reduced.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeaknessRanking {
-    pub rank: u32,               // 1 = worst
-    pub dimension: String,       // "symbol", "session", "pattern", "regime", "timeframe"
+    pub rank: u32,         // 1 = worst
+    pub dimension: String, // "symbol", "session", "pattern", "regime", "timeframe"
     pub label: String,
-    pub expectancy: Decimal,     // negative or near-zero = weak
+    pub expectancy: Decimal, // negative or near-zero = weak
     pub profit_factor: Decimal,
     pub max_drawdown: Decimal,
     pub confidence: Decimal,
@@ -39,9 +39,7 @@ impl WeaknessRankingEngine {
             let score_a = a.expectancy * a.profit_factor;
             let score_b = b.expectancy * b.profit_factor;
             // ascending — most negative first
-            score_a
-                .cmp(&score_b)
-                .then(a.label.cmp(&b.label))
+            score_a.cmp(&score_b).then(a.label.cmp(&b.label))
         });
 
         for (i, c) in candidates.iter_mut().enumerate() {
@@ -51,11 +49,18 @@ impl WeaknessRankingEngine {
         candidates
     }
 
-    fn classify(expectancy: Decimal, profit_factor: Decimal, max_drawdown: Decimal) -> WeaknessState {
+    fn classify(
+        expectancy: Decimal,
+        profit_factor: Decimal,
+        max_drawdown: Decimal,
+    ) -> WeaknessState {
         use rust_decimal_macros::dec;
         if expectancy < dec!(-0.10) || profit_factor < dec!(0.70) || max_drawdown > dec!(0.30) {
             WeaknessState::Forbidden
-        } else if expectancy < dec!(-0.03) || profit_factor < dec!(0.90) || max_drawdown > dec!(0.20) {
+        } else if expectancy < dec!(-0.03)
+            || profit_factor < dec!(0.90)
+            || max_drawdown > dec!(0.20)
+        {
             WeaknessState::Danger
         } else if expectancy < dec!(0.02) || profit_factor < dec!(1.0) {
             WeaknessState::Weak

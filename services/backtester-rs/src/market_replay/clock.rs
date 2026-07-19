@@ -43,7 +43,7 @@ impl ReplayClock {
                 ReplaySpeed::TenX => 10,
                 ReplaySpeed::OneHundredX => 100,
                 ReplaySpeed::OneThousandX => 1000,
-                ReplaySpeed::Unlimited => unreachable!(),
+                ReplaySpeed::Unlimited => 1, // Fallback, though guarded by the if condition
             };
 
             let real_micros = delta.whole_microseconds() as u64 / speed_factor;

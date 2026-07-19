@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicU64, Ordering};
 use dashmap::DashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, RwLock};
 use time::OffsetDateTime;
 
 use super::errors::PortfolioError;
@@ -40,7 +40,10 @@ impl PortfolioRegistry {
 
     /// Read-only access to the current state.
     pub fn get_state(&self) -> Result<PortfolioState, PortfolioError> {
-        self.state.read().map(|guard| guard.clone()).map_err(|_| PortfolioError::SystemError("Lock poisoned".to_string()))
+        self.state
+            .read()
+            .map(|guard| guard.clone())
+            .map_err(|_| PortfolioError::SystemError("Lock poisoned".to_string()))
     }
 
     /// Get the current version of the portfolio state.
@@ -62,9 +65,12 @@ impl PortfolioRegistry {
     /// and generate a real-time snapshot.
     pub fn dispatch(&self, event: PortfolioEvent) -> Result<PortfolioSnapshot, PortfolioError> {
         let timestamp = OffsetDateTime::now_utc();
-        
-        let mut state_guard = self.state.write().map_err(|_| PortfolioError::SystemError("Lock poisoned".to_string()))?;
-        
+
+        let mut state_guard = self
+            .state
+            .write()
+            .map_err(|_| PortfolioError::SystemError("Lock poisoned".to_string()))?;
+
         // Try applying event
         state_guard.apply_event(&event, timestamp)?;
 
@@ -82,7 +88,7 @@ impl PortfolioRegistry {
             realtime_snapshots.push(snapshot.clone());
         }
 
-        // Logic for rolling up snapshots into M1, M5, etc. can be triggered here or 
+        // Logic for rolling up snapshots into M1, M5, etc. can be triggered here or
         // by an external cron worker that reads Realtime snapshots.
         // For Phase 1, the structures fully support this.
 

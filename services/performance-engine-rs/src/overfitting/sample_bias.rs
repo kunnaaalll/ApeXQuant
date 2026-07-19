@@ -42,13 +42,25 @@ impl SampleBiasDetector {
         let reason = if trade_count < MIN_WEAK {
             format!("Critically insufficient sample ({} trades). Results are statistically meaningless.", trade_count)
         } else if trade_count < MIN_ACCEPTABLE {
-            format!("Weak sample ({} trades). High variance — results may not generalise.", trade_count)
+            format!(
+                "Weak sample ({} trades). High variance — results may not generalise.",
+                trade_count
+            )
         } else if trade_count < MIN_STRONG {
-            format!("Acceptable sample ({} trades). Moderate confidence only.", trade_count)
+            format!(
+                "Acceptable sample ({} trades). Moderate confidence only.",
+                trade_count
+            )
         } else if trade_count < MIN_INSTITUTIONAL {
-            format!("Strong sample ({} trades). Results are reliable.", trade_count)
+            format!(
+                "Strong sample ({} trades). Results are reliable.",
+                trade_count
+            )
         } else {
-            format!("Institutional sample ({} trades). Full confidence.", trade_count)
+            format!(
+                "Institutional sample ({} trades). Full confidence.",
+                trade_count
+            )
         };
 
         SampleBiasReport {

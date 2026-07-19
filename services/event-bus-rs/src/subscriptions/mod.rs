@@ -1,2 +1,1 @@
-pub struct SubscriberManager {
-}
+pub struct SubscriberManager {}

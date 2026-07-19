@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 use chrono::Utc;
 use risk_engine::shadow::comparison::{ComparisonEngine, ComparisonState};
 use risk_engine::shadow::drift::{DriftEngine, DriftSeverity};

@@ -46,23 +46,19 @@ pub(crate) fn calculate_score(
     // Protect against underflow/overflow - use checked math or safe bounds
     // Score formula: (Expectancy * Confidence * Stability * SampleQuality) / Drawdown
     // Normalize to 0-100. Assume inputs are generally in 0-1 range except Expectancy which can be anything.
-    
+
     // We construct a scoring function that naturally bounds or we clamp it.
-    // We add 1.0 to expectancy in case it's negative to penalize but not crash, 
+    // We add 1.0 to expectancy in case it's negative to penalize but not crash,
     // actually let's just clamp the intermediate parts safely.
-    
+
     // Normalize expectancy to positive domain for score
-    let exp_factor = if expectancy < zero {
-        zero
-    } else {
-        expectancy
-    };
+    let exp_factor = if expectancy < zero { zero } else { expectancy };
 
     // Avoid overflow by multiplying step by step and clamping
     let p1 = exp_factor.checked_mul(confidence).unwrap_or(zero);
     let p2 = p1.checked_mul(stability).unwrap_or(zero);
     let p3 = p2.checked_mul(sample_quality).unwrap_or(zero);
-    
+
     let raw_score = p3.checked_div(safe_drawdown).unwrap_or(zero);
 
     // Scale to a realistic 0-100 range. We multiply by 100 and clamp.

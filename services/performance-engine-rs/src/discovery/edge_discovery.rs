@@ -36,7 +36,12 @@ impl EdgeDiscovery {
 
     /// Evaluates if an entity is improving or degrading based on short vs long term expectancy
     /// Expects absolute determinism
-    pub fn evaluate_state(short_term_expectancy: Decimal, long_term_expectancy: Decimal, sample_size: u32, min_sample: u32) -> Option<DiscoveryState> {
+    pub fn evaluate_state(
+        short_term_expectancy: Decimal,
+        long_term_expectancy: Decimal,
+        sample_size: u32,
+        min_sample: u32,
+    ) -> Option<DiscoveryState> {
         if sample_size < min_sample {
             return None;
         }
@@ -49,5 +54,11 @@ impl EdgeDiscovery {
         } else {
             Some(DiscoveryState::Stable)
         }
+    }
+}
+
+impl Default for EdgeDiscovery {
+    fn default() -> Self {
+        Self::new()
     }
 }

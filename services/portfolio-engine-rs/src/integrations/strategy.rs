@@ -1,5 +1,5 @@
-use tonic::transport::Channel;
 use apex_protos::strategy::strategy_service_client::StrategyServiceClient;
+use tonic::transport::Channel;
 
 pub struct StrategyClient {
     pub client: Option<StrategyServiceClient<Channel>>,
@@ -10,7 +10,9 @@ impl StrategyClient {
         let client = StrategyServiceClient::connect(url)
             .await
             .map_err(|e| format!("Failed to connect to strategy service: {}", e))?;
-        Ok(Self { client: Some(client) })
+        Ok(Self {
+            client: Some(client),
+        })
     }
 
     pub fn new() -> Self {

@@ -4,11 +4,11 @@
 //! Pearson correlation is computed from return time series. Covariance is derived
 //! from correlation × individual volatilities. Positive-definiteness validated via Cholesky.
 
-use serde::{Deserialize, Serialize};
-use rust_decimal::Decimal;
-use rust_decimal::prelude::{ToPrimitive, FromPrimitive};
-use std::collections::HashMap;
 use nalgebra::DMatrix;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CorrelationWindow {
@@ -58,7 +58,14 @@ impl CorrelationMatrix {
         for i in 0..size {
             data[i * size + i] = Decimal::ONE;
         }
-        Self { matrix_type, window, identifiers, data, rows: size, cols: size }
+        Self {
+            matrix_type,
+            window,
+            identifiers,
+            data,
+            rows: size,
+            cols: size,
+        }
     }
 
     /// Compute Pearson correlation matrix from historical return series.
@@ -81,7 +88,8 @@ impl CorrelationMatrix {
         }
 
         // Find common length
-        let min_len = identifiers.iter()
+        let min_len = identifiers
+            .iter()
             .map(|id| returns[id].len())
             .min()
             .unwrap_or(0);
@@ -91,9 +99,11 @@ impl CorrelationMatrix {
         }
 
         // Convert to f64 arrays for computation
-        let series: Vec<Vec<f64>> = identifiers.iter()
+        let series: Vec<Vec<f64>> = identifiers
+            .iter()
             .map(|id| {
-                returns[id].iter()
+                returns[id]
+                    .iter()
                     .take(min_len)
                     .map(|d| d.to_f64().unwrap_or(0.0))
                     .collect()
@@ -115,7 +125,14 @@ impl CorrelationMatrix {
             }
         }
 
-        Ok(Self { matrix_type, window, identifiers, data, rows: n, cols: n })
+        Ok(Self {
+            matrix_type,
+            window,
+            identifiers,
+            data,
+            rows: n,
+            cols: n,
+        })
     }
 
     pub fn get_correlation(&self, idx_a: usize, idx_b: usize) -> Option<Decimal> {
@@ -138,7 +155,11 @@ impl CorrelationMatrix {
     /// `vols` must be in the same order as `self.identifiers`.
     pub fn to_covariance(&self, vols: &[Decimal]) -> Result<CovarianceMatrix, String> {
         if vols.len() != self.rows {
-            return Err(format!("vols length {} != matrix size {}", vols.len(), self.rows));
+            return Err(format!(
+                "vols length {} != matrix size {}",
+                vols.len(),
+                self.rows
+            ));
         }
         let n = self.rows;
         let mut data = vec![Decimal::ZERO; n * n];
@@ -163,7 +184,9 @@ impl CorrelationMatrix {
     /// applied, this should always return true.
     pub fn is_positive_semi_definite(&self) -> bool {
         let n = self.rows;
-        let flat: Vec<f64> = self.data.iter()
+        let flat: Vec<f64> = self
+            .data
+            .iter()
             .map(|d| d.to_f64().unwrap_or(0.0))
             .collect();
         let mat = DMatrix::from_row_slice(n, n, &flat);
@@ -178,7 +201,9 @@ impl CorrelationMatrix {
     /// `t_ratio` = n_observations / n_assets (higher = more observations relative to assets)
     pub fn eigenvalue_clean(&self, t_ratio: f64) -> Result<Self, String> {
         let n = self.rows;
-        let flat: Vec<f64> = self.data.iter()
+        let flat: Vec<f64> = self
+            .data
+            .iter()
             .map(|d| d.to_f64().unwrap_or(0.0))
             .collect();
         let mat = DMatrix::from_row_slice(n, n, &flat);
@@ -196,7 +221,9 @@ impl CorrelationMatrix {
         };
 
         // Replace noise eigenvalues with their mean
-        let noise_eigs: Vec<f64> = eigenvalues.iter().copied()
+        let noise_eigs: Vec<f64> = eigenvalues
+            .iter()
+            .copied()
             .filter(|&e| e < lambda_plus)
             .collect();
         let noise_mean = if noise_eigs.is_empty() {
@@ -220,7 +247,9 @@ impl CorrelationMatrix {
         for i in 0..n {
             for j in 0..n {
                 let mut val = cleaned[(i, j)];
-                if i == j { val = 1.0; }
+                if i == j {
+                    val = 1.0;
+                }
                 cleaned_data[i * n + j] = Decimal::from_f64(val.clamp(-1.0, 1.0))
                     .unwrap_or(Decimal::ZERO)
                     .round_dp(8);
@@ -244,16 +273,26 @@ impl CorrelationMatrix {
 
 fn pearson_correlation(x: &[f64], y: &[f64]) -> f64 {
     let n = x.len().min(y.len());
-    if n < 2 { return 0.0; }
+    if n < 2 {
+        return 0.0;
+    }
     let nf = n as f64;
     let mx = x[..n].iter().sum::<f64>() / nf;
     let my = y[..n].iter().sum::<f64>() / nf;
 
-    let cov = x[..n].iter().zip(y[..n].iter()).map(|(&xi, &yi)| (xi - mx) * (yi - my)).sum::<f64>();
+    let cov = x[..n]
+        .iter()
+        .zip(y[..n].iter())
+        .map(|(&xi, &yi)| (xi - mx) * (yi - my))
+        .sum::<f64>();
     let sx = (x[..n].iter().map(|&xi| (xi - mx).powi(2)).sum::<f64>() / nf).sqrt();
     let sy = (y[..n].iter().map(|&yi| (yi - my).powi(2)).sum::<f64>() / nf).sqrt();
 
-    if sx < 1e-12 || sy < 1e-12 { 0.0 } else { (cov / nf) / (sx * sy) }
+    if sx < 1e-12 || sy < 1e-12 {
+        0.0
+    } else {
+        (cov / nf) / (sx * sy)
+    }
 }
 
 #[cfg(test)]
@@ -275,29 +314,48 @@ mod tests {
     #[test]
     fn test_from_returns_symmetric() {
         let mut returns = HashMap::new();
-        returns.insert("A".to_string(), vec![
-            Decimal::new(1, 2), Decimal::new(2, 2), Decimal::new(-1, 2),
-            Decimal::new(3, 2), Decimal::new(-2, 2),
-        ]);
-        returns.insert("B".to_string(), vec![
-            Decimal::new(1, 2), Decimal::new(2, 2), Decimal::new(-1, 2),
-            Decimal::new(3, 2), Decimal::new(-2, 2),
-        ]);
+        returns.insert(
+            "A".to_string(),
+            vec![
+                Decimal::new(1, 2),
+                Decimal::new(2, 2),
+                Decimal::new(-1, 2),
+                Decimal::new(3, 2),
+                Decimal::new(-2, 2),
+            ],
+        );
+        returns.insert(
+            "B".to_string(),
+            vec![
+                Decimal::new(1, 2),
+                Decimal::new(2, 2),
+                Decimal::new(-1, 2),
+                Decimal::new(3, 2),
+                Decimal::new(-2, 2),
+            ],
+        );
         let m = CorrelationMatrix::from_returns(
             CorrelationType::Symbol,
             CorrelationWindow::MediumTerm,
             &returns,
-        ).expect("failed");
+        )
+        .expect("failed");
         // Same series → perfect correlation = 1
-        assert!(m.get_correlation(0, 1).map(|v| v > Decimal::new(99, 2)).unwrap_or(false));
+        assert!(m
+            .get_correlation(0, 1)
+            .map(|v| v > Decimal::new(99, 2))
+            .unwrap_or(false));
         // Symmetric
         assert_eq!(m.get_correlation(0, 1), m.get_correlation(1, 0));
     }
 
     #[test]
     fn test_covariance_diagonal() {
-        let m = CorrelationMatrix::new(CorrelationType::Symbol, CorrelationWindow::MediumTerm,
-            vec!["A".to_string(), "B".to_string()]);
+        let m = CorrelationMatrix::new(
+            CorrelationType::Symbol,
+            CorrelationWindow::MediumTerm,
+            vec!["A".to_string(), "B".to_string()],
+        );
         let vols = vec![Decimal::new(20, 2), Decimal::new(30, 2)]; // 20%, 30%
         let cov = m.to_covariance(&vols).expect("failed");
         // Diagonal: 0.20² = 0.04, 0.30² = 0.09

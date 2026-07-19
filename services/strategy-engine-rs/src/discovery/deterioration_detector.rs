@@ -30,10 +30,8 @@ impl DeteriorationDetector {
         streak_deterioration: Decimal,
     ) -> DeteriorationState {
         // Higher values denote worse state
-        let total_risk = expectancy_collapse 
-            + confidence_degradation 
-            + drawdown_increase 
-            + streak_deterioration;
+        let total_risk =
+            expectancy_collapse + confidence_degradation + drawdown_increase + streak_deterioration;
 
         let target_state = if total_risk >= dec!(0.40) {
             DeteriorationState::Collapse

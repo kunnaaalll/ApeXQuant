@@ -50,7 +50,10 @@ fn test_determinism_100k_iterations() -> Result<(), Box<dyn std::error::Error>> 
     for _ in 0..100_000 {
         let serialized = Serializer::serialize(&event)?;
         let str_rep = serde_json::to_string(&serialized)?;
-        assert_eq!(reference, str_rep, "Determinism failed during 100k iterations");
+        assert_eq!(
+            reference, str_rep,
+            "Determinism failed during 100k iterations"
+        );
     }
     Ok(())
 }

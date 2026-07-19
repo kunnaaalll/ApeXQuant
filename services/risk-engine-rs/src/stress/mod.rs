@@ -21,9 +21,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StressScenarioResult {
-    pub scenario_id:    String,
+    pub scenario_id: String,
     pub estimated_loss: Decimal,
-    pub survived:       bool,
+    pub survived: bool,
 }
 
 // ─── Stress Engine Facade ─────────────────────────────────────────────────────
@@ -42,8 +42,8 @@ pub struct StressEngine {
 impl StressEngine {
     pub fn new() -> Self {
         Self {
-            gross_exposure:  Decimal::ZERO,
-            loss_tolerance:  dec!(0.20), // 20% max tolerable loss
+            gross_exposure: Decimal::ZERO,
+            loss_tolerance: dec!(0.20), // 20% max tolerable loss
         }
     }
 
@@ -55,21 +55,21 @@ impl StressEngine {
     /// Unknown scenario IDs use a conservative 2× multiplier.
     pub fn run_scenario(&self, scenario_id: &str) -> StressScenarioResult {
         let vol_mult = match scenario_id {
-            "flash_crash"        => dec!(3.0),
-            "black_monday_1987"  => dec!(5.0),
-            "covid_crash_2020"   => dec!(4.5),
-            "dot_com_bubble"     => dec!(2.5),
-            "lehman_2008"        => dec!(4.0),
-            "synthetic_extreme"  => dec!(6.0),
-            _                    => dec!(2.0), // conservative default
+            "flash_crash" => dec!(3.0),
+            "black_monday_1987" => dec!(5.0),
+            "covid_crash_2020" => dec!(4.5),
+            "dot_com_bubble" => dec!(2.5),
+            "lehman_2008" => dec!(4.0),
+            "synthetic_extreme" => dec!(6.0),
+            _ => dec!(2.0), // conservative default
         };
 
         // Estimated loss = gross_exposure × (vol_mult − 1) × 0.05 base factor
         let estimated_loss = self.gross_exposure * (vol_mult - Decimal::from(1)) * dec!(0.05);
-        let survived       = estimated_loss < (self.gross_exposure * self.loss_tolerance);
+        let survived = estimated_loss < (self.gross_exposure * self.loss_tolerance);
 
         StressScenarioResult {
-            scenario_id:    scenario_id.to_owned(),
+            scenario_id: scenario_id.to_owned(),
             estimated_loss,
             survived,
         }
@@ -77,5 +77,7 @@ impl StressEngine {
 }
 
 impl Default for StressEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

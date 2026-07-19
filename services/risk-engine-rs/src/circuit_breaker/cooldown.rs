@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone)]
 pub struct CooldownModel {
     pub required_cooldown_ticks: u64,

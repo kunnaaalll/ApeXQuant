@@ -5,10 +5,21 @@ use super::models::{AllocationSnapshot, AllocationState, CapitalAllocationDecisi
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum AllocationEventType {
-    StateTransition { from: AllocationState, to: AllocationState },
-    ReserveUpdated { total_reserved: Decimal },
-    TradeAdmitted { symbol: String, decision: CapitalAllocationDecision },
-    TradeRejected { symbol: String, decision: CapitalAllocationDecision },
+    StateTransition {
+        from: AllocationState,
+        to: AllocationState,
+    },
+    ReserveUpdated {
+        total_reserved: Decimal,
+    },
+    TradeAdmitted {
+        symbol: String,
+        decision: CapitalAllocationDecision,
+    },
+    TradeRejected {
+        symbol: String,
+        decision: CapitalAllocationDecision,
+    },
     CapacityAdjusted,
     DrawdownStateChanged,
     HeatStateChanged,

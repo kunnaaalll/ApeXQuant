@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
 use super::scenarios::HistoricalScenario;
 use super::severity::Severity;
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StressSnapshot {

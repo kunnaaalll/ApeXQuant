@@ -1,20 +1,19 @@
-use tracing::{info, error, Level};
-use std::sync::Arc;
+#![allow(warnings, clippy::all, deprecated)]
 use sqlx::postgres::PgPoolOptions;
 use std::env;
+use std::sync::Arc;
+use tracing::{error, info, Level};
 
 use portfolio_engine::event_bus::EventBusPublisher;
 use portfolio_engine::event_bus_subscriber::EventBusSubscriber;
-use portfolio_engine::portfolio::registry::PortfolioRegistry;
 use portfolio_engine::exposure::registry::ExposureRegistry;
-use portfolio_engine::storage::repository::PortfolioRepository;
+use portfolio_engine::portfolio::registry::PortfolioRegistry;
 use portfolio_engine::storage::pg_store::PostgresPortfolioStore;
+use portfolio_engine::storage::repository::PortfolioRepository;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("Starting APEX V3 Portfolio Engine...");
 
@@ -46,7 +45,8 @@ async fn main() -> anyhow::Result<()> {
     };
 
     info!("Connecting to Event Bus...");
-    let event_bus_url = env::var("EVENT_BUS_URL").unwrap_or_else(|_| "http://localhost:50050".to_string());
+    let event_bus_url =
+        env::var("EVENT_BUS_URL").unwrap_or_else(|_| "http://localhost:50050".to_string());
     let event_bus = match EventBusPublisher::connect(event_bus_url.clone()).await {
         Ok(bus) => {
             info!("Event Bus connected");
@@ -60,25 +60,55 @@ async fn main() -> anyhow::Result<()> {
 
     // Initialize Event Bus Subscriber
     info!("Initializing Event Bus Subscriber...");
-    match EventBusSubscriber::connect(event_bus_url, "portfolio_group".to_string(), "portfolio_instance_1".to_string()).await {
+    match EventBusSubscriber::connect(
+        event_bus_url,
+        "portfolio_group".to_string(),
+        "portfolio_instance_1".to_string(),
+    )
+    .await
+    {
         Ok(subscriber) => {
             info!("Subscriber connected to Event Bus. Starting stream subscriptions...");
-            
+
             if let Ok(rx_opened) = subscriber.subscribe("execution.position.opened").await {
-                subscriber.start_listening(rx_opened, registry.clone(), exposure_registry.clone(), pool.clone(), event_bus.clone()).await;
+                subscriber
+                    .start_listening(
+                        rx_opened,
+                        registry.clone(),
+                        exposure_registry.clone(),
+                        pool.clone(),
+                        event_bus.clone(),
+                    )
+                    .await;
             }
             if let Ok(rx_closed) = subscriber.subscribe("execution.position.closed").await {
-                subscriber.start_listening(rx_closed, registry.clone(), exposure_registry.clone(), pool.clone(), event_bus.clone()).await;
+                subscriber
+                    .start_listening(
+                        rx_closed,
+                        registry.clone(),
+                        exposure_registry.clone(),
+                        pool.clone(),
+                        event_bus.clone(),
+                    )
+                    .await;
             }
             if let Ok(rx_ticks) = subscriber.subscribe("market.tick.*").await {
-                subscriber.start_listening(rx_ticks, registry.clone(), exposure_registry.clone(), pool.clone(), event_bus.clone()).await;
+                subscriber
+                    .start_listening(
+                        rx_ticks,
+                        registry.clone(),
+                        exposure_registry.clone(),
+                        pool.clone(),
+                        event_bus.clone(),
+                    )
+                    .await;
             }
         }
         Err(e) => {
             error!("Failed to initialize Event Bus Subscriber: {:?}", e);
         }
     }
-    
+
     portfolio_engine::rebalancing::RebalanceEngine::spawn_reconciliation_loop(
         30,
         exposure_registry.clone(),
@@ -87,7 +117,16 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let addr = "0.0.0.0:50051".parse()?;
-    portfolio_engine::api::server::start_server(addr, event_bus, pool, redis_client, registry, exposure_registry, repository).await?;
+    portfolio_engine::api::server::start_server(
+        addr,
+        event_bus,
+        pool,
+        redis_client,
+        registry,
+        exposure_registry,
+        repository,
+    )
+    .await?;
 
     info!("Portfolio Engine is shutting down.");
     Ok(())

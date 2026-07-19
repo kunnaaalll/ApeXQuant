@@ -42,7 +42,7 @@ fn test_determinism_100k_iterations() {
 
     for _ in 0..100_000 {
         let shocked_vol = vol_engine.apply_shock(scenario.volatility_multiplier());
-        
+
         if let Some(prev) = previous_vol {
             assert_eq!(shocked_vol, prev, "Determinism failed: value drifted");
         }
@@ -58,7 +58,10 @@ fn test_correlation_convergence() {
     let scenario = HistoricalScenario::FlashCrash; // Mult: 1.5
     let collapsed_corr = corr_engine.apply_collapse(scenario.correlation_multiplier());
 
-    assert!(collapsed_corr > base_corr, "Correlation should converge towards 1.0");
+    assert!(
+        collapsed_corr > base_corr,
+        "Correlation should converge towards 1.0"
+    );
     assert!(collapsed_corr <= dec!(1.0));
 }
 
@@ -72,7 +75,7 @@ fn test_leverage_cascade() {
 
     assert!(cascaded_leverage > base_leverage);
     assert_eq!(cascaded_leverage, dec!(4.5));
-    
+
     let state = lev_engine.evaluate_state(cascaded_leverage);
     assert_eq!(state, LeverageState::Danger);
 }

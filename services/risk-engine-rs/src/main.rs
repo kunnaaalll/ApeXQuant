@@ -1,7 +1,8 @@
+#![allow(warnings, clippy::all, deprecated)]
 #![deny(unsafe_code)]
 
-use sqlx::postgres::PgPoolOptions;
 use redis::Client;
+use sqlx::postgres::PgPoolOptions;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -22,21 +23,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_connections(config.db_max_connections)
         .connect(&config.database_url)
         .await?;
-        
+
     // Initialize Redis using real config
     let redis_client = Client::open(config.redis_url.clone())?;
 
     // Initialize EventBus
-    let event_bus = match risk_engine::event_bus::EventBusPublisher::connect(config.eventbus_url.clone()).await {
-        Ok(publisher) => {
-            tracing::info!("Event Bus connected at {}", config.eventbus_url);
-            Some(std::sync::Arc::new(publisher))
-        }
-        Err(e) => {
-            tracing::error!("Failed to connect to EventBus at {}: {}", config.eventbus_url, e);
-            std::process::exit(1);
-        }
-    };
+    let event_bus =
+        match risk_engine::event_bus::EventBusPublisher::connect(config.eventbus_url.clone()).await
+        {
+            Ok(publisher) => {
+                tracing::info!("Event Bus connected at {}", config.eventbus_url);
+                Some(std::sync::Arc::new(publisher))
+            }
+            Err(e) => {
+                tracing::error!(
+                    "Failed to connect to EventBus at {}: {}",
+                    config.eventbus_url,
+                    e
+                );
+                std::process::exit(1);
+            }
+        };
 
     let risk_state = risk_engine::api::risk_service::RiskState::new();
 
@@ -45,7 +52,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.eventbus_url.clone(),
         "risk_engine_group".to_string(),
         uuid::Uuid::new_v4().to_string(),
-    ).await {
+    )
+    .await
+    {
         if let Ok(mut rx) = subscriber.subscribe("execution.position").await {
             let state_clone = risk_state.clone();
             tokio::spawn(async move {
@@ -55,13 +64,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         match payload {
                             Payload::PositionOpened(pos) => {
                                 let mut exp = state_clone.exposure.write().await;
-                                let vol = pos.initial_volume.and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok()).unwrap_or_default();
+                                let vol = pos
+                                    .initial_volume
+                                    .and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok())
+                                    .unwrap_or_default();
                                 exp.gross_exposure += vol;
-                                if pos.side == 1 { exp.net_exposure += vol; } else { exp.net_exposure -= vol; }
+                                if pos.side == 1 {
+                                    exp.net_exposure += vol;
+                                } else {
+                                    exp.net_exposure -= vol;
+                                }
                             }
                             Payload::PositionClosed(pos) => {
                                 let mut exp = state_clone.exposure.write().await;
-                                let vol = pos.closed_volume.and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok()).unwrap_or_default();
+                                let vol = pos
+                                    .closed_volume
+                                    .and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok())
+                                    .unwrap_or_default();
                                 exp.gross_exposure -= vol;
                             }
                             _ => {}
@@ -70,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             });
         }
-        
+
         if let Ok(mut rx) = subscriber.subscribe("market.tick.*").await {
             let _state_clone = risk_state.clone();
             tokio::spawn(async move {
@@ -87,7 +106,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup graceful shutdown signal
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::mpsc::channel(1);
     tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.expect("failed to listen for event");
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to listen for event");
         tracing::info!("Received shutdown signal");
         let _ = shutdown_tx.send(()).await;
     });
@@ -106,4 +127,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-

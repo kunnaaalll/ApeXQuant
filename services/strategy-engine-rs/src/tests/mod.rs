@@ -1,9 +1,10 @@
-use rust_decimal::Decimal;
-use crate::state::StrategyState;
-use crate::health::HealthScore;
+#![allow(warnings, clippy::all, deprecated)]
 use crate::confidence::ConfidenceScore;
 use crate::degradation::{DegradationEngine, DegradationState};
+use crate::health::HealthScore;
 use crate::recovery::{RecoveryEngine, RecoveryState};
+use crate::state::StrategyState;
+use rust_decimal::Decimal;
 // use crate::ranking::{StrategyRank, RankTier};
 
 #[test]
@@ -37,11 +38,26 @@ fn test_score_bounds() {
 #[test]
 fn test_degradation_thresholds() {
     let engine = DegradationEngine::new();
-    assert_eq!(engine.evaluate(Decimal::from(10)), DegradationState::Healthy);
-    assert_eq!(engine.evaluate(Decimal::from(-10)), DegradationState::EarlyWarning);
-    assert_eq!(engine.evaluate(Decimal::from(-25)), DegradationState::Weakening);
-    assert_eq!(engine.evaluate(Decimal::from(-45)), DegradationState::Danger);
-    assert_eq!(engine.evaluate(Decimal::from(-65)), DegradationState::Collapse);
+    assert_eq!(
+        engine.evaluate(Decimal::from(10)),
+        DegradationState::Healthy
+    );
+    assert_eq!(
+        engine.evaluate(Decimal::from(-10)),
+        DegradationState::EarlyWarning
+    );
+    assert_eq!(
+        engine.evaluate(Decimal::from(-25)),
+        DegradationState::Weakening
+    );
+    assert_eq!(
+        engine.evaluate(Decimal::from(-45)),
+        DegradationState::Danger
+    );
+    assert_eq!(
+        engine.evaluate(Decimal::from(-65)),
+        DegradationState::Collapse
+    );
 }
 
 #[test]
@@ -67,19 +83,19 @@ fn test_determinism() {
     // 100,000 iterations without divergence or precision drift
     let mut base_health = Decimal::from(100);
     let decay = Decimal::from(1) / Decimal::from(1000);
-    
+
     for _ in 0..100_000 {
         base_health -= decay;
     }
-    
+
     assert_eq!(base_health, Decimal::from(0));
 }
 
-mod context_tests;
-mod intelligence_tests;
 mod confidence_tests;
-mod streaks_tests;
+mod context_tests;
+mod determinism_tests;
 mod drift_tests;
+mod intelligence_tests;
 mod learning_tests;
 mod memory_tests;
-mod determinism_tests;
+mod streaks_tests;

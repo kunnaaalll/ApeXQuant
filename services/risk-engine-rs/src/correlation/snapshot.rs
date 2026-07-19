@@ -1,6 +1,6 @@
 use super::{
-    clusters::CorrelationCluster, correlation_matrix::CorrelationMatrix, events::CorrelationRiskEvent,
-    hidden_leverage::HiddenLeverageState,
+    clusters::CorrelationCluster, correlation_matrix::CorrelationMatrix,
+    events::CorrelationRiskEvent, hidden_leverage::HiddenLeverageState,
 };
 use serde::{Deserialize, Serialize};
 

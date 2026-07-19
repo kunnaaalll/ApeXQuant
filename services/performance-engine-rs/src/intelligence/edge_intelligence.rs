@@ -25,9 +25,9 @@ pub struct EdgeIntelligence {
 impl EdgeIntelligence {
     pub fn evaluate(recent_edge: Decimal, long_term_edge: Decimal) -> Self {
         let edge_difference = recent_edge - long_term_edge;
-        
+
         let margin = (long_term_edge.abs() * dec!(0.05)).max(dec!(0.01));
-        
+
         let improving = edge_difference > margin;
         let degrading = edge_difference < -margin;
         let stable = edge_difference.abs() <= margin;

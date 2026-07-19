@@ -1,14 +1,15 @@
-use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
 use super::models::RegimeAssessment;
 use super::states::RegimeState;
 use super::types::{RegimeType, TradeCount};
+use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 
 pub struct RegimeCalculator;
 
 impl RegimeCalculator {
     pub const MIN_TRADES_FOR_EVALUATION: TradeCount = 30;
 
+    #[allow(clippy::too_many_arguments)]
     pub fn evaluate(
         regime: RegimeType,
         trade_count: TradeCount,
@@ -45,8 +46,8 @@ impl RegimeCalculator {
             return RegimeState::Normal; // Default until we have enough data
         }
 
-        let one_point_five = Decimal::from_f64(1.5).unwrap();
-        let two_point_zero = Decimal::from_f64(2.0).unwrap();
+        let one_point_five = Decimal::from_f64(1.5).unwrap_or_default();
+        let two_point_zero = Decimal::from_f64(2.0).unwrap_or_default();
         let zero = Decimal::ZERO;
 
         if expectancy > zero && profit_factor >= two_point_zero {

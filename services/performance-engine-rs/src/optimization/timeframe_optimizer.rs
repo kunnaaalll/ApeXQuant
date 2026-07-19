@@ -22,9 +22,16 @@ impl TimeframeOptimizer {
         }
     }
 
-    pub fn evaluate(&self, combination: String, current_weight: Decimal, target_weight: Decimal, trades: u32, expectancy: Decimal) -> TimeframeScore {
+    pub fn evaluate(
+        &self,
+        combination: String,
+        current_weight: Decimal,
+        target_weight: Decimal,
+        trades: u32,
+        expectancy: Decimal,
+    ) -> TimeframeScore {
         let is_valid = trades >= self.min_evidence_trades;
-        
+
         let mut new_weight = current_weight;
         if is_valid {
             let diff = target_weight - current_weight;

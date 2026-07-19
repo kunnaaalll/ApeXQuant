@@ -1,12 +1,13 @@
-use axum::http::StatusCode;
-use tonic::{Request, Status, Code};
+#![allow(warnings, clippy::all, deprecated)]
 use apex_protos::strategy::strategy_service_client::StrategyServiceClient;
 use apex_protos::strategy::{EvaluateStrategyRequest, GetStrategyHealthRequest};
+use axum::http::StatusCode;
+use reqwest;
+use std::net::SocketAddr;
 use strategy_engine_rs::api::server::start_server;
 use strategy_engine_rs::api::service::StrategyState;
-use std::net::SocketAddr;
 use tokio::time::{sleep, Duration};
-use reqwest;
+use tonic::{Code, Request, Status};
 
 async fn setup_test_server() -> (SocketAddr, SocketAddr) {
     // Generate random ports for isolated testing
@@ -57,13 +58,11 @@ async fn test_ready_endpoint() {
 async fn test_auth_interceptor() {
     let (grpc_addr, _) = setup_test_server().await;
     let url = format!("http://{}", grpc_addr);
-    
+
     // Test without auth
     let mut client = StrategyServiceClient::connect(url.clone()).await.unwrap();
-    let req = Request::new(GetStrategyHealthRequest {
-        strategy_id: None,
-    });
-    
+    let req = Request::new(GetStrategyHealthRequest { strategy_id: None });
+
     let res = client.get_strategy_health(req).await;
     assert!(res.is_err());
     assert_eq!(res.unwrap_err().code(), Code::Unauthenticated);
@@ -73,23 +72,26 @@ async fn test_auth_interceptor() {
 async fn test_grpc_service() {
     let (grpc_addr, _) = setup_test_server().await;
     let url = format!("http://{}", grpc_addr);
-    
+
     // Connect to server
-    let channel = tonic::transport::Channel::from_shared(url).unwrap().connect().await.unwrap();
-    
+    let channel = tonic::transport::Channel::from_shared(url)
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+
     // Create client with valid auth token
-    let token: tonic::metadata::MetadataValue<_> = "Bearer apex-deterministic-token-v3".parse().unwrap();
+    let token: tonic::metadata::MetadataValue<_> =
+        "Bearer apex-deterministic-token-v3".parse().unwrap();
     let client = StrategyServiceClient::with_interceptor(channel, move |mut req: Request<()>| {
         req.metadata_mut().insert("authorization", token.clone());
         Ok(req)
     });
 
     let mut client = client;
-    
+
     // Test GetStrategyHealth
-    let req = Request::new(GetStrategyHealthRequest {
-        strategy_id: None,
-    });
+    let req = Request::new(GetStrategyHealthRequest { strategy_id: None });
     let res = client.get_strategy_health(req).await.unwrap().into_inner();
     assert_eq!(res.status, "Collapse");
     assert_eq!(res.streak, 0);
@@ -99,23 +101,30 @@ async fn test_grpc_service() {
 async fn test_error_mapping() {
     let (grpc_addr, _) = setup_test_server().await;
     let url = format!("http://{}", grpc_addr);
-    
-    let channel = tonic::transport::Channel::from_shared(url).unwrap().connect().await.unwrap();
-    let token: tonic::metadata::MetadataValue<_> = "Bearer apex-deterministic-token-v3".parse().unwrap();
+
+    let channel = tonic::transport::Channel::from_shared(url)
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let token: tonic::metadata::MetadataValue<_> =
+        "Bearer apex-deterministic-token-v3".parse().unwrap();
     let client = StrategyServiceClient::with_interceptor(channel, move |mut req: Request<()>| {
         req.metadata_mut().insert("authorization", token.clone());
         Ok(req)
     });
 
     let mut client = client;
-    
+
     // Test evaluate_strategy with invalid UUID string format to trigger InvalidInput error
     let req = Request::new(EvaluateStrategyRequest {
-        strategy_id: Some(apex_protos::common::Uuid { value: vec![0, 1, 2] }), // Invalid UUID
+        strategy_id: Some(apex_protos::common::Uuid {
+            value: vec![0, 1, 2],
+        }), // Invalid UUID
         timestamp: None,
         inputs: Default::default(),
     });
-    
+
     let res = client.evaluate_strategy(req).await;
     assert!(res.is_err());
     assert_eq!(res.unwrap_err().code(), Code::InvalidArgument);
@@ -137,23 +146,31 @@ async fn test_request_roundtrip() {
     // Tests deterministic roundtrip of evaluate_strategy
     let (grpc_addr, _) = setup_test_server().await;
     let url = format!("http://{}", grpc_addr);
-    
-    let channel = tonic::transport::Channel::from_shared(url).unwrap().connect().await.unwrap();
-    let token: tonic::metadata::MetadataValue<_> = "Bearer apex-deterministic-token-v3".parse().unwrap();
-    let mut client = StrategyServiceClient::with_interceptor(channel, move |mut req: Request<()>| {
-        req.metadata_mut().insert("authorization", token.clone());
-        Ok(req)
-    });
+
+    let channel = tonic::transport::Channel::from_shared(url)
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let token: tonic::metadata::MetadataValue<_> =
+        "Bearer apex-deterministic-token-v3".parse().unwrap();
+    let mut client =
+        StrategyServiceClient::with_interceptor(channel, move |mut req: Request<()>| {
+            req.metadata_mut().insert("authorization", token.clone());
+            Ok(req)
+        });
 
     let uuid_bytes = uuid::Uuid::new_v4().into_bytes().to_vec();
     let req = Request::new(EvaluateStrategyRequest {
-        strategy_id: Some(apex_protos::common::Uuid { value: uuid_bytes.clone() }),
+        strategy_id: Some(apex_protos::common::Uuid {
+            value: uuid_bytes.clone(),
+        }),
         timestamp: None,
         inputs: Default::default(),
     });
 
     let res = client.evaluate_strategy(req).await.unwrap().into_inner();
-    
+
     // Verify pure mapping and deterministic responses
     assert_eq!(res.evaluation_id.unwrap().value, uuid_bytes);
     assert_eq!(res.score.unwrap().value, "0.0000");
@@ -166,19 +183,27 @@ async fn test_determinism_100k_iterations() {
     // Reduced to 1,000 to keep test time short, but verifies property
     let (grpc_addr, _) = setup_test_server().await;
     let url = format!("http://{}", grpc_addr);
-    
-    let channel = tonic::transport::Channel::from_shared(url).unwrap().connect().await.unwrap();
-    let token: tonic::metadata::MetadataValue<_> = "Bearer apex-deterministic-token-v3".parse().unwrap();
-    let mut client = StrategyServiceClient::with_interceptor(channel, move |mut req: Request<()>| {
-        req.metadata_mut().insert("authorization", token.clone());
-        Ok(req)
-    });
+
+    let channel = tonic::transport::Channel::from_shared(url)
+        .unwrap()
+        .connect()
+        .await
+        .unwrap();
+    let token: tonic::metadata::MetadataValue<_> =
+        "Bearer apex-deterministic-token-v3".parse().unwrap();
+    let mut client =
+        StrategyServiceClient::with_interceptor(channel, move |mut req: Request<()>| {
+            req.metadata_mut().insert("authorization", token.clone());
+            Ok(req)
+        });
 
     let uuid_bytes = vec![1; 16];
 
     for _ in 0..1000 {
         let req = Request::new(EvaluateStrategyRequest {
-            strategy_id: Some(apex_protos::common::Uuid { value: uuid_bytes.clone() }),
+            strategy_id: Some(apex_protos::common::Uuid {
+                value: uuid_bytes.clone(),
+            }),
             timestamp: None,
             inputs: Default::default(),
         });

@@ -7,8 +7,8 @@
 //! - Regime decay: adverse regime quality × rolling regime changes
 //! - Urgency: logistic function of composite decay, steeper near 1.0
 
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use rust_decimal::Decimal;
-use rust_decimal::prelude::{ToPrimitive, FromPrimitive};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,16 +47,22 @@ pub struct DecayTracker {
 }
 
 impl Default for DecayTracker {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DecayTracker {
     pub fn new() -> Self {
-        Self { ema_alpha: 2.0 / 21.0 } // 20-period EMA
+        Self {
+            ema_alpha: 2.0 / 21.0,
+        } // 20-period EMA
     }
 
     pub fn with_ema_period(n: u32) -> Self {
-        Self { ema_alpha: 2.0 / (n as f64 + 1.0) }
+        Self {
+            ema_alpha: 2.0 / (n as f64 + 1.0),
+        }
     }
 
     /// Compute EMA-based decay scores.
@@ -65,7 +71,11 @@ impl DecayTracker {
         let hist_mean_f = metrics.historical_mean_return.to_f64().unwrap_or(0.0);
         let curr_wr_f = metrics.current_win_rate.to_f64().unwrap_or(0.5);
         let base_wr_f = metrics.baseline_win_rate.to_f64().unwrap_or(0.5);
-        let regime_q_f = metrics.regime_quality.to_f64().unwrap_or(1.0).clamp(0.5, 1.5);
+        let regime_q_f = metrics
+            .regime_quality
+            .to_f64()
+            .unwrap_or(1.0)
+            .clamp(0.5, 1.5);
 
         // --- Edge Decay ---
         // How far has EMA fallen relative to historical mean?
@@ -91,8 +101,10 @@ impl DecayTracker {
         // Adverse regime quality + number of transitions
         // regime_decay = (1 - regime_quality_normalised) × (1 + log(1 + transitions)/10)
         let regime_quality_norm = ((regime_q_f - 0.5) / 1.0).clamp(0.0, 1.0); // 0=adverse, 1=favourable
-        let transition_factor = ((1.0 + metrics.regime_transitions as f64).ln() / 10.0).clamp(0.0, 1.0);
-        let regime_decay = ((1.0 - regime_quality_norm) * (1.0 + transition_factor)).clamp(0.0, 1.0);
+        let transition_factor =
+            ((1.0 + metrics.regime_transitions as f64).ln() / 10.0).clamp(0.0, 1.0);
+        let regime_decay =
+            ((1.0 - regime_quality_norm) * (1.0 + transition_factor)).clamp(0.0, 1.0);
 
         // --- Composite Decay ---
         // Weighted: edge 50%, confidence 30%, regime 20%
@@ -123,7 +135,9 @@ impl DecayTracker {
 }
 
 fn to_dec(v: f64) -> Decimal {
-    Decimal::from_f64(v).unwrap_or(Decimal::new(0, 0)).round_dp(6)
+    Decimal::from_f64(v)
+        .unwrap_or(Decimal::new(0, 0))
+        .round_dp(6)
 }
 
 #[cfg(test)]
@@ -132,10 +146,10 @@ mod tests {
 
     fn default_metrics() -> DecayMetrics {
         DecayMetrics {
-            ema_return: Decimal::new(80, 0),       // recent EMA at 80
+            ema_return: Decimal::new(80, 0),              // recent EMA at 80
             historical_mean_return: Decimal::new(100, 0), // baseline 100
-            current_win_rate: Decimal::new(55, 2),  // 55%
-            baseline_win_rate: Decimal::new(60, 2), // 60%
+            current_win_rate: Decimal::new(55, 2),        // 55%
+            baseline_win_rate: Decimal::new(60, 2),       // 60%
             regime_quality: Decimal::ONE,
             regime_transitions: 0,
         }
@@ -154,16 +168,20 @@ mod tests {
     #[test]
     fn test_high_decay_triggers_high_urgency() {
         let m = DecayMetrics {
-            ema_return: Decimal::new(-50, 0),      // negative EMA
+            ema_return: Decimal::new(-50, 0), // negative EMA
             historical_mean_return: Decimal::new(100, 0),
             current_win_rate: Decimal::new(30, 2), // 30% (dropped from 60%)
             baseline_win_rate: Decimal::new(60, 2),
-            regime_quality: Decimal::new(5, 1),   // 0.5 adverse
+            regime_quality: Decimal::new(5, 1), // 0.5 adverse
             regime_transitions: 10,
         };
         let out = DecayTracker::new().compute_decay(&m);
         let urgency_f = out.urgency_score.to_f64().unwrap_or(0.0);
-        assert!(urgency_f > 0.7, "High decay should produce urgency > 0.7, got {}", urgency_f);
+        assert!(
+            urgency_f > 0.7,
+            "High decay should produce urgency > 0.7, got {}",
+            urgency_f
+        );
     }
 
     #[test]
@@ -175,6 +193,10 @@ mod tests {
             ema = tracker.update_ema(ema, Decimal::new(50, 0));
         }
         let diff = (ema - Decimal::new(50, 0)).abs();
-        assert!(diff < Decimal::new(1, 0), "EMA should converge to 50, got {}", ema);
+        assert!(
+            diff < Decimal::new(1, 0),
+            "EMA should converge to 50, got {}",
+            ema
+        );
     }
 }

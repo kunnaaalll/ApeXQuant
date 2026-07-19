@@ -24,9 +24,21 @@ impl LeverageAssessment {
         hidden_leverage: Decimal,
     ) -> Self {
         // Guarantee no negative leverage
-        let gross = if gross_leverage.is_sign_negative() { Decimal::ZERO } else { gross_leverage };
-        let effective = if effective_leverage.is_sign_negative() { Decimal::ZERO } else { effective_leverage };
-        let hidden = if hidden_leverage.is_sign_negative() { Decimal::ZERO } else { hidden_leverage };
+        let gross = if gross_leverage.is_sign_negative() {
+            Decimal::ZERO
+        } else {
+            gross_leverage
+        };
+        let effective = if effective_leverage.is_sign_negative() {
+            Decimal::ZERO
+        } else {
+            effective_leverage
+        };
+        let hidden = if hidden_leverage.is_sign_negative() {
+            Decimal::ZERO
+        } else {
+            hidden_leverage
+        };
 
         let mut assessment = Self {
             gross_leverage: gross,
@@ -47,14 +59,18 @@ impl LeverageAssessment {
         // > 3.0x = Danger
         // > 2.0x = Elevated
         // <= 2.0x = Normal
-        
-        self.state = if total_leverage > Decimal::new(50, 1) { // 5.0
+
+        self.state = if total_leverage > Decimal::new(50, 1) {
+            // 5.0
             LeverageState::Collapse
-        } else if total_leverage > Decimal::new(40, 1) { // 4.0
+        } else if total_leverage > Decimal::new(40, 1) {
+            // 4.0
             LeverageState::Critical
-        } else if total_leverage > Decimal::new(30, 1) { // 3.0
+        } else if total_leverage > Decimal::new(30, 1) {
+            // 3.0
             LeverageState::Danger
-        } else if total_leverage > Decimal::new(20, 1) { // 2.0
+        } else if total_leverage > Decimal::new(20, 1) {
+            // 2.0
             LeverageState::Elevated
         } else {
             LeverageState::Normal

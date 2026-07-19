@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShadowStatistics {
@@ -21,8 +21,8 @@ pub enum WindowPeriod {
     OneMonth,
 }
 
-use std::str::FromStr;
 use rust_decimal::prelude::FromPrimitive;
+use std::str::FromStr;
 
 pub struct StatisticsEngine;
 
@@ -37,8 +37,13 @@ impl StatisticsEngine {
         Self
     }
 
-    pub fn aggregate(&self, events: &[crate::shadow::ShadowEvent], window: WindowPeriod) -> ShadowStatistics {
-        let comparisons: Vec<_> = events.iter()
+    pub fn aggregate(
+        &self,
+        events: &[crate::shadow::ShadowEvent],
+        window: WindowPeriod,
+    ) -> ShadowStatistics {
+        let comparisons: Vec<_> = events
+            .iter()
             .filter(|e| e.event_type == crate::shadow::ShadowEventType::ComparisonPerformed)
             .collect();
 
@@ -58,13 +63,15 @@ impl StatisticsEngine {
         let mut exact_matches = 0;
         let mut close_matches = 0;
         let mut major_mismatches = 0;
-        
+
         let mut total_drift = Decimal::ZERO;
         let mut max_drift = Decimal::ZERO;
         let mut drift_count = 0;
 
         for event in &comparisons {
-            if let Some(classification_str) = event.details.get("classification").and_then(|v| v.as_str()) {
+            if let Some(classification_str) =
+                event.details.get("classification").and_then(|v| v.as_str())
+            {
                 match classification_str {
                     "ExactMatch" => exact_matches += 1,
                     "CloseMatch" => close_matches += 1,
@@ -81,7 +88,9 @@ impl StatisticsEngine {
                     }
                     drift_count += 1;
                 }
-            } else if let Some(drift_val) = event.details.get("average_drift").and_then(|v| v.as_f64()) {
+            } else if let Some(drift_val) =
+                event.details.get("average_drift").and_then(|v| v.as_f64())
+            {
                 if let Some(d) = Decimal::from_f64(drift_val) {
                     total_drift += d;
                     if d > max_drift {
@@ -94,8 +103,10 @@ impl StatisticsEngine {
 
         let exact_match_percentage = Decimal::new(exact_matches * 100, 0) / Decimal::new(total, 0);
         let close_match_percentage = Decimal::new(close_matches * 100, 0) / Decimal::new(total, 0);
-        let major_mismatch_percentage = Decimal::new(major_mismatches * 100, 0) / Decimal::new(total, 0);
-        let agreement_percentage = Decimal::new((exact_matches + close_matches) * 100, 0) / Decimal::new(total, 0);
+        let major_mismatch_percentage =
+            Decimal::new(major_mismatches * 100, 0) / Decimal::new(total, 0);
+        let agreement_percentage =
+            Decimal::new((exact_matches + close_matches) * 100, 0) / Decimal::new(total, 0);
 
         let average_drift = if drift_count > 0 {
             total_drift / Decimal::new(drift_count, 0)

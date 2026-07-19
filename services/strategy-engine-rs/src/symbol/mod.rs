@@ -20,7 +20,11 @@ pub struct SymbolAssessment {
 
 impl SymbolAssessment {
     pub fn grade(&self) -> SymbolGrade {
-        let denominator = if self.drawdown == Decimal::from(0) { Decimal::from(1) } else { self.drawdown };
+        let denominator = if self.drawdown == Decimal::from(0) {
+            Decimal::from(1)
+        } else {
+            self.drawdown
+        };
         let mut score = (self.expectancy * self.stability * self.confidence) / denominator;
 
         // Apply severe penalties

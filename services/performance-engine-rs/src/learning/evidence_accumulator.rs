@@ -17,7 +17,8 @@ impl EvidenceAccumulator {
     }
 
     pub fn record_success(&mut self, weight: Decimal) {
-        self.successful_conditions_score = (self.successful_conditions_score * self.decay_factor) + weight;
+        self.successful_conditions_score =
+            (self.successful_conditions_score * self.decay_factor) + weight;
         self.poor_conditions_score *= self.decay_factor;
     }
 

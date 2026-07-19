@@ -10,11 +10,11 @@ pub struct StressReport {
 
 impl StressReport {
     pub fn is_passing(&self) -> bool {
-        self.panics_detected == 0 &&
-        self.data_corruption_detected == 0 &&
-        self.race_conditions_detected == 0 &&
-        self.max_drawdown_survived &&
-        self.max_volatility_survived
+        self.panics_detected == 0
+            && self.data_corruption_detected == 0
+            && self.race_conditions_detected == 0
+            && self.max_drawdown_survived
+            && self.max_volatility_survived
     }
 }
 
@@ -31,14 +31,30 @@ impl PortfolioStressSuite {
         Self
     }
 
-    pub fn inject_high_volatility(&self) -> bool { true }
-    pub fn inject_massive_drawdowns(&self) -> bool { true }
-    pub fn inject_thousands_of_positions(&self) -> bool { true }
-    pub fn inject_correlation_crises(&self) -> bool { true }
-    pub fn inject_rapid_pnl_updates(&self) -> bool { true }
-    pub fn inject_extreme_event_bursts(&self) -> bool { true }
-    pub fn inject_network_interruptions(&self) -> bool { true }
-    pub fn inject_storage_failures(&self) -> bool { true }
+    pub fn inject_high_volatility(&self) -> bool {
+        true
+    }
+    pub fn inject_massive_drawdowns(&self) -> bool {
+        true
+    }
+    pub fn inject_thousands_of_positions(&self) -> bool {
+        true
+    }
+    pub fn inject_correlation_crises(&self) -> bool {
+        true
+    }
+    pub fn inject_rapid_pnl_updates(&self) -> bool {
+        true
+    }
+    pub fn inject_extreme_event_bursts(&self) -> bool {
+        true
+    }
+    pub fn inject_network_interruptions(&self) -> bool {
+        true
+    }
+    pub fn inject_storage_failures(&self) -> bool {
+        true
+    }
 
     pub fn run_suite(&self) -> StressReport {
         // Run all injections and capture the response of the engine

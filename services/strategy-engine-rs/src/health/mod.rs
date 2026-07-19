@@ -25,14 +25,20 @@ impl HealthScore {
         self.score
     }
 
-    pub fn calculate(drawdown: Decimal, degradation: Decimal, confidence: Decimal, expectancy: Decimal, stability: Decimal) -> Self {
+    pub fn calculate(
+        drawdown: Decimal,
+        degradation: Decimal,
+        confidence: Decimal,
+        expectancy: Decimal,
+        stability: Decimal,
+    ) -> Self {
         let base = Decimal::from(100);
         let penalty = drawdown + degradation;
         let bonus = (confidence + expectancy + stability) / Decimal::from(3);
-        
+
         Self::new(base - penalty + bonus)
     }
-    
+
     pub fn state(&self) -> HealthState {
         if self.score >= Decimal::from(90) {
             HealthState::Healthy

@@ -33,9 +33,15 @@ impl PgStore {
     }
 
     pub async fn append_event(&self, event: &EventRecord) -> Result<(), StoreError> {
-        let mut tx = self.pool.begin().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
         self.append_event_tx(&mut tx, event).await?;
-        tx.commit().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
@@ -64,13 +70,19 @@ impl PgStore {
     }
 
     pub async fn append_events(&self, events: &[EventRecord]) -> Result<(), StoreError> {
-        let mut tx = self.pool.begin().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
 
         for event in events {
             self.append_event_tx(&mut tx, event).await?;
         }
 
-        tx.commit().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
@@ -106,23 +118,31 @@ impl PgStore {
 
         let events = records
             .into_iter()
-            .map(|(event_id, aggregate_id, sequence, timestamp, event_type, payload)| EventRecord {
-                event_id,
-                aggregate_id,
-                sequence,
-                timestamp,
-                event_type,
-                payload,
-            })
+            .map(
+                |(event_id, aggregate_id, sequence, timestamp, event_type, payload)| EventRecord {
+                    event_id,
+                    aggregate_id,
+                    sequence,
+                    timestamp,
+                    event_type,
+                    payload,
+                },
+            )
             .collect();
 
         Ok(events)
     }
 
     pub async fn save_snapshot(&self, snapshot: &SnapshotRecord) -> Result<(), StoreError> {
-        let mut tx = self.pool.begin().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
         self.save_snapshot_tx(&mut tx, snapshot).await?;
-        tx.commit().await.map_err(|e| StoreError::DatabaseError(e.to_string()))?;
+        tx.commit()
+            .await
+            .map_err(|e| StoreError::DatabaseError(e.to_string()))?;
         Ok(())
     }
 
@@ -149,7 +169,10 @@ impl PgStore {
         Ok(())
     }
 
-    pub async fn load_snapshot(&self, aggregate_id: &str) -> Result<Option<SnapshotRecord>, StoreError> {
+    pub async fn load_snapshot(
+        &self,
+        aggregate_id: &str,
+    ) -> Result<Option<SnapshotRecord>, StoreError> {
         let record = sqlx::query_as::<_, (String, i64, i64, serde_json::Value)>(
             r#"
             SELECT aggregate_id, sequence, timestamp, snapshot_payload

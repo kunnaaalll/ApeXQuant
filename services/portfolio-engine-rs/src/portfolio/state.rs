@@ -67,7 +67,7 @@ impl PortfolioState {
         Self::default()
     }
 
-    /// Recalculates derived fields (equity, free_margin, margin_level) and 
+    /// Recalculates derived fields (equity, free_margin, margin_level) and
     /// returns an error if any invariant is violated.
     pub fn validate_invariants(&mut self) -> Result<(), PortfolioError> {
         // Equity = Balance + FloatingPnL
@@ -130,16 +130,29 @@ impl PortfolioState {
         Ok(())
     }
 
-    pub fn apply_event(&mut self, event: &PortfolioEvent, timestamp: OffsetDateTime) -> Result<(), PortfolioError> {
+    pub fn apply_event(
+        &mut self,
+        event: &PortfolioEvent,
+        timestamp: OffsetDateTime,
+    ) -> Result<(), PortfolioError> {
         self.timestamp = timestamp;
 
         match event {
-            PortfolioEvent::PositionOpened { margin_used, exposure, .. } => {
+            PortfolioEvent::PositionOpened {
+                margin_used,
+                exposure,
+                ..
+            } => {
                 self.used_margin += margin_used;
                 self.exposure += exposure;
                 self.active_positions += 1;
             }
-            PortfolioEvent::PositionClosed { realized_pnl, margin_released, exposure_released, .. } => {
+            PortfolioEvent::PositionClosed {
+                realized_pnl,
+                margin_released,
+                exposure_released,
+                ..
+            } => {
                 self.balance += realized_pnl;
                 self.realized_pnl += realized_pnl;
                 self.daily_pnl += realized_pnl;
@@ -152,7 +165,12 @@ impl PortfolioState {
                 }
                 self.active_positions -= 1;
             }
-            PortfolioEvent::PartialClose { realized_pnl, margin_released, exposure_released, .. } => {
+            PortfolioEvent::PartialClose {
+                realized_pnl,
+                margin_released,
+                exposure_released,
+                ..
+            } => {
                 self.balance += realized_pnl;
                 self.realized_pnl += realized_pnl;
                 self.daily_pnl += realized_pnl;

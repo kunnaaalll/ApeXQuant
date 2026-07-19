@@ -58,9 +58,10 @@ impl EventStore {
     pub fn take_system_snapshot(&self) -> Result<SystemSnapshot, &'static str> {
         let serialized = serde_json::to_string(&self.events)
             .map_err(|_| "Failed to serialize events for hashing")?;
-        
+
         let hash = ring::digest::digest(&ring::digest::SHA256, serialized.as_bytes());
-        let state_hash = hash.as_ref()
+        let state_hash = hash
+            .as_ref()
             .iter()
             .map(|b| format!("{:02x}", b))
             .collect::<String>();
@@ -71,7 +72,12 @@ impl EventStore {
         })
     }
 
-    pub fn take_cluster_snapshot(&self, active: u32, degraded: u32, maintenance: u32) -> Result<ClusterStateSnapshot, &'static str> {
+    pub fn take_cluster_snapshot(
+        &self,
+        active: u32,
+        degraded: u32,
+        maintenance: u32,
+    ) -> Result<ClusterStateSnapshot, &'static str> {
         Ok(ClusterStateSnapshot {
             system_snapshot: self.take_system_snapshot()?,
             active_nodes: active,
@@ -80,7 +86,11 @@ impl EventStore {
         })
     }
 
-    pub fn take_dependency_snapshot(&self, healthy: u32, failed: u32) -> Result<DependencySnapshot, &'static str> {
+    pub fn take_dependency_snapshot(
+        &self,
+        healthy: u32,
+        failed: u32,
+    ) -> Result<DependencySnapshot, &'static str> {
         Ok(DependencySnapshot {
             system_snapshot: self.take_system_snapshot()?,
             healthy_dependencies: healthy,

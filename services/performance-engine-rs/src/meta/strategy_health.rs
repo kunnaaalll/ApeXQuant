@@ -112,12 +112,12 @@ impl StrategyHealth {
     /// Synthesise a health score from component metrics.
     /// All inputs are normalised [0, 1] unless noted.
     pub fn synthesise(
-        win_rate: Decimal,        // [0, 1]
-        expectancy: Decimal,      // in R-multiples; negative = losing
-        profit_factor: Decimal,   // 1.0 = break even
-        max_drawdown: Decimal,    // [0, 1] positive fraction
-        confidence: Decimal,      // [0, 1]
-        stability: Decimal,       // [0, 1]
+        win_rate: Decimal,      // [0, 1]
+        expectancy: Decimal,    // in R-multiples; negative = losing
+        profit_factor: Decimal, // 1.0 = break even
+        max_drawdown: Decimal,  // [0, 1] positive fraction
+        confidence: Decimal,    // [0, 1]
+        stability: Decimal,     // [0, 1]
     ) -> u8 {
         // Immediate collapse guards
         if expectancy < dec!(-0.10) || profit_factor < dec!(0.70) {

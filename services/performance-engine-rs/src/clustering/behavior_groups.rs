@@ -25,3 +25,9 @@ impl BehaviorGroups {
         self.cluster_scores.insert(cluster_name, score);
     }
 }
+
+impl Default for BehaviorGroups {
+    fn default() -> Self {
+        Self::new()
+    }
+}

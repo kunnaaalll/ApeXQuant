@@ -38,7 +38,7 @@ impl StrategyRepository {
         aggregate_id: &str,
     ) -> Result<Option<A>, RepositoryError> {
         let snapshot_record = self.store.load_snapshot(aggregate_id).await?;
-        
+
         let (from_sequence, snapshot) = match snapshot_record {
             Some(record) => {
                 let snap = Serializer::deserialize::<A::Snapshot>(record.snapshot_payload)
@@ -49,7 +49,7 @@ impl StrategyRepository {
         };
 
         let event_records = self.store.load_events(aggregate_id, from_sequence).await?;
-        
+
         if snapshot.is_none() && event_records.is_empty() {
             return Ok(None);
         }
@@ -98,7 +98,10 @@ impl StrategyRepository {
         let latest_sequence = events.last().map(|(_, seq, _)| *seq).unwrap_or(0);
         let latest_timestamp = events.last().map(|(_, _, ts)| *ts).unwrap_or(0);
 
-        let mut tx = self.pool.begin().await
+        let mut tx = self
+            .pool
+            .begin()
+            .await
             .map_err(|e| RepositoryError::TransactionFailed(e.to_string()))?;
 
         self.store.append_events_tx(&mut tx, &event_records).await?;
@@ -114,10 +117,13 @@ impl StrategyRepository {
                 snapshot_payload,
             };
 
-            self.store.save_snapshot_tx(&mut tx, &snapshot_record).await?;
+            self.store
+                .save_snapshot_tx(&mut tx, &snapshot_record)
+                .await?;
         }
 
-        tx.commit().await
+        tx.commit()
+            .await
             .map_err(|e| RepositoryError::TransactionFailed(e.to_string()))?;
 
         Ok(())

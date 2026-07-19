@@ -1,4 +1,7 @@
-use super::models::{CircuitBreakerState, CorrelationSeverity, DrawdownState, IncreaseDecision, RiskInputs, VarSeverity};
+use super::models::{
+    CircuitBreakerState, CorrelationSeverity, DrawdownState, IncreaseDecision, RiskInputs,
+    VarSeverity,
+};
 
 pub fn evaluate_increase(inputs: &RiskInputs) -> IncreaseDecision {
     if inputs.drawdown_state == DrawdownState::Frozen

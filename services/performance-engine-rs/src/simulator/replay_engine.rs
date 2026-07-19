@@ -132,25 +132,39 @@ impl ReplayEngine {
 
     fn passes_filter(trade: &TradeRecord, filter: &ReplayFilter) -> bool {
         if let Some(ref s) = filter.session {
-            if &trade.session != s { return false; }
+            if &trade.session != s {
+                return false;
+            }
         }
         if let Some(ref r) = filter.regime {
-            if &trade.regime != r { return false; }
+            if &trade.regime != r {
+                return false;
+            }
         }
         if let Some(ref sym) = filter.symbol {
-            if &trade.symbol != sym { return false; }
+            if &trade.symbol != sym {
+                return false;
+            }
         }
         if let Some(ref tf) = filter.timeframe {
-            if &trade.timeframe != tf { return false; }
+            if &trade.timeframe != tf {
+                return false;
+            }
         }
         if let Some(ref p) = filter.pattern_id {
-            if &trade.pattern_id != p { return false; }
+            if &trade.pattern_id != p {
+                return false;
+            }
         }
         if let Some(min_rr) = filter.min_rr {
-            if trade.rr < min_rr { return false; }
+            if trade.rr < min_rr {
+                return false;
+            }
         }
         if let Some(min_eq) = filter.min_entry_quality {
-            if trade.entry_quality < min_eq { return false; }
+            if trade.entry_quality < min_eq {
+                return false;
+            }
         }
         true
     }

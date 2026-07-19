@@ -1,15 +1,15 @@
-use apex_protos::common::{Empty, Result as CommonResult, Error as CommonError};
+use crate::database::{LearningRepository, RecordLessonParams};
+use apex_protos::common::{Empty, Error as CommonError, Result as CommonResult};
 use apex_protos::learning::{
     learning_engine_server::LearningEngine, Lesson, LessonCollection, LessonQuery,
     ModelPerformance, ModelWeights, PerformanceQuery, RecordLessonResponse, TrainingQuery,
-    TrainingRequest, TrainingRun, TrainingStatus, WeightUpdateRequest,
-    WeightUpdateResponse, WeightsQuery,
+    TrainingRequest, TrainingRun, TrainingStatus, WeightUpdateRequest, WeightUpdateResponse,
+    WeightsQuery,
 };
-use tonic::{Request, Response, Status};
-use uuid::Uuid;
 use rust_decimal::Decimal;
 use std::sync::Arc;
-use crate::database::LearningRepository;
+use tonic::{Request, Response, Status};
+use uuid::Uuid;
 
 pub struct GrpcLearningEngine {
     repo: Arc<LearningRepository>,
@@ -31,36 +31,62 @@ impl LearningEngine for GrpcLearningEngine {
         let lesson_id = Uuid::new_v4();
 
         // Convert the protobuf values to Decimals safely
-        let pnl = lesson.outcome.as_ref().and_then(|o| o.net_pnl.as_ref()).and_then(|m| m.amount.parse::<Decimal>().ok()).unwrap_or(Decimal::new(0, 0));
-        let gross = lesson.outcome.as_ref().and_then(|o| o.gross_pnl.as_ref()).and_then(|m| m.amount.parse::<Decimal>().ok()).unwrap_or(Decimal::new(0, 0));
-        let entry_eff = lesson.analysis.as_ref().and_then(|a| a.entry_efficiency.as_ref()).and_then(|m| m.value.parse::<Decimal>().ok()).unwrap_or(Decimal::ONE);
-        let exit_eff = lesson.analysis.as_ref().and_then(|a| a.exit_efficiency.as_ref()).and_then(|m| m.value.parse::<Decimal>().ok()).unwrap_or(Decimal::ONE);
-        
-        let symbol_str = lesson.symbol.as_ref().map(|s| s.code.clone()).unwrap_or_default();
-        
-        match self.repo.record_lesson(
-            lesson_id,
-            &lesson.position_id,
-            &lesson.signal_id,
-            "system_strategy", // Default
-            &lesson.r#type().as_str_name(),
-            &lesson.category().as_str_name(),
-            lesson.severity,
-            &symbol_str,
-            &lesson.market_regime,
-            gross,
-            pnl,
-            entry_eff,
-            exit_eff,
-        ).await {
-            Ok(_) => {
-                Ok(Response::new(RecordLessonResponse {
-                    success: true,
-                    lesson_id: lesson_id.to_string(),
-                    predicted_value: 0.0,
-                    error: None,
-                }))
-            }
+        let pnl = lesson
+            .outcome
+            .as_ref()
+            .and_then(|o| o.net_pnl.as_ref())
+            .and_then(|m| m.amount.parse::<Decimal>().ok())
+            .unwrap_or(Decimal::new(0, 0));
+        let gross = lesson
+            .outcome
+            .as_ref()
+            .and_then(|o| o.gross_pnl.as_ref())
+            .and_then(|m| m.amount.parse::<Decimal>().ok())
+            .unwrap_or(Decimal::new(0, 0));
+        let entry_eff = lesson
+            .analysis
+            .as_ref()
+            .and_then(|a| a.entry_efficiency.as_ref())
+            .and_then(|m| m.value.parse::<Decimal>().ok())
+            .unwrap_or(Decimal::ONE);
+        let exit_eff = lesson
+            .analysis
+            .as_ref()
+            .and_then(|a| a.exit_efficiency.as_ref())
+            .and_then(|m| m.value.parse::<Decimal>().ok())
+            .unwrap_or(Decimal::ONE);
+
+        let symbol_str = lesson
+            .symbol
+            .as_ref()
+            .map(|s| s.code.clone())
+            .unwrap_or_default();
+
+        match self
+            .repo
+            .record_lesson(RecordLessonParams {
+                lesson_id,
+                position_id: &lesson.position_id,
+                signal_id: &lesson.signal_id,
+                strategy_id: "system_strategy", // Default
+                lesson_type: lesson.r#type().as_str_name(),
+                category: lesson.category().as_str_name(),
+                severity: lesson.severity,
+                symbol: &symbol_str,
+                market_regime: &lesson.market_regime,
+                gross_pnl: gross,
+                net_pnl: pnl,
+                entry_efficiency: entry_eff,
+                exit_efficiency: exit_eff,
+            })
+            .await
+        {
+            Ok(_) => Ok(Response::new(RecordLessonResponse {
+                success: true,
+                lesson_id: lesson_id.to_string(),
+                predicted_value: 0.0,
+                error: None,
+            })),
             Err(e) => {
                 tracing::error!("Failed to record lesson: {}", e);
                 Ok(Response::new(RecordLessonResponse {
@@ -127,10 +153,7 @@ impl LearningEngine for GrpcLearningEngine {
         Ok(Response::new(ModelPerformance::default()))
     }
 
-    async fn health(
-        &self,
-        _request: Request<Empty>,
-    ) -> Result<Response<CommonResult>, Status> {
+    async fn health(&self, _request: Request<Empty>) -> Result<Response<CommonResult>, Status> {
         Ok(Response::new(CommonResult {
             ok: true,
             error: None,

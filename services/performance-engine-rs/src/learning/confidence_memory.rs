@@ -16,8 +16,8 @@ impl ConfidenceMemory {
     }
 
     pub fn update(&mut self, recent_confidence: Decimal) -> Decimal {
-        self.historical_confidence = (self.historical_confidence * self.memory_decay) + 
-                                     (recent_confidence * (dec!(1.0) - self.memory_decay));
+        self.historical_confidence = (self.historical_confidence * self.memory_decay)
+            + (recent_confidence * (dec!(1.0) - self.memory_decay));
         self.historical_confidence
     }
 }

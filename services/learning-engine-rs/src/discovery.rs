@@ -37,7 +37,7 @@ impl DiscoveryEngine {
     pub fn rank_opportunities(&self, mut opportunities: Vec<Opportunity>) -> DiscoveryResult {
         // Sort by potential edge descending
         opportunities.sort_by_key(|b| std::cmp::Reverse(b.potential_edge));
-        
+
         DiscoveryResult {
             ranked_opportunities: opportunities,
         }

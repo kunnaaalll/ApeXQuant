@@ -24,7 +24,8 @@ impl ConfidencePenalty {
                 name: "Small Sample Size".into(),
                 severity: PenaltySeverity::Critical,
                 impact: dec!(50.0),
-                reason: "Fewer than 20 trades provides insufficient statistical significance".into(),
+                reason: "Fewer than 20 trades provides insufficient statistical significance"
+                    .into(),
             })
         } else if trade_count < 50 {
             Some(Self {
@@ -39,7 +40,7 @@ impl ConfidencePenalty {
     }
 
     pub fn large_drawdown(max_drawdown: Decimal) -> Option<Self> {
-        if max_drawdown > dec!(0.2) { 
+        if max_drawdown > dec!(0.2) {
             Some(Self {
                 name: "Large Drawdown".into(),
                 severity: PenaltySeverity::High,
@@ -63,7 +64,7 @@ impl ConfidencePenalty {
             None
         }
     }
-    
+
     pub fn high_volatility(volatility: Decimal) -> Option<Self> {
         if volatility > dec!(0.3) {
             Some(Self {

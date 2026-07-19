@@ -21,10 +21,12 @@ impl LearningEngineMetrics {
     }
 
     pub fn record_feature_discovered(feature_type: &str) {
-        counter!("apex_learning_features_discovered_total", "type" => feature_type.to_string()).increment(1);
+        counter!("apex_learning_features_discovered_total", "type" => feature_type.to_string())
+            .increment(1);
     }
 
     pub fn record_recommendation_generated(strategy: &str) {
-        counter!("apex_learning_recommendations_total", "strategy" => strategy.to_string()).increment(1);
+        counter!("apex_learning_recommendations_total", "strategy" => strategy.to_string())
+            .increment(1);
     }
 }

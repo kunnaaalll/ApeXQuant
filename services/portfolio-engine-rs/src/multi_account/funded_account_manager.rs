@@ -32,7 +32,13 @@ impl FundedAccountManager {
         Self
     }
 
-    pub fn check_status(&self, state: &FundedAccountState, profit_target: Decimal, max_drawdown: Decimal, daily_drawdown_limit: Decimal) -> AccountPhase {
+    pub fn check_status(
+        &self,
+        state: &FundedAccountState,
+        profit_target: Decimal,
+        max_drawdown: Decimal,
+        daily_drawdown_limit: Decimal,
+    ) -> AccountPhase {
         if state.phase == AccountPhase::Terminated {
             return AccountPhase::Terminated;
         }
@@ -51,7 +57,7 @@ impl FundedAccountManager {
         if profit >= profit_target && state.phase == AccountPhase::Evaluation1 {
             return AccountPhase::Evaluation2;
         }
-        
+
         if profit >= profit_target && state.phase == AccountPhase::Evaluation2 {
             return AccountPhase::Funded;
         }

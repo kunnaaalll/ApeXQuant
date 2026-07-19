@@ -85,10 +85,16 @@ impl OverfitDetector {
         }
 
         if pf_ratio < dec!(0.70) {
-            reasons.push(format!("OOS/IS profit factor ratio critically low: {:.3}", pf_ratio));
+            reasons.push(format!(
+                "OOS/IS profit factor ratio critically low: {:.3}",
+                pf_ratio
+            ));
             penalty *= dec!(0.60);
         } else if pf_ratio < dec!(0.85) {
-            reasons.push(format!("OOS/IS profit factor ratio degraded: {:.3}", pf_ratio));
+            reasons.push(format!(
+                "OOS/IS profit factor ratio degraded: {:.3}",
+                pf_ratio
+            ));
             penalty *= dec!(0.85);
         }
 

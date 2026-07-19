@@ -1,13 +1,13 @@
 use anyhow::Result;
-use tracing::{info, error};
 use std::sync::Arc;
 use tokio::signal;
+use tracing::{error, info};
 
 use core_runtime_rs::configuration::EngineConfiguration;
-use core_runtime_rs::service_registry::ServiceRegistry;
 use core_runtime_rs::dependency_graph::DependencyGraph;
-use core_runtime_rs::lifecycle::LifecycleManager;
 use core_runtime_rs::health::HealthMonitor;
+use core_runtime_rs::lifecycle::LifecycleManager;
+use core_runtime_rs::service_registry::ServiceRegistry;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
     let _dependency_graph = Arc::new(DependencyGraph::new());
     let _lifecycle_manager = Arc::new(LifecycleManager::new());
     let _health_monitor = Arc::new(HealthMonitor::new());
-    
+
     info!("APEX Core Runtime & Orchestrator successfully initialized");
 
     // 5. Start gRPC Gateway and HTTP API (Placeholder start)
@@ -36,10 +36,10 @@ async fn main() -> Result<()> {
     match signal::ctrl_c().await {
         Ok(()) => {
             info!("Received SIGINT, starting graceful shutdown...");
-        },
+        }
         Err(err) => {
             error!("Unable to listen for shutdown signal: {}", err);
-        },
+        }
     }
 
     info!("APEX Orchestrator shutdown complete");

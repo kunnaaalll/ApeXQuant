@@ -7,27 +7,28 @@ pub struct LearningRepository {
     pool: PgPool,
 }
 
+pub struct RecordLessonParams<'a> {
+    pub lesson_id: Uuid,
+    pub position_id: &'a str,
+    pub signal_id: &'a str,
+    pub strategy_id: &'a str,
+    pub lesson_type: &'a str,
+    pub category: &'a str,
+    pub severity: f64,
+    pub symbol: &'a str,
+    pub market_regime: &'a str,
+    pub gross_pnl: Decimal,
+    pub net_pnl: Decimal,
+    pub entry_efficiency: Decimal,
+    pub exit_efficiency: Decimal,
+}
+
 impl LearningRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn record_lesson(
-        &self,
-        lesson_id: Uuid,
-        position_id: &str,
-        signal_id: &str,
-        strategy_id: &str,
-        lesson_type: &str,
-        category: &str,
-        severity: f64,
-        symbol: &str,
-        market_regime: &str,
-        gross_pnl: Decimal,
-        net_pnl: Decimal,
-        entry_efficiency: Decimal,
-        exit_efficiency: Decimal,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn record_lesson(&self, params: RecordLessonParams<'_>) -> Result<(), sqlx::Error> {
         sqlx::query(
             r#"
             INSERT INTO learning_lessons 
@@ -35,19 +36,19 @@ impl LearningRepository {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             "#
         )
-        .bind(lesson_id)
-        .bind(position_id)
-        .bind(signal_id)
-        .bind(strategy_id)
-        .bind(lesson_type)
-        .bind(category)
-        .bind(severity)
-        .bind(symbol)
-        .bind(market_regime)
-        .bind(gross_pnl)
-        .bind(net_pnl)
-        .bind(entry_efficiency)
-        .bind(exit_efficiency)
+        .bind(params.lesson_id)
+        .bind(params.position_id)
+        .bind(params.signal_id)
+        .bind(params.strategy_id)
+        .bind(params.lesson_type)
+        .bind(params.category)
+        .bind(params.severity)
+        .bind(params.symbol)
+        .bind(params.market_regime)
+        .bind(params.gross_pnl)
+        .bind(params.net_pnl)
+        .bind(params.entry_efficiency)
+        .bind(params.exit_efficiency)
         .execute(&self.pool)
         .await?;
 
@@ -103,7 +104,10 @@ impl MemoryRepository {
         Ok(())
     }
 
-    pub async fn get_memory(&self, strategy_id: &str) -> Result<Option<StrategyMemoryRow>, sqlx::Error> {
+    pub async fn get_memory(
+        &self,
+        strategy_id: &str,
+    ) -> Result<Option<StrategyMemoryRow>, sqlx::Error> {
         let row = sqlx::query_as::<_, StrategyMemoryRow>(
             r#"SELECT total_trades, winning_trades, regime_quality, execution_quality, ema_return, historical_sum_return, regime_transitions FROM learning_memory WHERE strategy_id = $1"#
         )

@@ -1,5 +1,6 @@
-use rust_decimal::Decimal;
+#![allow(warnings, clippy::all, deprecated)]
 use crate::intelligence::{EdgeIntelligence, PatternAssessment, Recommendation};
+use rust_decimal::Decimal;
 
 #[test]
 fn test_edge_intelligence_assess() {
@@ -57,12 +58,20 @@ fn test_edge_intelligence_assess() {
 #[test]
 fn test_edge_intelligence_recommend() {
     let exceptional = EdgeIntelligence::new(
-        Decimal::new(6, 1), Decimal::new(6, 1), Decimal::new(2, 0), Decimal::new(9, 1), Decimal::new(1, 1),
+        Decimal::new(6, 1),
+        Decimal::new(6, 1),
+        Decimal::new(2, 0),
+        Decimal::new(9, 1),
+        Decimal::new(1, 1),
     );
     assert_eq!(exceptional.recommend(), Recommendation::IncreaseAllocation);
 
     let negative = EdgeIntelligence::new(
-        Decimal::new(-3, 1), Decimal::new(2, 1), Decimal::new(5, 1), Decimal::new(2, 1), Decimal::new(5, 1),
+        Decimal::new(-3, 1),
+        Decimal::new(2, 1),
+        Decimal::new(5, 1),
+        Decimal::new(2, 1),
+        Decimal::new(5, 1),
     );
     assert_eq!(negative.recommend(), Recommendation::Pause);
 }

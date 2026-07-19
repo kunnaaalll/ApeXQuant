@@ -53,7 +53,7 @@ fn test_tail_risk_score_clamping() {
     let mut tr = TailRiskAssessment::new();
     tr.record_tail_loss(Decimal::new(15, 1));
     tr.record_tail_loss(Decimal::new(25, 1));
-    
+
     let score = tr.tail_risk_score(2);
     // Expected to be clamped at 100
     assert!(score <= 100);
@@ -85,7 +85,7 @@ fn test_zero_panics_and_no_nan() {
     assert_eq!(pvar.variance(), Decimal::ZERO);
     assert_eq!(pvar.standard_deviation(), Decimal::ZERO);
     assert_eq!(pvar.compute_var(ConfidenceLevel::Ninety), Decimal::ZERO);
-    
+
     let tr = TailRiskAssessment::new();
     assert_eq!(tr.average_tail_loss(), Decimal::ZERO);
     assert_eq!(tr.frequency_of_extreme_events(0), Decimal::ZERO);

@@ -3,10 +3,10 @@
 //! All computed from a Vec<CompletedTrade>. Uses f64 internally for
 //! statistical math (stddev, log), Decimal for all outputs.
 
-use rust_decimal::Decimal;
-use rust_decimal::prelude::{ToPrimitive, FromPrimitive};
-use crate::trades::CompletedTrade;
 use crate::aggregation::PnLAggregate;
+use crate::trades::CompletedTrade;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone)]
 pub struct DetailedMetrics {
@@ -42,7 +42,8 @@ impl DetailedMetrics {
         if trades.is_empty() {
             return Err("No trades to compute metrics from".to_string());
         }
-        let pnls: Vec<f64> = trades.iter()
+        let pnls: Vec<f64> = trades
+            .iter()
             .map(|t| t.net_pnl.to_f64().unwrap_or(0.0))
             .collect();
 
@@ -76,10 +77,16 @@ impl DetailedMetrics {
         let (max_win_streak, max_loss_streak) = compute_streaks(trades);
 
         Ok(Self {
-            sharpe_ratio: Decimal::from_f64(sharpe).unwrap_or(Decimal::ZERO).round_dp(4),
-            sortino_ratio: Decimal::from_f64(sortino).unwrap_or(Decimal::ZERO).round_dp(4),
+            sharpe_ratio: Decimal::from_f64(sharpe)
+                .unwrap_or(Decimal::ZERO)
+                .round_dp(4),
+            sortino_ratio: Decimal::from_f64(sortino)
+                .unwrap_or(Decimal::ZERO)
+                .round_dp(4),
             calmar_ratio,
-            max_drawdown: Decimal::from_f64(max_drawdown).unwrap_or(Decimal::ZERO).round_dp(2),
+            max_drawdown: Decimal::from_f64(max_drawdown)
+                .unwrap_or(Decimal::ZERO)
+                .round_dp(2),
             profit_factor: agg.profit_factor(),
             win_rate: agg.win_rate(),
             average_r: agg.average_r(),
@@ -97,19 +104,31 @@ impl DetailedMetrics {
 /// √252 annualisation factor (trading days).
 fn sharpe_sortino(pnls: &[f64]) -> (f64, f64) {
     let n = pnls.len() as f64;
-    if n < 2.0 { return (0.0, 0.0); }
+    if n < 2.0 {
+        return (0.0, 0.0);
+    }
     let mean = pnls.iter().sum::<f64>() / n;
     let var = pnls.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / (n - 1.0);
     let std = var.sqrt();
-    let sharpe = if std > 1e-12 { (mean / std) * 252_f64.sqrt() } else { 0.0 };
+    let sharpe = if std > 1e-12 {
+        (mean / std) * 252_f64.sqrt()
+    } else {
+        0.0
+    };
 
     // Sortino: downside deviation (only negative returns count)
-    let down_var = pnls.iter()
+    let down_var = pnls
+        .iter()
         .filter(|&&x| x < 0.0)
         .map(|&x| x.powi(2))
-        .sum::<f64>() / n;
+        .sum::<f64>()
+        / n;
     let down_std = down_var.sqrt();
-    let sortino = if down_std > 1e-12 { (mean / down_std) * 252_f64.sqrt() } else { 0.0 };
+    let sortino = if down_std > 1e-12 {
+        (mean / down_std) * 252_f64.sqrt()
+    } else {
+        0.0
+    };
 
     (sharpe, sortino)
 }
@@ -121,9 +140,13 @@ fn max_drawdown_f64(pnls: &[f64]) -> f64 {
     let mut max_dd = 0.0_f64;
     for &p in pnls {
         cumulative += p;
-        if cumulative > peak { peak = cumulative; }
+        if cumulative > peak {
+            peak = cumulative;
+        }
         let dd = peak - cumulative;
-        if dd > max_dd { max_dd = dd; }
+        if dd > max_dd {
+            max_dd = dd;
+        }
     }
     max_dd
 }
@@ -143,8 +166,12 @@ fn compute_streaks(trades: &[CompletedTrade]) -> (u32, u32) {
             loss_streak += 1;
             win_streak = 0;
         }
-        if win_streak > max_win { max_win = win_streak; }
-        if loss_streak > max_loss { max_loss = loss_streak; }
+        if win_streak > max_win {
+            max_win = win_streak;
+        }
+        if loss_streak > max_loss {
+            max_loss = loss_streak;
+        }
     }
     (max_win, max_loss)
 }

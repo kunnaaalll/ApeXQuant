@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum PortfolioHealthState {
@@ -110,11 +110,17 @@ impl PortfolioHealth {
         }
     }
 
-    pub fn apply_event(&mut self, _event: HealthEvent, new_score: u8, new_breakdown: PortfolioHealthBreakdown, timestamp: u64) -> HealthSnapshot {
+    pub fn apply_event(
+        &mut self,
+        _event: HealthEvent,
+        new_score: u8,
+        new_breakdown: PortfolioHealthBreakdown,
+        timestamp: u64,
+    ) -> HealthSnapshot {
         // Enforce invariants: score must be between 0 and 100.
         // It is inherently bounded since it's u8, but we clamp to max 100.
         let bounded_score = new_score.min(100);
-        
+
         self.current_score = bounded_score;
         self.state = Self::determine_state(bounded_score);
         self.breakdown = new_breakdown;
@@ -129,7 +135,7 @@ impl PortfolioHealth {
         // Limit recovery tick impact.
         let safe_recovery = recovery_points.min(5); // e.g. max 5 points per tick
         let new_score = self.current_score.saturating_add(safe_recovery).min(100);
-        
+
         let mut new_breakdown = self.breakdown.clone();
         new_breakdown.recovery_state = HealthContribution {
             weight: self.breakdown.recovery_state.weight,
@@ -137,7 +143,12 @@ impl PortfolioHealth {
             reason: "Time-based health recovery applied".to_string(),
         };
 
-        self.apply_event(HealthEvent::RecoveryTick, new_score, new_breakdown, timestamp)
+        self.apply_event(
+            HealthEvent::RecoveryTick,
+            new_score,
+            new_breakdown,
+            timestamp,
+        )
     }
 
     pub fn create_snapshot(&self) -> HealthSnapshot {
@@ -177,7 +188,10 @@ impl PortfolioHealth {
         let drawdown_contrib = HealthContribution {
             weight: Decimal::new(20, 2),
             contribution: drawdown_score_val,
-            reason: format!("Current drawdown is {:.2}%", state.drawdown * Decimal::new(100, 0)),
+            reason: format!(
+                "Current drawdown is {:.2}%",
+                state.drawdown * Decimal::new(100, 0)
+            ),
         };
 
         let margin_util_ratio = if state.equity.is_zero() {
@@ -185,13 +199,17 @@ impl PortfolioHealth {
         } else {
             state.used_margin / state.equity
         };
-        let margin_util_score_val = (Decimal::new(100, 0) - margin_util_ratio * Decimal::new(100, 0))
-            .max(Decimal::ZERO)
-            .min(Decimal::new(100, 0));
+        let margin_util_score_val = (Decimal::new(100, 0)
+            - margin_util_ratio * Decimal::new(100, 0))
+        .max(Decimal::ZERO)
+        .min(Decimal::new(100, 0));
         let margin_util_contrib = HealthContribution {
             weight: Decimal::new(15, 2),
             contribution: margin_util_score_val,
-            reason: format!("Margin utilization is {:.2}%", margin_util_ratio * Decimal::new(100, 0)),
+            reason: format!(
+                "Margin utilization is {:.2}%",
+                margin_util_ratio * Decimal::new(100, 0)
+            ),
         };
 
         let concentrations = exposure.assess_concentration();
@@ -222,7 +240,10 @@ impl PortfolioHealth {
         let open_risk_contrib = HealthContribution {
             weight: Decimal::new(10, 2),
             contribution: open_risk_score_val,
-            reason: format!("Open risk is {:.2}% of equity", open_risk_ratio * Decimal::new(100, 0)),
+            reason: format!(
+                "Open risk is {:.2}% of equity",
+                open_risk_ratio * Decimal::new(100, 0)
+            ),
         };
 
         let default_contrib = |weight: Decimal, score: Decimal, reason: &str| HealthContribution {
@@ -232,24 +253,56 @@ impl PortfolioHealth {
         };
 
         let breakdown = PortfolioHealthBreakdown {
-            portfolio_heat: default_contrib(Decimal::new(5, 2), Decimal::new(95, 0), "Normal heat level"),
+            portfolio_heat: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(95, 0),
+                "Normal heat level",
+            ),
             drawdown: drawdown_contrib.clone(),
             margin_utilization: margin_util_contrib.clone(),
             leverage: leverage_contrib.clone(),
             open_risk: open_risk_contrib.clone(),
             exposure_concentration: concentration_contrib.clone(),
-            correlation_pressure: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "Low correlation pressure"),
-            recovery_state: default_contrib(Decimal::new(5, 2), Decimal::new(100, 0), "No recovery active"),
-            circuit_breakers: default_contrib(Decimal::new(5, 2), Decimal::new(100, 0), "All systems operational"),
-            capital_reserves: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "Reserves fully funded"),
-            volatility_regime: default_contrib(Decimal::new(5, 2), Decimal::new(85, 0), "Stable volatility regime"),
-            position_quality: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "High win-rate quality"),
-            portfolio_quality: default_contrib(Decimal::new(5, 2), Decimal::new(90, 0), "Overall high stability"),
+            correlation_pressure: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(90, 0),
+                "Low correlation pressure",
+            ),
+            recovery_state: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(100, 0),
+                "No recovery active",
+            ),
+            circuit_breakers: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(100, 0),
+                "All systems operational",
+            ),
+            capital_reserves: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(90, 0),
+                "Reserves fully funded",
+            ),
+            volatility_regime: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(85, 0),
+                "Stable volatility regime",
+            ),
+            position_quality: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(90, 0),
+                "High win-rate quality",
+            ),
+            portfolio_quality: default_contrib(
+                Decimal::new(5, 2),
+                Decimal::new(90, 0),
+                "Overall high stability",
+            ),
         };
 
         let mut total_score = Decimal::ZERO;
         let mut total_weight = Decimal::ZERO;
-        
+
         let contributions = [
             &breakdown.portfolio_heat,
             &breakdown.drawdown,

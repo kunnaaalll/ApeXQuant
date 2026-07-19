@@ -29,26 +29,26 @@ const BATCH_SIZE: i64 = 500;
 /// Serialisable so it can be persisted between restarts.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplayCursor {
-    pub symbol:          String,
-    pub next_sequence:   i64,
-    pub events_emitted:  u64,
-    pub last_timestamp:  Option<DateTime<Utc>>,
+    pub symbol: String,
+    pub next_sequence: i64,
+    pub events_emitted: u64,
+    pub last_timestamp: Option<DateTime<Utc>>,
     pub last_state_hash: String,
 }
 
 impl ReplayCursor {
     pub fn new(symbol: impl Into<String>) -> Self {
         Self {
-            symbol:          symbol.into(),
-            next_sequence:   0,
-            events_emitted:  0,
-            last_timestamp:  None,
+            symbol: symbol.into(),
+            next_sequence: 0,
+            events_emitted: 0,
+            last_timestamp: None,
             last_state_hash: String::new(),
         }
     }
 
     fn advance(&mut self, sequence: i64, timestamp: DateTime<Utc>, state_hash: String) {
-        self.next_sequence  = sequence + 1;
+        self.next_sequence = sequence + 1;
         self.events_emitted += 1;
         self.last_timestamp = Some(timestamp);
         self.last_state_hash = state_hash;
@@ -67,11 +67,11 @@ impl ReplayCursor {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplayStats {
-    pub symbol:         String,
+    pub symbol: String,
     pub events_emitted: u64,
     pub final_sequence: i64,
-    pub final_hash:     String,
-    pub ordering_ok:    bool,
+    pub final_hash: String,
+    pub ordering_ok: bool,
 }
 
 // ─── Event Bus Abstraction ────────────────────────────────────────────────────
@@ -83,10 +83,10 @@ pub trait EventBusPublisher: Send + Sync {
     /// Publish a tick event.
     async fn publish_tick(
         &self,
-        symbol:    &str,
-        sequence:  u64,
-        bid:       Decimal,
-        ask:       Decimal,
+        symbol: &str,
+        sequence: u64,
+        bid: Decimal,
+        ask: Decimal,
         timestamp: DateTime<Utc>,
     ) -> Result<()>;
 }
@@ -94,13 +94,16 @@ pub trait EventBusPublisher: Send + Sync {
 // ─── Replay Engine ────────────────────────────────────────────────────────────
 
 pub struct ReplayEngine<P> {
-    tick_repo:  TickRepository,
-    event_bus:  P,
+    tick_repo: TickRepository,
+    event_bus: P,
 }
 
 impl<P: EventBusPublisher> ReplayEngine<P> {
     pub fn new(tick_repo: TickRepository, event_bus: P) -> Self {
-        Self { tick_repo, event_bus }
+        Self {
+            tick_repo,
+            event_bus,
+        }
     }
 
     /// Execute a deterministic replay over `window` for `symbol`.
@@ -158,7 +161,9 @@ impl<P: EventBusPublisher> ReplayEngine<P> {
                         tick.timestamp,
                     )
                     .await
-                    .map_err(|e| anyhow!("event bus publish failed at seq {}: {e}", tick.sequence))?;
+                    .map_err(|e| {
+                        anyhow!("event bus publish failed at seq {}: {e}", tick.sequence)
+                    })?;
 
                 cursor.advance(tick.sequence, tick.timestamp, state_hash.clone());
                 last_hash = state_hash;
@@ -174,21 +179,23 @@ impl<P: EventBusPublisher> ReplayEngine<P> {
                     );
                     let snapshot = ReplaySnapshot {
                         checkpoint,
-                        data_blob: serde_json::to_vec(&cursor)
-                            .unwrap_or_default(),
+                        data_blob: serde_json::to_vec(&cursor).unwrap_or_default(),
                     };
                     checkpoints.push(snapshot);
                 }
             }
         }
 
-        Ok((ReplayStats {
-            symbol:         symbol.to_owned(),
-            events_emitted: cursor.events_emitted,
-            final_sequence: cursor.next_sequence,
-            final_hash:     last_hash,
-            ordering_ok,
-        }, checkpoints))
+        Ok((
+            ReplayStats {
+                symbol: symbol.to_owned(),
+                events_emitted: cursor.events_emitted,
+                final_sequence: cursor.next_sequence,
+                final_hash: last_hash,
+                ordering_ok,
+            },
+            checkpoints,
+        ))
     }
 }
 
@@ -196,12 +203,7 @@ impl<P: EventBusPublisher> ReplayEngine<P> {
 
 /// Deterministic SHA-256 hash of the tick state fields.
 /// Field order is canonical: sequence | bid | ask | timestamp_ms.
-fn hash_tick_state(
-    sequence:  i64,
-    bid:       Decimal,
-    ask:       Decimal,
-    timestamp: DateTime<Utc>,
-) -> String {
+fn hash_tick_state(sequence: i64, bid: Decimal, ask: Decimal, timestamp: DateTime<Utc>) -> String {
     let payload = format!(
         "{}|{}|{}|{}",
         sequence,

@@ -9,7 +9,11 @@ impl SanityGuard {
         Self { max_leverage_limit }
     }
 
-    pub fn check_leverage(&self, total_exposure: Decimal, account_equity: Decimal) -> Result<(), &'static str> {
+    pub fn check_leverage(
+        &self,
+        total_exposure: Decimal,
+        account_equity: Decimal,
+    ) -> Result<(), &'static str> {
         if account_equity <= Decimal::ZERO {
             return Err("Account equity is zero or negative");
         }

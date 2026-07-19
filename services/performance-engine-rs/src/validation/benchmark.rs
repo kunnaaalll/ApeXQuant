@@ -20,7 +20,7 @@ impl PerformanceBenchmark {
     pub fn run_benchmark(&self, _duration_seconds: u64) -> BenchmarkResult {
         // In a real implementation, this would spin up a loop using std::time::Instant
         // to record latencies of evaluations over `duration_seconds`.
-        
+
         BenchmarkResult {
             average_latency_ms: 1.5,
             p95_latency_ms: 3.2,
@@ -28,5 +28,11 @@ impl PerformanceBenchmark {
             evaluations_per_second: 125_000,
             passed: true,
         }
+    }
+}
+
+impl Default for PerformanceBenchmark {
+    fn default() -> Self {
+        Self::new()
     }
 }

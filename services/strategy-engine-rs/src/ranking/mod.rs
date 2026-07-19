@@ -16,11 +16,20 @@ pub struct StrategyRank {
 }
 
 impl StrategyRank {
-    pub fn calculate(edge: Decimal, confidence: Decimal, stability: Decimal, drawdown: Decimal) -> Self {
+    pub fn calculate(
+        edge: Decimal,
+        confidence: Decimal,
+        stability: Decimal,
+        drawdown: Decimal,
+    ) -> Self {
         // edge × confidence × stability ÷ drawdown
-        let denominator = if drawdown == Decimal::from(0) { Decimal::from(1) } else { drawdown };
+        let denominator = if drawdown == Decimal::from(0) {
+            Decimal::from(1)
+        } else {
+            drawdown
+        };
         let mut score = (edge * confidence * stability) / denominator;
-        
+
         if score < Decimal::from(0) {
             score = Decimal::from(0);
         }

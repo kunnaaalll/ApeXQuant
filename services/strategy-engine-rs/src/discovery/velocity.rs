@@ -33,17 +33,23 @@ impl VelocityEngine {
 
     pub fn update(&mut self, current_velocity: Decimal) -> VelocityState {
         let acceleration = current_velocity - self.previous_velocity;
-        
+
         // Use 0 for comparisons
         let zero = dec!(0.0);
         let sig_accel = dec!(0.01);
         let sig_decel = dec!(-0.01);
 
-        self.state = if (current_velocity > zero && self.previous_velocity < zero) || (current_velocity < zero && self.previous_velocity > zero) {
+        self.state = if (current_velocity > zero && self.previous_velocity < zero)
+            || (current_velocity < zero && self.previous_velocity > zero)
+        {
             VelocityState::Reversing
-        } else if (current_velocity > zero && acceleration > sig_accel) || (current_velocity < zero && acceleration < sig_decel) {
+        } else if (current_velocity > zero && acceleration > sig_accel)
+            || (current_velocity < zero && acceleration < sig_decel)
+        {
             VelocityState::Accelerating
-        } else if (current_velocity > zero && acceleration < sig_decel) || (current_velocity < zero && acceleration > sig_accel) {
+        } else if (current_velocity > zero && acceleration < sig_decel)
+            || (current_velocity < zero && acceleration > sig_accel)
+        {
             VelocityState::Decelerating
         } else {
             VelocityState::Stable

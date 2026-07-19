@@ -1,6 +1,6 @@
+use crate::drift::DriftState;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use crate::drift::DriftState;
 
 #[derive(Debug, Clone)]
 pub struct ExpectancyDrift {
@@ -12,9 +12,13 @@ pub struct ExpectancyDrift {
 }
 
 impl ExpectancyDrift {
-    pub fn evaluate(current_expectancy: Decimal, previous_expectancy: Decimal, historical_avg: Decimal) -> Self {
+    pub fn evaluate(
+        current_expectancy: Decimal,
+        previous_expectancy: Decimal,
+        historical_avg: Decimal,
+    ) -> Self {
         let difference = current_expectancy - historical_avg;
-        
+
         let percentage_change = if historical_avg.abs() > Decimal::ZERO {
             difference / historical_avg.abs()
         } else {

@@ -11,8 +11,8 @@ pub mod snapshot;
 #[cfg(test)]
 pub mod tests;
 
-pub use models::{RiskRecommendation, RiskCommitteeDecision, RiskInputs, TradeAdmissionPolicy};
 pub use committee::evaluate_committee;
+pub use models::{RiskCommitteeDecision, RiskInputs, RiskRecommendation, TradeAdmissionPolicy};
 
 use rust_decimal::Decimal;
 
@@ -28,14 +28,16 @@ pub struct RiskRecommendationEngine {
 /// Simplified view exposed to the gRPC layer.
 #[derive(Debug, Clone)]
 pub struct CurrentRiskRecommendation {
-    pub action:     RiskRecommendation,
+    pub action: RiskRecommendation,
     pub confidence: Decimal,
-    pub reason:     String,
+    pub reason: String,
 }
 
 impl RiskRecommendationEngine {
     pub fn new() -> Self {
-        Self { last_decision: None }
+        Self {
+            last_decision: None,
+        }
     }
 
     /// Run the committee and cache the result.
@@ -48,19 +50,21 @@ impl RiskRecommendationEngine {
     pub fn current(&self) -> CurrentRiskRecommendation {
         match &self.last_decision {
             Some(d) => CurrentRiskRecommendation {
-                action:     d.recommendation,
+                action: d.recommendation,
                 confidence: Decimal::from(d.confidence),
-                reason:     d.explanation.why.clone(),
+                reason: d.explanation.why.clone(),
             },
             None => CurrentRiskRecommendation {
-                action:     RiskRecommendation::MaintainRisk,
+                action: RiskRecommendation::MaintainRisk,
                 confidence: Decimal::ZERO,
-                reason:     "no_evaluation_yet".to_owned(),
+                reason: "no_evaluation_yet".to_owned(),
             },
         }
     }
 }
 
 impl Default for RiskRecommendationEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

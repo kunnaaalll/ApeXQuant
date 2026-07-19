@@ -1,7 +1,7 @@
 //! Trade Consumer — decodes completed trade events from the Event Bus.
 
-use rust_decimal::Decimal;
 use rust_decimal::prelude::FromStr;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 /// Normalised completed trade record.
@@ -47,20 +47,28 @@ pub fn parse_trade_event(payload: &[u8]) -> Result<CompletedTrade, String> {
 
 fn parse_trade_from_value(v: &serde_json::Value) -> Result<CompletedTrade, String> {
     let get_str = |field: &str| -> Result<String, String> {
-        v[field].as_str()
+        v[field]
+            .as_str()
             .map(|s| s.to_string())
             .ok_or_else(|| format!("Missing or invalid field: {}", field))
     };
     let get_decimal = |field: &str| -> Result<Decimal, String> {
-        v[field].as_str()
+        v[field]
+            .as_str()
             .ok_or_else(|| format!("Missing decimal field: {}", field))
-            .and_then(|s| Decimal::from_str(s).map_err(|e| format!("Invalid decimal {}: {}", field, e)))
+            .and_then(|s| {
+                Decimal::from_str(s).map_err(|e| format!("Invalid decimal {}: {}", field, e))
+            })
     };
     let get_i64 = |field: &str| -> Result<i64, String> {
-        v[field].as_i64().ok_or_else(|| format!("Missing or invalid i64: {}", field))
+        v[field]
+            .as_i64()
+            .ok_or_else(|| format!("Missing or invalid i64: {}", field))
     };
     let get_bool = |field: &str| -> Result<bool, String> {
-        v[field].as_bool().ok_or_else(|| format!("Missing or invalid bool: {}", field))
+        v[field]
+            .as_bool()
+            .ok_or_else(|| format!("Missing or invalid bool: {}", field))
     };
 
     Ok(CompletedTrade {

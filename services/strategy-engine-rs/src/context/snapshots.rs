@@ -1,7 +1,7 @@
+use crate::ranking::context::ContextRank;
 use crate::regime::{Regime, RegimeGrade};
 use crate::session::{Session, SessionGrade};
 use crate::timeframe::{Timeframe, TimeframeGrade};
-use crate::ranking::context::ContextRank;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

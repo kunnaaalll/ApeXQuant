@@ -23,7 +23,7 @@ impl ConfidenceMemory {
         if self.capacity == 0 {
             return;
         }
-        
+
         if self.historical_confidence.len() == self.capacity {
             self.historical_confidence.pop_back();
             self.degradation_history.pop_back();

@@ -40,7 +40,11 @@ impl DeterminismValidator {
             outputs_identical: true,
             snapshots_identical: true,
             analytics_identical: true,
-            overall_state: if divergence_count == 0 { DeterminismState::Pass } else { DeterminismState::Fail },
+            overall_state: if divergence_count == 0 {
+                DeterminismState::Pass
+            } else {
+                DeterminismState::Fail
+            },
         }
     }
 }

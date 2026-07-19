@@ -23,7 +23,15 @@ impl AnomalyDetector {
     pub fn new() -> Self {
         Self
     }
+}
 
+impl Default for AnomalyDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AnomalyDetector {
     pub fn detect_slippage_anomaly(
         &self,
         current_slippage: Decimal,
@@ -55,7 +63,10 @@ impl AnomalyDetector {
             anomaly_type: "abnormal_slippage".to_string(),
             severity,
             confidence: Decimal::new(95, 0), // Highly confident if ratio is large
-            details: format!("Current slippage {} has z-score of {} compared to historical std dev", current_slippage, z_score),
+            details: format!(
+                "Current slippage {} has z-score of {} compared to historical std dev",
+                current_slippage, z_score
+            ),
         })
     }
 }

@@ -1,8 +1,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-use super::types::{Symbol, TradeCount};
 use super::states::SymbolState;
+use super::types::{Symbol, TradeCount};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SymbolAssessment {

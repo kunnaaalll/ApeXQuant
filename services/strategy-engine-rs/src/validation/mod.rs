@@ -1,10 +1,10 @@
-pub mod parity;
-pub mod determinism;
-pub mod replay;
-pub mod monte_carlo;
-pub mod stress;
 pub mod benchmark;
 pub mod certification;
-pub mod reporter;
+pub mod determinism;
 pub mod events;
+pub mod monte_carlo;
+pub mod parity;
+pub mod replay;
+pub mod reporter;
 pub mod snapshot;
+pub mod stress;

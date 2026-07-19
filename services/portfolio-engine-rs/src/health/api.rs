@@ -1,13 +1,9 @@
-use axum::{
-    routing::get,
-    Router,
-    response::Json,
-};
+use axum::{response::Json, routing::get, Router};
+use rust_decimal::Decimal;
 use serde::Serialize;
+use sqlx::PgPool;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use rust_decimal::Decimal;
-use sqlx::PgPool;
 
 #[derive(Serialize)]
 pub struct LivenessResponse {
@@ -48,11 +44,10 @@ async fn liveness() -> Json<LivenessResponse> {
     })
 }
 
-async fn readiness(axum::extract::State(state): axum::extract::State<Arc<HealthState>>) -> Json<ReadinessResponse> {
-    let postgres_connected = sqlx::query("SELECT 1")
-        .execute(&state.pool)
-        .await
-        .is_ok();
+async fn readiness(
+    axum::extract::State(state): axum::extract::State<Arc<HealthState>>,
+) -> Json<ReadinessResponse> {
+    let postgres_connected = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
 
     let redis_connected = if let Some(client) = &state.redis_client {
         if let Ok(mut conn) = client.get_async_connection().await {

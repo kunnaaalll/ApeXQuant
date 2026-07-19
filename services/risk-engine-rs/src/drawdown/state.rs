@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::DrawdownTracker;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DrawdownState {

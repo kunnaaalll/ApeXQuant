@@ -1,4 +1,4 @@
-use super::incident::{Incident, IncidentLevel, IncidentEngine};
+use super::incident::{Incident, IncidentEngine, IncidentLevel};
 use rand::Rng;
 
 pub struct ChaosMonkey {
@@ -55,17 +55,20 @@ mod tests {
         monkey.trigger_random_chaos(&mut engine);
         assert_eq!(engine.active_incidents.len(), 0);
     }
-    
+
     #[test]
     fn test_chaos_monkey_enabled() {
         let mut engine = IncidentEngine::new();
         let monkey = ChaosMonkey::new(true);
-        
+
         // Loop a bunch of times to guarantee at least one chaos event triggers
         for _ in 0..1000 {
             monkey.trigger_random_chaos(&mut engine);
         }
-        
-        assert!(engine.active_incidents.len() > 0, "Chaos monkey failed to trigger any incidents over 1000 iterations");
+
+        assert!(
+            !engine.active_incidents.is_empty(),
+            "Chaos monkey failed to trigger any incidents over 1000 iterations"
+        );
     }
 }

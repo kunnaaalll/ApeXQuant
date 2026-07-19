@@ -37,7 +37,8 @@ impl ThemeExposure {
         }
 
         for theme_exp in exposures.values_mut() {
-            theme_exp.dominance_score = (theme_exp.exposure / total_theme_exposure) * Decimal::from(100);
+            theme_exp.dominance_score =
+                (theme_exp.exposure / total_theme_exposure) * Decimal::from(100);
         }
     }
 }

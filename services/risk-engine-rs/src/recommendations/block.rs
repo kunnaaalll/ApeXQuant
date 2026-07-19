@@ -1,4 +1,7 @@
-use super::models::{CircuitBreakerState, CorrelationSeverity, DrawdownState, RiskInputs, TradeAdmissionPolicy, VarSeverity};
+use super::models::{
+    CircuitBreakerState, CorrelationSeverity, DrawdownState, RiskInputs, TradeAdmissionPolicy,
+    VarSeverity,
+};
 
 pub fn evaluate_blocking(inputs: &RiskInputs) -> TradeAdmissionPolicy {
     if inputs.drawdown_state == DrawdownState::Frozen

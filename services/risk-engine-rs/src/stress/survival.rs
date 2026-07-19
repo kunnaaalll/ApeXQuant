@@ -1,9 +1,9 @@
+use super::leverage::LeverageState;
+use super::liquidity::LiquidityState;
+use super::volatility::VolatilityState;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
-use super::volatility::VolatilityState;
-use super::liquidity::LiquidityState;
-use super::leverage::LeverageState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SurvivalState {
@@ -25,7 +25,7 @@ impl SurvivalEngine {
         correlation: Decimal,
     ) -> Decimal {
         let mut score = dec!(100.0);
-        
+
         let vol_penalty = match volatility {
             VolatilityState::Normal => dec!(0.0),
             VolatilityState::Elevated => dec!(5.0),

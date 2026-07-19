@@ -98,15 +98,20 @@ impl DependencyGraph {
     }
 
     pub fn get_topology_snapshot(&self) -> (Vec<String>, Vec<(String, String)>) {
-        let roots = self.order.iter()
+        let roots = self
+            .order
+            .iter()
             .enumerate()
             .filter(|(i, _)| *i == 0)
             .map(|(_, k)| format!("{:?}", k))
             .collect();
-            
+
         let mut edges = Vec::new();
         for i in 1..self.order.len() {
-            edges.push((format!("{:?}", self.order[i]), format!("{:?}", self.order[i-1])));
+            edges.push((
+                format!("{:?}", self.order[i]),
+                format!("{:?}", self.order[i - 1]),
+            ));
         }
         (roots, edges)
     }

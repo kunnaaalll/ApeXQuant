@@ -48,14 +48,19 @@ impl ClusterStateManager {
     }
 
     pub fn generate_health_score(&self) -> ClusterHealthScore {
-        let total = self.active_services + self.degraded_services + self.unavailable_services + self.maintenance_services;
-        
+        let total = self.active_services
+            + self.degraded_services
+            + self.unavailable_services
+            + self.maintenance_services;
+
         let score = if total == 0 {
             0
         } else {
             let active_weight = self.active_services * 100;
             let degraded_weight = self.degraded_services * 50;
-            (active_weight + degraded_weight).checked_div(total).unwrap_or(0)
+            (active_weight + degraded_weight)
+                .checked_div(total)
+                .unwrap_or(0)
         };
 
         ClusterHealthScore {

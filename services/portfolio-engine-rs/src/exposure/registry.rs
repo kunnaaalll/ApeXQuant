@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicU64, Ordering};
 use dashmap::DashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, RwLock};
 use time::OffsetDateTime;
 
 use super::errors::ExposureError;
@@ -39,7 +39,10 @@ impl ExposureRegistry {
     }
 
     pub fn get_state(&self) -> Result<ExposureState, ExposureError> {
-        self.state.read().map(|guard| guard.clone()).map_err(|_| ExposureError::SystemError("Lock poisoned".to_string()))
+        self.state
+            .read()
+            .map(|guard| guard.clone())
+            .map_err(|_| ExposureError::SystemError("Lock poisoned".to_string()))
     }
 
     pub fn get_version(&self) -> u64 {
@@ -56,8 +59,11 @@ impl ExposureRegistry {
 
     pub fn dispatch(&self, event: ExposureEvent) -> Result<ExposureSnapshot, ExposureError> {
         let timestamp = OffsetDateTime::now_utc();
-        let mut state_guard = self.state.write().map_err(|_| ExposureError::SystemError("Lock poisoned".to_string()))?;
-        
+        let mut state_guard = self
+            .state
+            .write()
+            .map_err(|_| ExposureError::SystemError("Lock poisoned".to_string()))?;
+
         state_guard.apply_event(&event, timestamp)?;
 
         let new_version = self.version.fetch_add(1, Ordering::SeqCst) + 1;
@@ -67,7 +73,9 @@ impl ExposureRegistry {
 
         let snapshot = ExposureSnapshot::new(new_version, new_state, event, timestamp);
 
-        if let Some(mut realtime_snapshots) = self.snapshots.get_mut(&ExposureSnapshotFrequency::Realtime) {
+        if let Some(mut realtime_snapshots) =
+            self.snapshots.get_mut(&ExposureSnapshotFrequency::Realtime)
+        {
             realtime_snapshots.push(snapshot.clone());
         }
 

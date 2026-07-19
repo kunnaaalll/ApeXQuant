@@ -1,8 +1,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-use super::types::{SessionType, TradeCount};
 use super::states::SessionState;
+use super::types::{SessionType, TradeCount};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SessionAssessment {

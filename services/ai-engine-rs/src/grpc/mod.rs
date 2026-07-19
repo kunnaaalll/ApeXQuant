@@ -6,6 +6,7 @@ use rust_decimal::Decimal;
 pub struct GrpcService;
 
 impl GrpcService {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
@@ -16,7 +17,7 @@ impl GrpcService {
         }
         let last = prices.last().unwrap_or(&Decimal::ZERO);
         let first = prices.first().unwrap_or(&Decimal::ZERO);
-        
+
         // Deterministic live logic
         Ok(last - first)
     }

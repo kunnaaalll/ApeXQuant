@@ -15,8 +15,7 @@ pub struct InferenceResponse {
 }
 
 pub async fn run_api_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
-    let app = Router::new()
-        .route("/infer", post(handle_inference));
+    let app = Router::new().route("/infer", post(handle_inference));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -26,10 +25,15 @@ pub async fn run_api_server(port: u16) -> Result<(), Box<dyn std::error::Error>>
 
 async fn handle_inference(Json(payload): Json<InferenceRequest>) -> Json<InferenceResponse> {
     // Execute live deterministic logic here
-    let movement = payload.prices.last().copied().unwrap_or_default() - payload.prices.first().copied().unwrap_or_default();
-    
+    let movement = payload.prices.last().copied().unwrap_or_default()
+        - payload.prices.first().copied().unwrap_or_default();
+
     Json(InferenceResponse {
-        regime: if movement > rust_decimal::Decimal::ZERO { "TrendingUp".to_string() } else { "TrendingDown".to_string() },
+        regime: if movement > rust_decimal::Decimal::ZERO {
+            "TrendingUp".to_string()
+        } else {
+            "TrendingDown".to_string()
+        },
         predicted_movement: movement,
     })
 }

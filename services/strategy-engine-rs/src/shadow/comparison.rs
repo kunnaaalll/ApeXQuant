@@ -58,7 +58,16 @@ impl ComparisonEngine {
         let cp_diff = (cluster_profile - reference_cluster_profile).abs();
         let mi_diff = (meta_intelligence - reference_meta_intelligence).abs();
 
-        let total_diff = h_diff + c_diff + e_diff + d_diff + a_diff + deg_diff + cr_diff + rec_diff + cp_diff + mi_diff;
+        let total_diff = h_diff
+            + c_diff
+            + e_diff
+            + d_diff
+            + a_diff
+            + deg_diff
+            + cr_diff
+            + rec_diff
+            + cp_diff
+            + mi_diff;
 
         if total_diff == Decimal::ZERO {
             ShadowComparisonState::ExactMatch

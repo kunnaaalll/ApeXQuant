@@ -1,5 +1,5 @@
-use crate::validation::certification::{CertificationLevel, PortfolioCertification};
 use super::state::{CertificationState, CertificationStatus};
+use crate::validation::certification::{CertificationLevel, PortfolioCertification};
 
 pub struct StateTrackerEngine;
 
@@ -14,7 +14,11 @@ impl StateTrackerEngine {
         Self
     }
 
-    pub fn evaluate_state(&self, mut current_state: CertificationState, latest_certification: &PortfolioCertification) -> CertificationState {
+    pub fn evaluate_state(
+        &self,
+        mut current_state: CertificationState,
+        latest_certification: &PortfolioCertification,
+    ) -> CertificationState {
         match latest_certification.level {
             CertificationLevel::Certified => {
                 if current_state.status != CertificationStatus::Certified {
@@ -23,7 +27,7 @@ impl StateTrackerEngine {
                         std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
-                            .as_secs()
+                            .as_secs(),
                     );
                     current_state.revocation_reason = None;
                 }
@@ -31,7 +35,8 @@ impl StateTrackerEngine {
             CertificationLevel::Fail => {
                 if current_state.status == CertificationStatus::Certified {
                     current_state.status = CertificationStatus::Revoked;
-                    current_state.revocation_reason = Some("Failed certification checks".to_string());
+                    current_state.revocation_reason =
+                        Some("Failed certification checks".to_string());
                 } else {
                     current_state.status = CertificationStatus::Pending;
                 }
@@ -44,11 +49,17 @@ impl StateTrackerEngine {
         }
         current_state
     }
-    
-    pub fn generate_audit_artifact(&self, certification: &PortfolioCertification) -> std::io::Result<()> {
-        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+
+    pub fn generate_audit_artifact(
+        &self,
+        certification: &PortfolioCertification,
+    ) -> std::io::Result<()> {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
         let filename = format!("apex_certification_audit_{}.json", timestamp);
-        
+
         let artifact = format!(
             "{{\n  \"level\": \"{:?}\",\n  \"parity_match\": {},\n  \"replay_exact\": {},\n  \"timestamp\": {}\n}}",
             certification.level,
@@ -56,10 +67,10 @@ impl StateTrackerEngine {
             certification.replay_result.exact_match,
             timestamp
         );
-        
+
         std::fs::write(&filename, artifact)?;
         tracing::info!("Institutional Audit Artifact generated at: {}", filename);
-        
+
         Ok(())
     }
 }

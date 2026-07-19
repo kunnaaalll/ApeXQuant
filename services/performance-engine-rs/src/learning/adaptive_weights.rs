@@ -9,7 +9,11 @@ pub struct AdaptiveWeights {
 }
 
 impl AdaptiveWeights {
-    pub fn new(initial_recent_weight: Decimal, initial_historical_weight: Decimal, learning_rate: Decimal) -> Self {
+    pub fn new(
+        initial_recent_weight: Decimal,
+        initial_historical_weight: Decimal,
+        learning_rate: Decimal,
+    ) -> Self {
         Self {
             recent_weight: initial_recent_weight,
             historical_weight: initial_historical_weight,

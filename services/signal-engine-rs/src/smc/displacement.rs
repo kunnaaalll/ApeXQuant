@@ -281,7 +281,11 @@ pub fn has_recent_displacement(
         .into_iter()
         .filter(|d| candles.len().saturating_sub(d.end_index) <= lookback)
         .filter(|d| d.direction == direction)
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
+        .max_by(|a, b| {
+            a.strength
+                .partial_cmp(&b.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
 }
 
 /// Get most recent displacement info
@@ -341,9 +345,11 @@ pub fn analyze_displacement_bias(candles: &[Candle]) -> DisplacementBias {
         (None, 0.0)
     };
 
-    let strongest = displacements
-        .iter()
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
+    let strongest = displacements.iter().max_by(|a, b| {
+        a.strength
+            .partial_cmp(&b.strength)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     DisplacementBias {
         bias,

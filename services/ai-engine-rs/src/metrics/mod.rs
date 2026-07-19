@@ -1,4 +1,4 @@
-use prometheus::{Encoder, TextEncoder, Registry};
+use prometheus::{Encoder, Registry, TextEncoder};
 
 pub struct MetricsRegistry {
     pub registry: Registry,
@@ -11,6 +11,7 @@ impl Default for MetricsRegistry {
 }
 
 impl MetricsRegistry {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             registry: Registry::new(),

@@ -54,10 +54,7 @@ pub struct ScaleInEngine;
 
 impl ScaleInEngine {
     /// Evaluate whether to scale into a position and how much.
-    pub fn evaluate(
-        quality: &PositionQuality,
-        inputs: &ScaleInInputs,
-    ) -> ScaleInRecommendation {
+    pub fn evaluate(quality: &PositionQuality, inputs: &ScaleInInputs) -> ScaleInRecommendation {
         // Gate 1: quality must be excellent
         if *quality != PositionQuality::Excellent {
             return ScaleInRecommendation {
@@ -94,7 +91,8 @@ impl ScaleInEngine {
                 should_scale: false,
                 additional_size: Decimal::ZERO,
                 holding_efficiency: Decimal::ZERO,
-                reason: "Distance to stop is zero or negative; cannot compute position size".to_string(),
+                reason: "Distance to stop is zero or negative; cannot compute position size"
+                    .to_string(),
             };
         }
 
@@ -135,8 +133,7 @@ impl ScaleInEngine {
         };
 
         // Final scale-in size
-        let additional_size = (atr_position * exposure_headroom * volatility_scalar)
-            .round_dp(4); // round to 4dp (standard lot precision)
+        let additional_size = (atr_position * exposure_headroom * volatility_scalar).round_dp(4); // round to 4dp (standard lot precision)
 
         if additional_size <= Decimal::ZERO {
             return ScaleInRecommendation {

@@ -36,8 +36,13 @@ impl Default for EvidenceAccumulator {
 }
 
 impl EvidenceAccumulator {
-
-    pub fn record_event(&mut self, is_win: bool, expectancy: Decimal, confidence: Decimal, edge: Decimal) {
+    pub fn record_event(
+        &mut self,
+        is_win: bool,
+        expectancy: Decimal,
+        confidence: Decimal,
+        edge: Decimal,
+    ) {
         if is_win {
             self.recent_wins += 1;
         } else {
@@ -47,17 +52,22 @@ impl EvidenceAccumulator {
         let alpha = Decimal::new(1, 1); // 0.1
         let one_minus_alpha = Decimal::new(9, 1); // 0.9
 
-        self.expectancy_history_ema = (expectancy * alpha) + (self.expectancy_history_ema * one_minus_alpha);
-        self.confidence_history_ema = (confidence * alpha) + (self.confidence_history_ema * one_minus_alpha);
+        self.expectancy_history_ema =
+            (expectancy * alpha) + (self.expectancy_history_ema * one_minus_alpha);
+        self.confidence_history_ema =
+            (confidence * alpha) + (self.confidence_history_ema * one_minus_alpha);
         self.edge_history_ema = (edge * alpha) + (self.edge_history_ema * one_minus_alpha);
     }
 
     pub fn assess(&self) -> LearningAssessment {
-        if self.edge_history_ema > Decimal::new(2, 1) { // > 0.2
+        if self.edge_history_ema > Decimal::new(2, 1) {
+            // > 0.2
             LearningAssessment::Strengthening
-        } else if self.edge_history_ema < Decimal::new(-5, 1) { // < -0.5
+        } else if self.edge_history_ema < Decimal::new(-5, 1) {
+            // < -0.5
             LearningAssessment::Collapsing
-        } else if self.edge_history_ema < Decimal::from(0) { // < 0.0
+        } else if self.edge_history_ema < Decimal::from(0) {
+            // < 0.0
             LearningAssessment::Weakening
         } else {
             LearningAssessment::Stable

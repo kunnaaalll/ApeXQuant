@@ -46,19 +46,34 @@ impl RecoveryEngine {
         }
     }
 
-    pub fn configure_policy(&mut self, service_id: &str, policy: RestartPolicy, config: RecoveryConfig) {
+    pub fn configure_policy(
+        &mut self,
+        service_id: &str,
+        policy: RestartPolicy,
+        config: RecoveryConfig,
+    ) {
         self.policies.insert(service_id.to_string(), policy);
         self.configs.insert(service_id.to_string(), config);
     }
 
-    pub fn calculate_backoff(&mut self, service_id: &str, current_timestamp_ms: u64) -> Result<u64, &'static str> {
-        let policy = self.policies.get(service_id).unwrap_or(&RestartPolicy::Never);
+    pub fn calculate_backoff(
+        &mut self,
+        service_id: &str,
+        current_timestamp_ms: u64,
+    ) -> Result<u64, &'static str> {
+        let policy = self
+            .policies
+            .get(service_id)
+            .unwrap_or(&RestartPolicy::Never);
         let config = self.configs.get(service_id).cloned().unwrap_or_default();
 
-        let state = self.recovery_states.entry(service_id.to_string()).or_insert(ServiceRecoveryState {
-            restart_count: 0,
-            last_restart_timestamp_ms: 0,
-        });
+        let state = self
+            .recovery_states
+            .entry(service_id.to_string())
+            .or_insert(ServiceRecoveryState {
+                restart_count: 0,
+                last_restart_timestamp_ms: 0,
+            });
 
         if state.restart_count >= config.max_restarts {
             return Err("Restart budget exceeded");
@@ -67,8 +82,12 @@ impl RecoveryEngine {
         let backoff = match policy {
             RestartPolicy::Never => return Err("Restart policy is Never"),
             RestartPolicy::Immediate => 0,
-            RestartPolicy::LinearBackoff => config.base_backoff_ms * (state.restart_count as u64 + 1),
-            RestartPolicy::ExponentialBackoff => config.base_backoff_ms * (2_u64.pow(state.restart_count)),
+            RestartPolicy::LinearBackoff => {
+                config.base_backoff_ms * (state.restart_count as u64 + 1)
+            }
+            RestartPolicy::ExponentialBackoff => {
+                config.base_backoff_ms * (2_u64.pow(state.restart_count))
+            }
         };
 
         state.restart_count += 1;
@@ -78,7 +97,10 @@ impl RecoveryEngine {
     }
 
     pub fn get_restart_count(&self, service_id: &str) -> u32 {
-        self.recovery_states.get(service_id).map(|s| s.restart_count).unwrap_or(0)
+        self.recovery_states
+            .get(service_id)
+            .map(|s| s.restart_count)
+            .unwrap_or(0)
     }
 
     pub fn reset_recovery_state(&mut self, service_id: &str) {

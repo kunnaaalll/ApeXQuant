@@ -40,7 +40,7 @@ impl Storage {
 
     /// Initialize database schema
     fn init_schema(&self) -> SqliteResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS signal_comparisons (
@@ -125,7 +125,7 @@ impl Storage {
 
     /// Insert a comparison record
     pub fn insert_comparison(&self, record: &SignalComparisonRecord) -> SqliteResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
 
         conn.execute(
             "INSERT INTO signal_comparisons (
@@ -180,7 +180,7 @@ impl Storage {
         filter: ComparisonFilter,
         limit: usize,
     ) -> SqliteResult<Vec<SignalComparisonRecord>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
 
         let mut sql = "SELECT * FROM signal_comparisons WHERE 1=1".to_string();
         let mut params: Vec<String> = vec![];
@@ -231,7 +231,7 @@ impl Storage {
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> SqliteResult<StoredStatistics> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
 
         let stats = conn.query_row(
             "SELECT

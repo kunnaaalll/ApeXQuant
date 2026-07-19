@@ -20,8 +20,9 @@ impl FocusEngine {
     }
 
     pub fn generate_focus(&self, mut ranked_symbols: Vec<(String, Decimal)>) -> Vec<String> {
-        ranked_symbols.sort_by(|a, b| b.1.cmp(&a.1)); // Descending order
-        ranked_symbols.into_iter()
+        ranked_symbols.sort_by_key(|b| std::cmp::Reverse(b.1)); // Descending order
+        ranked_symbols
+            .into_iter()
             .take(self.max_items)
             .map(|(name, _score)| name)
             .collect()

@@ -6,36 +6,24 @@
 //   - All calculations sourced from Arc<RwLock<RiskState>>
 //   - rust_decimal for every financial value
 
+use crate::event_bus::EventBusPublisher;
+use apex_protos::common::{Decimal as ProtoDecimal, Money, Percentage, Timestamp};
+use apex_protos::events::{event::Payload, Event, RiskCheckPassedEvent};
 use apex_protos::risk::risk_engine_server::RiskEngine;
 use apex_protos::risk::{
-    CircuitBreakerQuery, CircuitBreakerResponse,
-    CorrelationQuery, CorrelationResponse,
-    CorrelationMatrix as ProtoCorrelationMatrix,
-    DrawdownQuery, DrawdownResponse,
-    EventQuery, EventSubscription, RiskEvent,
-    ExpectedShortfallResponse,
-    ExposureQuery, ExposureResponse,
-    HiddenLeverageQuery, HiddenLeverageResponse,
-    PositionRecommendation,
-    RecommendationQuery, RecommendationResponse,
-    RiskStateQuery, RiskStateResponse,
-    StressQuery, StressResponse,
-    VarQuery, VarResponse,
+    CircuitBreakerQuery, CircuitBreakerResponse, CorrelationMatrix as ProtoCorrelationMatrix,
+    CorrelationQuery, CorrelationResponse, DrawdownQuery, DrawdownResponse, EventQuery,
+    EventSubscription, ExpectedShortfallResponse, ExposureQuery, ExposureResponse,
+    HiddenLeverageQuery, HiddenLeverageResponse, PositionRecommendation, RecommendationQuery,
+    RecommendationResponse, RiskEvent, RiskStateQuery, RiskStateResponse, StressQuery,
+    StressResponse, VarQuery, VarResponse,
 };
-use apex_protos::common::{
-    Decimal as ProtoDecimal,
-    Money,
-    Percentage,
-    Timestamp,
-};
-use tonic::{Request, Response, Status};
-use tokio_stream::wrappers::ReceiverStream;
-use tokio::sync::mpsc;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use rust_decimal::Decimal;
-use crate::event_bus::EventBusPublisher;
-use apex_protos::events::{Event, event::Payload, RiskCheckPassedEvent};
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::sync::RwLock;
+use tokio_stream::wrappers::ReceiverStream;
+use tonic::{Request, Response, Status};
 
 use crate::circuit_breaker::CircuitBreakerState;
 use crate::correlation::CorrelationMatrix;
@@ -44,10 +32,8 @@ use crate::exposure::exposure_state::ExposureRiskState;
 use crate::recommendations::RiskRecommendationEngine;
 use crate::stress::StressEngine;
 use crate::var::{
-    confidence_levels::ConfidenceLevel,
-    expected_shortfall::ExpectedShortfallAssessment,
-    historical_var::HistoricalVaR,
-    parametric_var::ParametricVaR,
+    confidence_levels::ConfidenceLevel, expected_shortfall::ExpectedShortfallAssessment,
+    historical_var::HistoricalVaR, parametric_var::ParametricVaR,
 };
 
 // ─── Shared State ─────────────────────────────────────────────────────────────
@@ -55,37 +41,39 @@ use crate::var::{
 /// Live risk engine state injected into the gRPC layer.
 #[derive(Clone)]
 pub struct RiskState {
-    pub historical_var:      Arc<RwLock<HistoricalVaR>>,
-    pub parametric_var:      Arc<RwLock<ParametricVaR>>,
-    pub expected_shortfall:  Arc<RwLock<ExpectedShortfallAssessment>>,
-    pub circuit_breaker:     Arc<RwLock<CircuitBreakerState>>,
-    pub drawdown:            Arc<RwLock<DrawdownTracker>>,
-    pub exposure:            Arc<RwLock<ExposureRiskState>>,
-    pub correlation:         Arc<RwLock<CorrelationMatrix>>,
-    pub recommendations:     Arc<RwLock<RiskRecommendationEngine>>,
-    pub stress:              Arc<RwLock<StressEngine>>,
+    pub historical_var: Arc<RwLock<HistoricalVaR>>,
+    pub parametric_var: Arc<RwLock<ParametricVaR>>,
+    pub expected_shortfall: Arc<RwLock<ExpectedShortfallAssessment>>,
+    pub circuit_breaker: Arc<RwLock<CircuitBreakerState>>,
+    pub drawdown: Arc<RwLock<DrawdownTracker>>,
+    pub exposure: Arc<RwLock<ExposureRiskState>>,
+    pub correlation: Arc<RwLock<CorrelationMatrix>>,
+    pub recommendations: Arc<RwLock<RiskRecommendationEngine>>,
+    pub stress: Arc<RwLock<StressEngine>>,
 }
 
 impl RiskState {
     pub fn new() -> Self {
         Self {
-            historical_var:     Arc::new(RwLock::new(HistoricalVaR::new(250))),
-            parametric_var:     Arc::new(RwLock::new(ParametricVaR::new())),
-            expected_shortfall: Arc::new(RwLock::new(
-                ExpectedShortfallAssessment::new(Decimal::ZERO),
-            )),
-            circuit_breaker:    Arc::new(RwLock::new(CircuitBreakerState::Normal)),
-            drawdown:           Arc::new(RwLock::new(DrawdownTracker::new())),
-            exposure:           Arc::new(RwLock::new(ExposureRiskState::new())),
-            correlation:        Arc::new(RwLock::new(CorrelationMatrix::new())),
-            recommendations:    Arc::new(RwLock::new(RiskRecommendationEngine::new())),
-            stress:             Arc::new(RwLock::new(StressEngine::new())),
+            historical_var: Arc::new(RwLock::new(HistoricalVaR::new(250))),
+            parametric_var: Arc::new(RwLock::new(ParametricVaR::new())),
+            expected_shortfall: Arc::new(RwLock::new(ExpectedShortfallAssessment::new(
+                Decimal::ZERO,
+            ))),
+            circuit_breaker: Arc::new(RwLock::new(CircuitBreakerState::Normal)),
+            drawdown: Arc::new(RwLock::new(DrawdownTracker::new())),
+            exposure: Arc::new(RwLock::new(ExposureRiskState::new())),
+            correlation: Arc::new(RwLock::new(CorrelationMatrix::new())),
+            recommendations: Arc::new(RwLock::new(RiskRecommendationEngine::new())),
+            stress: Arc::new(RwLock::new(StressEngine::new())),
         }
     }
 }
 
 impl Default for RiskState {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 // ─── Service Implementation ───────────────────────────────────────────────────
@@ -98,8 +86,16 @@ pub struct RiskServiceImpl {
 }
 
 impl RiskServiceImpl {
-    pub fn new(state: RiskState, event_bus: Option<Arc<EventBusPublisher>>, repository: Option<Arc<crate::storage::repository::RiskRepository>>) -> Self {
-        Self { state, event_bus, repository }
+    pub fn new(
+        state: RiskState,
+        event_bus: Option<Arc<EventBusPublisher>>,
+        repository: Option<Arc<crate::storage::repository::RiskRepository>>,
+    ) -> Self {
+        Self {
+            state,
+            event_bus,
+            repository,
+        }
     }
 }
 
@@ -107,48 +103,48 @@ impl RiskServiceImpl {
 
 fn make_money(amount: Decimal, currency: &str) -> Money {
     Money {
-        amount:   amount.to_string(),
+        amount: amount.to_string(),
         currency: currency.to_owned(),
         exponent: 0,
     }
 }
 
 fn make_percentage(pct: Decimal) -> Percentage {
-    Percentage { 
+    Percentage {
         value: pct.to_string(),
         is_basis_points: false,
     }
 }
 
 fn make_decimal(val: Decimal) -> ProtoDecimal {
-    ProtoDecimal { value: val.to_string() }
+    ProtoDecimal {
+        value: val.to_string(),
+    }
 }
 
 fn now_ts() -> Timestamp {
     let now = chrono::Utc::now();
     Timestamp {
         seconds: now.timestamp(),
-        nanos:   now.timestamp_subsec_nanos() as i32,
+        nanos: now.timestamp_subsec_nanos() as i32,
     }
 }
 
 #[tonic::async_trait]
 impl RiskEngine for RiskServiceImpl {
-
-
     // ── get_risk_state ────────────────────────────────────────────────────────
     async fn get_risk_state(
         &self,
         request: Request<RiskStateQuery>,
     ) -> Result<Response<RiskStateResponse>, Status> {
-        let req      = request.into_inner();
+        let req = request.into_inner();
         let exposure = self.state.exposure.read().await;
         let state_str = format!("{:?}", exposure.state);
 
         Ok(Response::new(RiskStateResponse {
             account_id: req.account_id,
-            as_of:      Some(now_ts()),
-            state:      state_str,
+            as_of: Some(now_ts()),
+            state: state_str,
         }))
     }
 
@@ -158,12 +154,12 @@ impl RiskEngine for RiskServiceImpl {
         request: Request<DrawdownQuery>,
     ) -> Result<Response<DrawdownResponse>, Status> {
         let req = request.into_inner();
-        let dd  = self.state.drawdown.read().await;
+        let dd = self.state.drawdown.read().await;
 
         Ok(Response::new(DrawdownResponse {
-            account_id:       req.account_id,
+            account_id: req.account_id,
             current_drawdown: Some(make_percentage(dd.current_drawdown)),
-            max_drawdown:     Some(make_percentage(dd.max_drawdown)),
+            max_drawdown: Some(make_percentage(dd.max_drawdown)),
         }))
     }
 
@@ -176,7 +172,7 @@ impl RiskEngine for RiskServiceImpl {
         let exp = self.state.exposure.read().await;
 
         Ok(Response::new(ExposureResponse {
-            account_id:     req.account_id,
+            account_id: req.account_id,
             total_exposure: Some(make_money(exp.gross_exposure, "USD")),
         }))
     }
@@ -188,16 +184,16 @@ impl RiskEngine for RiskServiceImpl {
     ) -> Result<Response<CorrelationResponse>, Status> {
         let req = request.into_inner();
         let corr = self.state.correlation.read().await;
-        
+
         let mut symbols = std::collections::BTreeSet::new();
         for (a, b) in corr.get_dimension_keys("Symbol") {
             symbols.insert(a);
             symbols.insert(b);
         }
-        
+
         let symbols_vec: Vec<String> = symbols.into_iter().collect();
         let mut rows = Vec::new();
-        
+
         for a in &symbols_vec {
             let mut row_values = Vec::new();
             for b in &symbols_vec {
@@ -234,7 +230,7 @@ impl RiskEngine for RiskServiceImpl {
         };
 
         Ok(Response::new(HiddenLeverageResponse {
-            account_id:     req.account_id,
+            account_id: req.account_id,
             leverage_ratio: Some(make_decimal(leverage)),
         }))
     }
@@ -249,7 +245,7 @@ impl RiskEngine for RiskServiceImpl {
         let val = var.compute_var(ConfidenceLevel::NinetyNine);
 
         Ok(Response::new(VarResponse {
-            account_id:    req.account_id,
+            account_id: req.account_id,
             value_at_risk: Some(make_money(val, "USD")),
         }))
     }
@@ -264,7 +260,7 @@ impl RiskEngine for RiskServiceImpl {
         let val = var.var_99();
 
         Ok(Response::new(VarResponse {
-            account_id:    req.account_id,
+            account_id: req.account_id,
             value_at_risk: Some(make_money(val, "USD")),
         }))
     }
@@ -275,11 +271,11 @@ impl RiskEngine for RiskServiceImpl {
         request: Request<VarQuery>,
     ) -> Result<Response<ExpectedShortfallResponse>, Status> {
         let req = request.into_inner();
-        let es  = self.state.expected_shortfall.read().await;
+        let es = self.state.expected_shortfall.read().await;
         let val = es.compute_shortfall();
 
         Ok(Response::new(ExpectedShortfallResponse {
-            account_id:         req.account_id,
+            account_id: req.account_id,
             expected_shortfall: Some(make_money(val, "USD")),
         }))
     }
@@ -289,10 +285,10 @@ impl RiskEngine for RiskServiceImpl {
         &self,
         request: Request<CircuitBreakerQuery>,
     ) -> Result<Response<CircuitBreakerResponse>, Status> {
-        let req     = request.into_inner();
-        let cb      = self.state.circuit_breaker.read().await;
+        let req = request.into_inner();
+        let cb = self.state.circuit_breaker.read().await;
         let tripped = !matches!(*cb, CircuitBreakerState::Normal);
-        let reason  = format!("{:?}", *cb).to_lowercase();
+        let reason = format!("{:?}", *cb).to_lowercase();
 
         Ok(Response::new(CircuitBreakerResponse {
             account_id: req.account_id,
@@ -313,9 +309,12 @@ impl RiskEngine for RiskServiceImpl {
         // Calculate correlation-adjusted Kelly fraction based on event stream position updates
         let mut win_prob = rust_decimal_macros::dec!(0.55);
         let wl_ratio = rust_decimal_macros::dec!(1.5);
-        
-        let symbol_code = req.symbol.map(|s| s.code).unwrap_or_else(|| "EURUSD".to_string());
-        
+
+        let symbol_code = req
+            .symbol
+            .map(|s| s.code)
+            .unwrap_or_else(|| "EURUSD".to_string());
+
         // Use correlation matrix to adjust win probability if there is high correlation with existing positions
         let corr = self.state.correlation.read().await;
         let eurusd_corr = corr.get_correlation("Symbol", &symbol_code, "EURUSD");
@@ -326,34 +325,56 @@ impl RiskEngine for RiskServiceImpl {
         let kelly_fraction = crate::kelly::calculate_kelly_fraction(win_prob, wl_ratio);
         let max_kelly = rust_decimal_macros::dec!(0.2); // max 20%
         let final_kelly = kelly_fraction.min(max_kelly);
-        
+
         // Base suggested lots scaled by Kelly
         let suggested = final_kelly * rust_decimal_macros::dec!(10.0);
         let max = final_kelly * rust_decimal_macros::dec!(20.0);
 
         // Publish RiskCheckPassedEvent if event_bus is configured
         if let Some(bus) = &self.event_bus {
-            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap();
-            
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default();
+
             let passed_event = RiskCheckPassedEvent {
                 check_id: uuid::Uuid::new_v4().to_string(),
                 order_id: "implicit_order_evaluation".to_string(),
-                passed_checks: vec!["circuit_breaker".to_string(), "drawdown".to_string(), "exposure".to_string()],
+                passed_checks: vec![
+                    "circuit_breaker".to_string(),
+                    "drawdown".to_string(),
+                    "exposure".to_string(),
+                ],
             };
-            
+
             let event = Event {
-                event_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
-                spec_version: Some(apex_protos::common::SemanticVersion {
-                    major: 1, minor: 0, patch: 0, pre_release: "".to_string(), build: "".to_string()
+                event_id: Some(apex_protos::common::Uuid {
+                    value: uuid::Uuid::new_v4().as_bytes().to_vec(),
                 }),
-                occurred_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
-                published_at: Some(Timestamp { seconds: now.as_secs() as i64, nanos: now.subsec_nanos() as i32 }),
+                spec_version: Some(apex_protos::common::SemanticVersion {
+                    major: 1,
+                    minor: 0,
+                    patch: 0,
+                    pre_release: "".to_string(),
+                    build: "".to_string(),
+                }),
+                occurred_at: Some(Timestamp {
+                    seconds: now.as_secs() as i64,
+                    nanos: now.subsec_nanos() as i32,
+                }),
+                published_at: Some(Timestamp {
+                    seconds: now.as_secs() as i64,
+                    nanos: now.subsec_nanos() as i32,
+                }),
                 event_type: "RiskCheckPassedEvent".to_string(),
                 source_service: "risk-engine".to_string(),
                 topic: "risk.decision".to_string(),
                 correlation: Some(apex_protos::common::CorrelationContext {
-                    trace_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
-                    span_id: Some(apex_protos::common::Uuid { value: uuid::Uuid::new_v4().as_bytes().to_vec() }),
+                    trace_id: Some(apex_protos::common::Uuid {
+                        value: uuid::Uuid::new_v4().as_bytes().to_vec(),
+                    }),
+                    span_id: Some(apex_protos::common::Uuid {
+                        value: uuid::Uuid::new_v4().as_bytes().to_vec(),
+                    }),
                     sampled: true,
                     baggage: std::collections::HashMap::new(),
                 }),
@@ -362,7 +383,7 @@ impl RiskEngine for RiskServiceImpl {
                 payload: Some(Payload::RiskCheckPassed(passed_event)),
                 payload_hash: vec![],
             };
-            
+
             if let Err(e) = bus.publish(event).await {
                 tracing::warn!("Failed to publish RiskCheckPassedEvent: {}", e);
             }
@@ -376,13 +397,15 @@ impl RiskEngine for RiskServiceImpl {
 
         use rust_decimal::prelude::ToPrimitive;
         let proto_rec = PositionRecommendation {
-            suggested_lots:          Some(make_decimal(suggested)),
-            max_lots:                Some(make_decimal(max)),
-            risk_amount:             Some(make_money(risk_amt, "USD")),
-            margin_required:         Some(make_money(margin_req, "USD")),
-            risk_percent_of_equity:  Some(make_percentage(final_kelly * rust_decimal_macros::dec!(100.0))),
-            position_sizing_method:  "kelly".to_string(),
-            kelly_fraction:          final_kelly.to_f64().unwrap_or(0.0),
+            suggested_lots: Some(make_decimal(suggested)),
+            max_lots: Some(make_decimal(max)),
+            risk_amount: Some(make_money(risk_amt, "USD")),
+            margin_required: Some(make_money(margin_req, "USD")),
+            risk_percent_of_equity: Some(make_percentage(
+                final_kelly * rust_decimal_macros::dec!(100.0),
+            )),
+            position_sizing_method: "kelly".to_string(),
+            kelly_fraction: final_kelly.to_f64().unwrap_or(0.0),
         };
 
         Ok(Response::new(RecommendationResponse {
@@ -395,15 +418,15 @@ impl RiskEngine for RiskServiceImpl {
         &self,
         request: Request<StressQuery>,
     ) -> Result<Response<StressResponse>, Status> {
-        let req    = request.into_inner();
+        let req = request.into_inner();
         let stress = self.state.stress.read().await;
         let result = stress.run_scenario(&req.scenario_id);
 
         Ok(Response::new(StressResponse {
-            account_id:     req.account_id,
-            scenario_id:    req.scenario_id,
+            account_id: req.account_id,
+            scenario_id: req.scenario_id,
             estimated_loss: Some(make_money(result.estimated_loss, "USD")),
-            survived:       result.survived,
+            survived: result.survived,
         }))
     }
 
@@ -417,12 +440,13 @@ impl RiskEngine for RiskServiceImpl {
     ) -> Result<Response<Self::LoadEventsStream>, Status> {
         let req = request.into_inner();
         let (tx, rx) = mpsc::channel(100);
-        
+
         let repo = self.repository.clone();
-        
+
         tokio::spawn(async move {
             if let Some(repo) = repo {
-                let uuid_str = uuid::Uuid::parse_str(&req.account_id).unwrap_or(uuid::Uuid::new_v4());
+                let uuid_str =
+                    uuid::Uuid::parse_str(&req.account_id).unwrap_or(uuid::Uuid::new_v4());
                 if let Ok(events) = repo.load_events_since(uuid_str, 0).await {
                     for ev in events {
                         let risk_event = RiskEvent {
@@ -442,7 +466,7 @@ impl RiskEngine for RiskServiceImpl {
                 }
             }
         });
-        
+
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 
@@ -454,10 +478,10 @@ impl RiskEngine for RiskServiceImpl {
     ) -> Result<Response<Self::SubscribeEventsStream>, Status> {
         let req = request.into_inner();
         let (tx, rx) = mpsc::channel(100);
-        
+
         // This acts as a pass-through from our internal event bus if available
         let _account_id = req.account_id;
-        
+
         tokio::spawn(async move {
             // Keep the channel open for now since we'd need a multi-producer multi-consumer setup
             // to properly fan out from the event bus to gRPC streams, which requires a broadcast channel
@@ -469,7 +493,7 @@ impl RiskEngine for RiskServiceImpl {
                 }
             }
         });
-        
+
         Ok(Response::new(ReceiverStream::new(rx)))
     }
 }

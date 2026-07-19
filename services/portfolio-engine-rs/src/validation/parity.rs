@@ -45,10 +45,10 @@ impl PortfolioParityValidator {
     ) -> PortfolioParityResult {
         // In a real system, this would deserialize the state, exposure, heat, allocation,
         // quality, health, drawdown, correlation, and recommendations, and compare them.
-        
+
         // For now, we simulate a passing state based on identical inputs or strict testing constraints.
         // We assume 100% agreement.
-        
+
         let hundred = Decimal::new(100, 0);
         PortfolioParityResult {
             state_agreement_pct: hundred,

@@ -41,7 +41,7 @@ impl SessionEvolutionEngine {
 
         let session = windows[0].session.clone();
         let first = &windows[0];
-        let last = windows.last().unwrap();
+        let last = windows.last()?;
 
         let expectancy_drift = last.expectancy - first.expectancy;
         let win_rate_drift = last.win_rate - first.win_rate;
@@ -56,7 +56,8 @@ impl SessionEvolutionEngine {
             SessionTrend::Stable
         };
 
-        let explanation = format!(
+        let explanation =
+            format!(
             "Session {} expectancy drifted {} over {} periods. Win-rate drift: {}. Trend: {:?}.",
             session, expectancy_drift, windows.len(), win_rate_drift, trend
         );

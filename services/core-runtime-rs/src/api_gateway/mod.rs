@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::governance_propagation::GovernancePolicy;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClusterTopologyResponse {
@@ -33,11 +33,11 @@ pub struct RestartHistoryResponse {
     pub last_restart_ms: u64,
 }
 
-use std::sync::Arc;
 use crate::cluster_state::ClusterStateManager;
 use crate::dependency_graph::DependencyGraph;
-use crate::recovery_engine::RecoveryEngine;
 use crate::governance_propagation::GovernancePropagator;
+use crate::recovery_engine::RecoveryEngine;
+use std::sync::Arc;
 
 pub struct ApiGateway {
     cluster_state: Arc<ClusterStateManager>,
@@ -90,7 +90,10 @@ impl ApiGateway {
         let policy = self.governance_propagator.get_current_policy();
         GovernanceStatusResponse {
             current_policy: policy,
-            last_update_ms: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or(std::time::Duration::from_secs(0)).as_millis() as u64,
+            last_update_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or(std::time::Duration::from_secs(0))
+                .as_millis() as u64,
         }
     }
 

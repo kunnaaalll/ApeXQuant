@@ -1,6 +1,6 @@
+use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
-use rust_decimal::Decimal;
 
 pub struct HealthRepository {
     pool: PgPool,

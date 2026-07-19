@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use super::models::{EdgeAssessment, EdgeMetrics};
 use super::states::EdgeState;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 pub struct EdgeCalculator;
 
@@ -13,9 +13,9 @@ impl EdgeCalculator {
         trade_count: u32,
     ) -> EdgeAssessment {
         let trade_count_dec = Decimal::from(trade_count);
-        
+
         let raw_edge = (win_rate * average_rr) - (dec!(1.0) - win_rate);
-        
+
         // Edge score mapping: logic to map raw_edge and expectancy into a 0-100 score.
         // Bounded mathematically.
         let mut edge_score = if raw_edge > dec!(0.0) {
@@ -31,7 +31,7 @@ impl EdgeCalculator {
             dec!(1.0)
         };
 
-        edge_score = edge_score * edge_confidence;
+        edge_score *= edge_confidence;
 
         let state = Self::determine_state(edge_score);
 
@@ -44,10 +44,7 @@ impl EdgeCalculator {
             edge_stability: Decimal::ZERO,
         };
 
-        EdgeAssessment {
-            metrics,
-            state,
-        }
+        EdgeAssessment { metrics, state }
     }
 
     pub fn determine_state(edge_score: Decimal) -> EdgeState {

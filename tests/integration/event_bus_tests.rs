@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! Integration tests for Event Bus
 
 use common::TestEnvironment;

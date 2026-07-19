@@ -1,6 +1,6 @@
 use super::embeddings::EmbeddingVector;
-use sqlx::{PgPool, Row};
 use anyhow::Result;
+use sqlx::{PgPool, Row};
 
 pub struct VectorStore {
     pool: PgPool,
@@ -13,13 +13,13 @@ impl VectorStore {
 
     pub async fn store_vector(&self, id: &str, vector: &EmbeddingVector) -> Result<()> {
         let json_vector = serde_json::to_value(&vector.values)?;
-        
+
         sqlx::query(
             r#"
             INSERT INTO embeddings (id, vector)
             VALUES ($1, $2)
             ON CONFLICT (id) DO UPDATE SET vector = EXCLUDED.vector
-            "#
+            "#,
         )
         .bind(id)
         .bind(json_vector)
@@ -29,11 +29,15 @@ impl VectorStore {
         Ok(())
     }
 
-    pub async fn search_similar(&self, vector: &EmbeddingVector, limit: i64) -> Result<Vec<(String, f32)>> {
+    pub async fn search_similar(
+        &self,
+        vector: &EmbeddingVector,
+        limit: i64,
+    ) -> Result<Vec<(String, f32)>> {
         let records = sqlx::query(
             r#"
             SELECT id, vector FROM embeddings LIMIT 1000
-            "#
+            "#,
         )
         .fetch_all(&self.pool)
         .await?;
@@ -47,7 +51,7 @@ impl VectorStore {
                 results.push((record.get::<String, _>("id"), similarity));
             }
         }
-        
+
         results.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         results.truncate(limit as usize);
 

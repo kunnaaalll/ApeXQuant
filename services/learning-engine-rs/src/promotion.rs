@@ -43,36 +43,51 @@ impl PromotionLadder {
     pub fn new() -> Self {
         let mut reqs = HashMap::new();
         // Setup initial default institutional thresholds
-        reqs.insert(PromotionLevel::Shadow, PromotionRequirements {
-            min_sample_size: 100,
-            min_confidence: Decimal::new(50, 0),
-            max_drawdown: Decimal::new(15, 0),
-            regime_robustness_score: Decimal::new(40, 0),
-        });
-        reqs.insert(PromotionLevel::Candidate, PromotionRequirements {
-            min_sample_size: 500,
-            min_confidence: Decimal::new(70, 0),
-            max_drawdown: Decimal::new(10, 0),
-            regime_robustness_score: Decimal::new(60, 0),
-        });
-        reqs.insert(PromotionLevel::Approved, PromotionRequirements {
-            min_sample_size: 1000,
-            min_confidence: Decimal::new(80, 0),
-            max_drawdown: Decimal::new(8, 0),
-            regime_robustness_score: Decimal::new(75, 0),
-        });
-        reqs.insert(PromotionLevel::Production, PromotionRequirements {
-            min_sample_size: 5000,
-            min_confidence: Decimal::new(90, 0),
-            max_drawdown: Decimal::new(5, 0),
-            regime_robustness_score: Decimal::new(85, 0),
-        });
-        reqs.insert(PromotionLevel::Elite, PromotionRequirements {
-            min_sample_size: 20000,
-            min_confidence: Decimal::new(95, 0),
-            max_drawdown: Decimal::new(3, 0),
-            regime_robustness_score: Decimal::new(95, 0),
-        });
+        reqs.insert(
+            PromotionLevel::Shadow,
+            PromotionRequirements {
+                min_sample_size: 100,
+                min_confidence: Decimal::new(50, 0),
+                max_drawdown: Decimal::new(15, 0),
+                regime_robustness_score: Decimal::new(40, 0),
+            },
+        );
+        reqs.insert(
+            PromotionLevel::Candidate,
+            PromotionRequirements {
+                min_sample_size: 500,
+                min_confidence: Decimal::new(70, 0),
+                max_drawdown: Decimal::new(10, 0),
+                regime_robustness_score: Decimal::new(60, 0),
+            },
+        );
+        reqs.insert(
+            PromotionLevel::Approved,
+            PromotionRequirements {
+                min_sample_size: 1000,
+                min_confidence: Decimal::new(80, 0),
+                max_drawdown: Decimal::new(8, 0),
+                regime_robustness_score: Decimal::new(75, 0),
+            },
+        );
+        reqs.insert(
+            PromotionLevel::Production,
+            PromotionRequirements {
+                min_sample_size: 5000,
+                min_confidence: Decimal::new(90, 0),
+                max_drawdown: Decimal::new(5, 0),
+                regime_robustness_score: Decimal::new(85, 0),
+            },
+        );
+        reqs.insert(
+            PromotionLevel::Elite,
+            PromotionRequirements {
+                min_sample_size: 20000,
+                min_confidence: Decimal::new(95, 0),
+                max_drawdown: Decimal::new(3, 0),
+                regime_robustness_score: Decimal::new(95, 0),
+            },
+        );
         Self { requirements: reqs }
     }
 
@@ -90,7 +105,10 @@ impl PromotionLadder {
             PromotionLevel::Elite => return Ok(None), // Already at top
         };
 
-        let reqs = self.requirements.get(&next_level).ok_or("Missing requirements for level")?;
+        let reqs = self
+            .requirements
+            .get(&next_level)
+            .ok_or("Missing requirements for level")?;
 
         if perf.sample_size >= reqs.min_sample_size
             && perf.confidence >= reqs.min_confidence

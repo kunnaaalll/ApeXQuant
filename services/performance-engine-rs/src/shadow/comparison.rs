@@ -1,8 +1,9 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ShadowComparisonState {
+    #[default]
     ExactMatch,
     CloseMatch,
     Warning,
@@ -17,12 +18,6 @@ pub struct ShadowComparisonResult {
     pub average_difference: Decimal,
     pub maximum_difference: Decimal,
     pub state: ShadowComparisonState,
-}
-
-impl Default for ShadowComparisonState {
-    fn default() -> Self {
-        Self::ExactMatch
-    }
 }
 
 impl ShadowComparisonResult {

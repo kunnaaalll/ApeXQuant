@@ -43,10 +43,10 @@ impl AttributionEngine {
         market_volatility: Decimal,
     ) -> AttributionScore {
         // Deterministic implementation of performance attribution
-        
+
         // 1. Execution is typically the cost paid to the market via slippage (usually negative)
         let execution_contribution = -slippage.abs();
-        
+
         // 2. Market contribution is driven by excess volatility tailwinds
         // We heuristically attribute a fraction of the PnL to market volatility when high
         let baseline_volatility = Decimal::new(15, 2); // 0.15
@@ -57,7 +57,7 @@ impl AttributionEngine {
         };
         // E.g., if vol is 0.25, excess = 0.10. We attribute 10% of PnL to market condition.
         let market_contribution = trade_pnl * vol_excess;
-        
+
         // 3. Risk contribution penalizes deviations from expected return
         // If trade_pnl > expected_pnl, risk is positive (upside risk captured)
         // If trade_pnl < expected_pnl, risk is negative (downside realized)
@@ -66,7 +66,8 @@ impl AttributionEngine {
         let risk_contribution = risk_deviation * Decimal::new(20, 2); // 0.20
 
         // 4. Strategy contribution is the residual alpha
-        let strategy_contribution = trade_pnl - execution_contribution - market_contribution - risk_contribution;
+        let strategy_contribution =
+            trade_pnl - execution_contribution - market_contribution - risk_contribution;
 
         AttributionScore {
             execution_contribution,

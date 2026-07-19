@@ -330,7 +330,11 @@ pub fn has_recent_sweep(
         .into_iter()
         .filter(|s| candles.len().saturating_sub(s.sweep_index) <= lookback)
         .filter(|s| s.direction == direction)
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
+        .max_by(|a, b| {
+            a.strength
+                .partial_cmp(&b.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
 }
 
 /// Get sweep bias from recent sweeps
@@ -393,9 +397,11 @@ pub fn analyze_liquidity(candles: &[Candle], swings: &[SwingPoint]) -> Liquidity
         .filter(|s| s.direction == SweepDirection::Low)
         .count();
 
-    let strongest = recent
-        .iter()
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
+    let strongest = recent.iter().max_by(|a, b| {
+        a.strength
+            .partial_cmp(&b.strength)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let bias = get_sweep_bias(&sweeps, lookback, candles.len());
 

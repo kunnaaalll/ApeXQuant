@@ -17,8 +17,8 @@ pub struct DependencyHealth {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthReport {
     pub service: String,
-    pub ready: bool,      // true when all critical deps are healthy
-    pub alive: bool,      // always true while process is running
+    pub ready: bool, // true when all critical deps are healthy
+    pub alive: bool, // always true while process is running
     pub dependencies: Vec<DependencyHealth>,
     pub checked_at_ms: u64,
 }
@@ -114,8 +114,7 @@ impl HealthChecker {
     async fn check_redis(&self) -> DependencyHealth {
         let t = Instant::now();
         let result = tokio::time::timeout(Duration::from_secs(3), async {
-            let client = redis::Client::open(self.redis_url.as_str())
-                .map_err(|e| e.to_string())?;
+            let client = redis::Client::open(self.redis_url.as_str()).map_err(|e| e.to_string())?;
             let mut conn = client
                 .get_multiplexed_async_connection()
                 .await

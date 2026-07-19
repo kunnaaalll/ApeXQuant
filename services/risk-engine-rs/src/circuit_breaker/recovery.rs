@@ -54,11 +54,14 @@ impl RiskRecoveryModel {
     fn update_state(&mut self) {
         // Enforce sequential transitions implicitly by only moving state step-by-step
         // based on score ranges, but remember: no instant jump from Broken -> Healthy
-        let target_state = if self.score >= Decimal::new(90, 2) { // 0.90
+        let target_state = if self.score >= Decimal::new(90, 2) {
+            // 0.90
             RecoveryState::Healthy
-        } else if self.score >= Decimal::new(60, 2) { // 0.60
+        } else if self.score >= Decimal::new(60, 2) {
+            // 0.60
             RecoveryState::Stable
-        } else if self.score >= Decimal::new(30, 2) { // 0.30
+        } else if self.score >= Decimal::new(30, 2) {
+            // 0.30
             RecoveryState::Recovering
         } else {
             RecoveryState::Broken

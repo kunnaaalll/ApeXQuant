@@ -19,7 +19,7 @@ impl Default for TickProcessor {
     fn default() -> Self {
         Self {
             max_staleness_ms: 10_000, // 10 seconds
-            max_future_ms: 5_000,    // 5 seconds
+            max_future_ms: 5_000,     // 5 seconds
         }
     }
 }
@@ -41,7 +41,7 @@ impl TickProcessor {
 
         let now = Utc::now();
         let diff_ms = now.signed_duration_since(tick.timestamp).num_milliseconds();
-        
+
         if diff_ms > self.max_staleness_ms {
             return Err(TickValidationError::StaleTick);
         }

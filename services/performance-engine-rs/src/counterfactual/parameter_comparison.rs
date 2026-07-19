@@ -32,10 +32,10 @@ impl ParameterComparisonEngine {
         }
 
         // Sort by outcome descending
-        variants.sort_by(|a, b| b.outcome.cmp(&a.outcome));
+        variants.sort_by_key(|b| std::cmp::Reverse(b.outcome));
 
-        let best_variant = variants.first().unwrap().clone();
-        let worst_variant = variants.last().unwrap().clone();
+        let best_variant = variants.first()?.clone();
+        let worst_variant = variants.last()?.clone();
         let difference = best_variant.outcome - worst_variant.outcome;
 
         Some(ParameterComparisonResult {

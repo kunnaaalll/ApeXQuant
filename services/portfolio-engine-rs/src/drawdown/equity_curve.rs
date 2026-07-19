@@ -36,7 +36,13 @@ impl EquityCurve {
         }
     }
 
-    pub fn record_point(&mut self, timestamp: time::OffsetDateTime, balance: Decimal, equity: Decimal, pnl: Decimal) {
+    pub fn record_point(
+        &mut self,
+        timestamp: time::OffsetDateTime,
+        balance: Decimal,
+        equity: Decimal,
+        pnl: Decimal,
+    ) {
         self.points.push(EquityCurvePoint {
             timestamp,
             balance,

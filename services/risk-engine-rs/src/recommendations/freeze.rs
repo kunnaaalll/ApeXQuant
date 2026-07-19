@@ -1,4 +1,6 @@
-use super::models::{CircuitBreakerState, DrawdownState, HiddenLeverage, RiskInputs, TailRiskScore};
+use super::models::{
+    CircuitBreakerState, DrawdownState, HiddenLeverage, RiskInputs, TailRiskScore,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FreezeReason {

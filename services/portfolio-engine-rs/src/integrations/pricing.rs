@@ -1,5 +1,5 @@
-use tonic::transport::Channel;
 use apex_protos::analytics::analytics_engine_client::AnalyticsEngineClient;
+use tonic::transport::Channel;
 
 pub struct PricingClient {
     pub client: Option<AnalyticsEngineClient<Channel>>,
@@ -10,7 +10,9 @@ impl PricingClient {
         let client = AnalyticsEngineClient::connect(url)
             .await
             .map_err(|e| format!("Failed to connect to pricing/analytics service: {}", e))?;
-        Ok(Self { client: Some(client) })
+        Ok(Self {
+            client: Some(client),
+        })
     }
 
     pub fn new() -> Self {

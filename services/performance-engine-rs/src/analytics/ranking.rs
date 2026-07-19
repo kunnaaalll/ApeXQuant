@@ -1,11 +1,10 @@
-
 use serde::{Deserialize, Serialize};
 
+use super::adequacy::AdequacyScore;
 use crate::regime::models::RegimeAssessment;
 use crate::session::models::SessionAssessment;
 use crate::symbol::models::SymbolAssessment;
 use crate::timeframe::models::TimeframeAssessment;
-use super::adequacy::AdequacyScore;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContextRankingResult {
@@ -31,19 +30,19 @@ impl ContextRanking {
         overall_adequacy: AdequacyScore,
     ) -> ContextRankingResult {
         let mut sorted_regimes = regimes;
-        sorted_regimes.sort_by(|a, b| b.expectancy.cmp(&a.expectancy));
+        sorted_regimes.sort_by_key(|b| std::cmp::Reverse(b.expectancy));
         let (top_regimes, bottom_regimes) = Self::split_top_bottom(sorted_regimes);
 
         let mut sorted_sessions = sessions;
-        sorted_sessions.sort_by(|a, b| b.expectancy.cmp(&a.expectancy));
+        sorted_sessions.sort_by_key(|b| std::cmp::Reverse(b.expectancy));
         let (top_sessions, bottom_sessions) = Self::split_top_bottom(sorted_sessions);
 
         let mut sorted_symbols = symbols;
-        sorted_symbols.sort_by(|a, b| b.expectancy.cmp(&a.expectancy));
+        sorted_symbols.sort_by_key(|b| std::cmp::Reverse(b.expectancy));
         let (top_symbols, bottom_symbols) = Self::split_top_bottom(sorted_symbols);
 
         let mut sorted_timeframes = timeframes;
-        sorted_timeframes.sort_by(|a, b| b.expectancy.cmp(&a.expectancy));
+        sorted_timeframes.sort_by_key(|b| std::cmp::Reverse(b.expectancy));
         let (top_timeframes, bottom_timeframes) = Self::split_top_bottom(sorted_timeframes);
 
         ContextRankingResult {
@@ -63,16 +62,20 @@ impl ContextRanking {
         if sorted_items.is_empty() {
             return (Vec::new(), Vec::new());
         }
-        
+
         // Take top 3 for top, bottom 3 for bottom (or less if not enough items)
         let len = sorted_items.len();
         let top_count = std::cmp::min(3, len);
         let top = sorted_items[..top_count].to_vec();
-        
-        let bottom_start = if len > top_count * 2 { len - top_count } else { top_count };
+
+        let bottom_start = if len > top_count * 2 {
+            len - top_count
+        } else {
+            top_count
+        };
         let mut bottom = sorted_items[bottom_start..].to_vec();
         bottom.reverse(); // Lowest expectancy first
-        
+
         (top, bottom)
     }
 }

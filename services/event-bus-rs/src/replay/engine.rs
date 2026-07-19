@@ -1,6 +1,6 @@
+use anyhow::Result;
 use apex_protos::events::Event;
 use sqlx::PgPool;
-use anyhow::Result;
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum ReplayMode {
@@ -20,11 +20,15 @@ impl ReplayEngine {
         Self { pool }
     }
 
-    pub async fn replay_by_topic(&self, topic: &str, _mode: ReplayMode) -> Result<tokio::sync::mpsc::Receiver<Event>> {
+    pub async fn replay_by_topic(
+        &self,
+        topic: &str,
+        _mode: ReplayMode,
+    ) -> Result<tokio::sync::mpsc::Receiver<Event>> {
         let (tx, rx) = tokio::sync::mpsc::channel(1000);
         let pool = self.pool.clone();
         let topic_clone = topic.to_string();
-        
+
         tokio::spawn(async move {
             use sqlx::Row;
             let rows = sqlx::query(
@@ -33,7 +37,7 @@ impl ReplayEngine {
                 FROM events
                 WHERE topic = $1
                 ORDER BY occurred_at ASC
-                "#
+                "#,
             )
             .bind(topic_clone)
             .fetch_all(&pool)
@@ -56,14 +60,14 @@ impl ReplayEngine {
     }
 
     pub async fn replay_by_time_range(
-        &self, 
-        start: chrono::DateTime<chrono::Utc>, 
-        end: chrono::DateTime<chrono::Utc>, 
-        _mode: ReplayMode
+        &self,
+        start: chrono::DateTime<chrono::Utc>,
+        end: chrono::DateTime<chrono::Utc>,
+        _mode: ReplayMode,
     ) -> Result<tokio::sync::mpsc::Receiver<Event>> {
         let (tx, rx) = tokio::sync::mpsc::channel(1000);
         let pool = self.pool.clone();
-        
+
         tokio::spawn(async move {
             use sqlx::Row;
             let rows = sqlx::query(
@@ -72,7 +76,7 @@ impl ReplayEngine {
                 FROM events
                 WHERE occurred_at >= $1 AND occurred_at <= $2
                 ORDER BY occurred_at ASC
-                "#
+                "#,
             )
             .bind(start)
             .bind(end)

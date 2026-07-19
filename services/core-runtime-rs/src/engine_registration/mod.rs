@@ -44,7 +44,8 @@ impl EngineCapabilityRegistry {
     }
 
     pub fn register(&mut self, service_id: &str, capabilities: Vec<String>) {
-        self.capabilities_by_service.insert(service_id.to_string(), capabilities);
+        self.capabilities_by_service
+            .insert(service_id.to_string(), capabilities);
     }
 
     pub fn get_capabilities(&self, service_id: &str) -> Option<&Vec<String>> {
@@ -89,18 +90,27 @@ impl EngineRegistrar {
         }
     }
 
-    pub fn register(&mut self, reg: EngineRegistration, timestamp_ms: u64) -> Result<(), &'static str> {
+    pub fn register(
+        &mut self,
+        reg: EngineRegistration,
+        timestamp_ms: u64,
+    ) -> Result<(), &'static str> {
         let id = reg.service_id.clone();
         if self.engines.contains_key(&id) {
             return Err("Engine already registered");
         }
-        self.capability_registry.register(&id, reg.capabilities.clone());
+        self.capability_registry
+            .register(&id, reg.capabilities.clone());
         self.lease_manager.renew_lease(&id, timestamp_ms);
         self.engines.insert(id, reg);
         Ok(())
     }
 
-    pub fn update_readiness(&mut self, service_id: &str, state: ReadinessState) -> Result<(), &'static str> {
+    pub fn update_readiness(
+        &mut self,
+        service_id: &str,
+        state: ReadinessState,
+    ) -> Result<(), &'static str> {
         if let Some(engine) = self.engines.get_mut(service_id) {
             engine.readiness_state = state;
             Ok(())

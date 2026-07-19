@@ -42,7 +42,7 @@ impl ConcentrationMetrics {
             + self.largest_currency_pct;
 
         let normalized = raw_concentration / Decimal::from(5);
-        
+
         self.concentration_score = normalized.clamp(Decimal::ZERO, Decimal::from(100));
         self.diversification_score = (Decimal::from(100) - self.concentration_score)
             .clamp(Decimal::ZERO, Decimal::from(100));

@@ -15,7 +15,7 @@ impl RequestRouter {
     pub fn route_request(&self, request_id: &str) -> Option<String> {
         self.routing_table.get(request_id).cloned()
     }
-    
+
     pub fn add_route(&mut self, source: String, target: String) {
         self.routing_table.insert(source, target);
     }

@@ -246,7 +246,11 @@ impl ConfluenceEngine {
                 SignalDirection::Short => matches!(s.direction, SweepDirection::High),
                 SignalDirection::Neutral => false,
             })
-            .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap());
+            .max_by(|a, b| {
+                a.strength
+                    .partial_cmp(&b.strength)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
         let strength = aligned_sweep.map(|s| s.strength).unwrap_or(0.0);
         let aligned = aligned_sweep.is_some();
@@ -284,11 +288,10 @@ impl ConfluenceEngine {
         let execution_tf = "M15";
         let tf_candles = candles.get(execution_tf);
 
-        if tf_candles.is_none() || tf_candles.as_ref().unwrap().len() < 10 {
-            return (0.0, false);
-        }
-
-        let c = tf_candles.unwrap();
+        let c = match tf_candles {
+            Some(candles) if candles.len() >= 10 => candles,
+            _ => return (0.0, false),
+        };
         let recent = &c[c.len().saturating_sub(10)..];
 
         // Simple momentum: count bullish/bearish candles

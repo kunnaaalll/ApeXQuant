@@ -38,7 +38,8 @@ impl VolatilityModel {
         let sum: Decimal = returns.iter().sum();
         let mean = sum / count;
 
-        let variance_sum: Decimal = returns.iter()
+        let variance_sum: Decimal = returns
+            .iter()
             .map(|&ret| {
                 let diff = ret - mean;
                 diff * diff

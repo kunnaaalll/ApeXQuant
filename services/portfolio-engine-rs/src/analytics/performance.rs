@@ -1,7 +1,6 @@
 // src/analytics/performance.rs
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PerformanceState {
@@ -31,9 +30,9 @@ impl PerformanceAssessment {
     pub fn evaluate_state(sortino: Decimal, stability: Decimal) -> PerformanceState {
         let weight_sortino = Decimal::new(6, 1);
         let weight_stability = Decimal::new(4, 1);
-        
+
         let composite_score = (sortino * weight_sortino) + (stability * weight_stability);
-        
+
         if composite_score < Decimal::ZERO {
             PerformanceState::Critical
         } else if composite_score < Decimal::new(5, 1) {

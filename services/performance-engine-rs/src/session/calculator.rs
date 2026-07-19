@@ -1,14 +1,15 @@
-use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
 use super::models::SessionAssessment;
 use super::states::SessionState;
 use super::types::{SessionType, TradeCount};
+use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 
 pub struct SessionCalculator;
 
 impl SessionCalculator {
     pub const MIN_TRADES_FOR_EVALUATION: TradeCount = 30;
 
+    #[allow(clippy::too_many_arguments)]
     pub fn evaluate(
         session: SessionType,
         trade_count: TradeCount,
@@ -46,9 +47,9 @@ impl SessionCalculator {
             return SessionState::Normal; // Default until we have enough data
         }
 
-        let one_point_five = Decimal::from_f64(1.5).unwrap();
-        let two_point_zero = Decimal::from_f64(2.0).unwrap();
-        let fifty_percent = Decimal::from_f64(0.50).unwrap();
+        let one_point_five = Decimal::from_f64(1.5).unwrap_or_default();
+        let two_point_zero = Decimal::from_f64(2.0).unwrap_or_default();
+        let fifty_percent = Decimal::from_f64(0.50).unwrap_or_default();
         let zero = Decimal::ZERO;
 
         if expectancy > zero && profit_factor >= two_point_zero && win_rate >= fifty_percent {

@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct InstitutionalConfidenceScore(Decimal);
@@ -66,10 +66,7 @@ pub struct ConfidenceEvaluation {
 }
 
 impl ConfidenceEvaluation {
-    pub fn evaluate(
-        target_id: Uuid,
-        inputs: ConfidenceInputs,
-    ) -> Result<Self, &'static str> {
+    pub fn evaluate(target_id: Uuid, inputs: ConfidenceInputs) -> Result<Self, &'static str> {
         // Simple equal weighting for now. Sum and divide by 6.
         let total = inputs.market_data_confidence
             + inputs.strategy_engine_confidence

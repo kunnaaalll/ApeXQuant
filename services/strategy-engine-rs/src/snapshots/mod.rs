@@ -1,10 +1,10 @@
-use rust_decimal::Decimal;
-use crate::state::StrategyState;
-use crate::health::HealthState;
-use crate::confidence::ConfidenceTier;
 use crate::allocation::AllocationState;
+use crate::confidence::ConfidenceTier;
 use crate::degradation::DegradationState;
+use crate::health::HealthState;
 use crate::lifecycle::LifecycleState;
+use crate::state::StrategyState;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StrategySnapshot {

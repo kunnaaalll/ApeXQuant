@@ -3,7 +3,6 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Domain models persisted to PostgreSQL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,8 +22,8 @@ pub struct ClosedTradeRecord {
     pub sl_price: Decimal,
     pub tp_price: Decimal,
     pub rr: Decimal,
-    pub r_outcome: Decimal,      // P&L in R-multiples
-    pub pnl_usd: Decimal,        // Absolute P&L in account currency
+    pub r_outcome: Decimal, // P&L in R-multiples
+    pub pnl_usd: Decimal,   // Absolute P&L in account currency
     pub gross_profit: Decimal,
     pub gross_loss: Decimal,
     pub commission: Decimal,
@@ -334,7 +333,7 @@ impl PerformanceRepository {
         from: Option<chrono::DateTime<chrono::Utc>>,
         to: Option<chrono::DateTime<chrono::Utc>>,
     ) -> Result<Vec<ClosedTradeRecord>> {
-        let from = from.unwrap_or_else(|| chrono::DateTime::UNIX_EPOCH);
+        let from = from.unwrap_or(chrono::DateTime::UNIX_EPOCH);
         let to = to.unwrap_or_else(chrono::Utc::now);
         let rows = sqlx::query_as::<_, ClosedTradeRecord>(
             r#"
@@ -441,10 +440,7 @@ impl PerformanceRepository {
 
     /// Check database health via a lightweight query.
     pub async fn health_check(&self) -> bool {
-        sqlx::query("SELECT 1")
-            .execute(&self.pool)
-            .await
-            .is_ok()
+        sqlx::query("SELECT 1").execute(&self.pool).await.is_ok()
     }
 }
 
@@ -644,8 +640,8 @@ impl OverfitRepository {
     }
 
     pub async fn upsert_record(&self, rec: &OverfitRecord) -> Result<()> {
-        let reasons_json = serde_json::to_value(&rec.reasons)
-            .unwrap_or(serde_json::Value::Array(vec![]));
+        let reasons_json =
+            serde_json::to_value(&rec.reasons).unwrap_or(serde_json::Value::Array(vec![]));
         sqlx::query(
             r#"
             INSERT INTO overfit_records (

@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! Determinism Tests for Signal Engine
 //!
 //! Validates that the Signal Engine produces identical outputs for identical inputs

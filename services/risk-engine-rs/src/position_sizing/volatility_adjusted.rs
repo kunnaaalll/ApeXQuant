@@ -21,7 +21,10 @@ impl VolatilityAdjustedSizer {
         stop_loss_distance: Decimal,
         current_volatility: Decimal,
     ) -> Decimal {
-        if stop_loss_distance <= Decimal::ZERO || current_volatility <= Decimal::ZERO || equity <= Decimal::ZERO {
+        if stop_loss_distance <= Decimal::ZERO
+            || current_volatility <= Decimal::ZERO
+            || equity <= Decimal::ZERO
+        {
             return Decimal::ZERO;
         }
 

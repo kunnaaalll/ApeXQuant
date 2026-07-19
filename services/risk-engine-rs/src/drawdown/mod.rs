@@ -1,9 +1,8 @@
 pub mod events;
-pub mod state;
 pub mod snapshot;
+pub mod state;
 #[cfg(test)]
 pub mod tests;
-
 
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -18,18 +17,18 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DrawdownTracker {
     pub current_drawdown: Decimal,
-    pub max_drawdown:     Decimal,
-    pub peak_equity:      Decimal,
-    pub trough_equity:    Decimal,
+    pub max_drawdown: Decimal,
+    pub peak_equity: Decimal,
+    pub trough_equity: Decimal,
 }
 
 impl DrawdownTracker {
     pub fn new() -> Self {
         Self {
             current_drawdown: Decimal::ZERO,
-            max_drawdown:     Decimal::ZERO,
-            peak_equity:      Decimal::ZERO,
-            trough_equity:    Decimal::ZERO,
+            max_drawdown: Decimal::ZERO,
+            peak_equity: Decimal::ZERO,
+            trough_equity: Decimal::ZERO,
         }
     }
 
@@ -37,8 +36,8 @@ impl DrawdownTracker {
     pub fn observe(&mut self, equity: Decimal) {
         if equity > self.peak_equity {
             // New peak — drawdown resets to zero
-            self.peak_equity      = equity;
-            self.trough_equity    = equity;
+            self.peak_equity = equity;
+            self.trough_equity = equity;
             self.current_drawdown = Decimal::ZERO;
         } else {
             self.trough_equity = equity;

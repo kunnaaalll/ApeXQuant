@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 use rust_decimal::Decimal;
 use strategy_engine_rs::shadow::comparison::{ComparisonEngine, ShadowComparisonState};
 use strategy_engine_rs::shadow::drift::DriftEngine;
@@ -5,24 +6,56 @@ use strategy_engine_rs::shadow::events::ShadowEvent;
 use strategy_engine_rs::shadow::reporter::Reporter;
 use strategy_engine_rs::shadow::snapshot::ShadowSnapshot;
 use strategy_engine_rs::shadow::statistics::StatisticsEngine;
-use strategy_engine_rs::shadow::validator::{GoLiveValidator, GoLiveState};
+use strategy_engine_rs::shadow::validator::{GoLiveState, GoLiveValidator};
 
 #[test]
 fn test_shadow_match_bounds() {
     let engine = ComparisonEngine::new();
     let state = engine.compare(
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
     );
     assert_eq!(state, ShadowComparisonState::ExactMatch);
 
     let state = engine.compare(
-        Decimal::new(1, 2), Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-        Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
+        Decimal::new(1, 2),
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
+        Decimal::ZERO,
     );
     assert_eq!(state, ShadowComparisonState::CloseMatch);
 }
@@ -71,7 +104,7 @@ fn test_validator_progression() {
 #[test]
 fn test_forbidden_transitions() {
     let mut validator = GoLiveValidator::new();
-    
+
     // get to approved
     for _ in 0..10000 {
         validator.process(ShadowComparisonState::ExactMatch);
@@ -96,7 +129,9 @@ fn test_forbidden_transitions() {
 
 #[test]
 fn test_event_rebuild() {
-    let event = ShadowEvent::ComparisonProcessed { total_difference: Decimal::new(15, 1) };
+    let event = ShadowEvent::ComparisonProcessed {
+        total_difference: Decimal::new(15, 1),
+    };
     let clone = event.clone();
     assert_eq!(event, clone);
 }
@@ -117,12 +152,12 @@ fn test_report_generation() {
     let mut stats = StatisticsEngine::new();
     stats.record(ShadowComparisonState::ExactMatch);
     stats.record(ShadowComparisonState::CloseMatch);
-    
+
     let reporter = Reporter::new();
     let markdown = reporter.generate_markdown_report(&stats);
     assert!(markdown.contains("Exact Matches: 1"));
     assert!(markdown.contains("Close Matches: 1"));
-    
+
     let json = reporter.generate_json_report(&stats);
     assert!(json.contains("\"exact_matches\": 1"));
     assert!(json.contains("\"close_matches\": 1"));
@@ -136,10 +171,26 @@ fn test_determinism_100k_iterations() {
 
     for _ in 0..100_000 {
         let state = engine.compare(
-            Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-            Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-            Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
-            Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO, Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
+            Decimal::ZERO,
         );
         stats.record(state);
         validator.process(state);

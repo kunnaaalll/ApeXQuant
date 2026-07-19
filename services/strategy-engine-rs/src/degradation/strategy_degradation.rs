@@ -1,5 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DegradationState {
     #[default]
     Healthy,
@@ -9,7 +8,6 @@ pub enum DegradationState {
     Critical,
     Collapse,
 }
-
 
 use rust_decimal::Decimal;
 

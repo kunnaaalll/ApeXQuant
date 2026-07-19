@@ -90,6 +90,9 @@ impl CorrelationMatrix {
     }
 
     pub fn get_dimension_keys(&self, dimension: &str) -> Vec<(String, String)> {
-        self.matrices.get(dimension).map(|m| m.keys().cloned().collect()).unwrap_or_default()
+        self.matrices
+            .get(dimension)
+            .map(|m| m.keys().cloned().collect())
+            .unwrap_or_default()
     }
 }

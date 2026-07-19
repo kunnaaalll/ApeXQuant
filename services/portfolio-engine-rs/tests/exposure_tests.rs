@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 use portfolio_engine::exposure::currency::Currency;
 use portfolio_engine::exposure::events::ExposureEvent;
 use portfolio_engine::exposure::registry::ExposureRegistry;
@@ -20,8 +21,8 @@ fn test_synthetic_currency_decomposition() {
         sector: Sector::Forex,
         base_currency: Currency::EUR,
         quote_currency: Currency::USD,
-        base_size: Decimal::from(100_000),    // +100k EUR
-        quote_size: Decimal::from(-108_500),  // -108.5k USD (assuming 1.0850 rate)
+        base_size: Decimal::from(100_000),   // +100k EUR
+        quote_size: Decimal::from(-108_500), // -108.5k USD (assuming 1.0850 rate)
         margin_used: Decimal::from(1000),
         risk_amount: Decimal::from(500),
     };
@@ -56,52 +57,62 @@ fn test_concentration_detection() {
     let registry = ExposureRegistry::new();
 
     // Push excessive USD short
-    registry.dispatch(ExposureEvent::PositionOpened {
-        position_id: Uuid::new_v4(),
-        symbol_id: "EURUSD".to_string(),
-        sector: Sector::Forex,
-        base_currency: Currency::EUR,
-        quote_currency: Currency::USD,
-        base_size: Decimal::from(50_000),
-        quote_size: Decimal::from(-60_000),
-        margin_used: Decimal::from(500),
-        risk_amount: Decimal::from(200),
-    }).unwrap();
+    registry
+        .dispatch(ExposureEvent::PositionOpened {
+            position_id: Uuid::new_v4(),
+            symbol_id: "EURUSD".to_string(),
+            sector: Sector::Forex,
+            base_currency: Currency::EUR,
+            quote_currency: Currency::USD,
+            base_size: Decimal::from(50_000),
+            quote_size: Decimal::from(-60_000),
+            margin_used: Decimal::from(500),
+            risk_amount: Decimal::from(200),
+        })
+        .unwrap();
 
-    registry.dispatch(ExposureEvent::PositionOpened {
-        position_id: Uuid::new_v4(),
-        symbol_id: "GBPUSD".to_string(),
-        sector: Sector::Forex,
-        base_currency: Currency::GBP,
-        quote_currency: Currency::USD,
-        base_size: Decimal::from(40_000),
-        quote_size: Decimal::from(-50_000),
-        margin_used: Decimal::from(400),
-        risk_amount: Decimal::from(200),
-    }).unwrap();
+    registry
+        .dispatch(ExposureEvent::PositionOpened {
+            position_id: Uuid::new_v4(),
+            symbol_id: "GBPUSD".to_string(),
+            sector: Sector::Forex,
+            base_currency: Currency::GBP,
+            quote_currency: Currency::USD,
+            base_size: Decimal::from(40_000),
+            quote_size: Decimal::from(-50_000),
+            margin_used: Decimal::from(400),
+            risk_amount: Decimal::from(200),
+        })
+        .unwrap();
 
     let state = registry.get_state().unwrap();
     let concentrations = state.assess_concentration();
 
     // Check USD Short detection (total short USD is 110_000, threshold is 100_000)
-    assert!(concentrations.iter().any(|c| c.description.contains("Excessive USD short")));
+    assert!(concentrations
+        .iter()
+        .any(|c| c.description.contains("Excessive USD short")));
 
     // Now push risk-on to > 50%
-    registry.dispatch(ExposureEvent::PositionOpened {
-        position_id: Uuid::new_v4(),
-        symbol_id: "BTCUSD".to_string(),
-        sector: Sector::Crypto,
-        base_currency: Currency::BTC,
-        quote_currency: Currency::USD,
-        base_size: Decimal::from(1_000_000), // Massive to dominate weight
-        quote_size: Decimal::from(-1_000_000),
-        margin_used: Decimal::from(10000),
-        risk_amount: Decimal::from(5000),
-    }).unwrap();
+    registry
+        .dispatch(ExposureEvent::PositionOpened {
+            position_id: Uuid::new_v4(),
+            symbol_id: "BTCUSD".to_string(),
+            sector: Sector::Crypto,
+            base_currency: Currency::BTC,
+            quote_currency: Currency::USD,
+            base_size: Decimal::from(1_000_000), // Massive to dominate weight
+            quote_size: Decimal::from(-1_000_000),
+            margin_used: Decimal::from(10000),
+            risk_amount: Decimal::from(5000),
+        })
+        .unwrap();
 
     let state2 = registry.get_state().unwrap();
     let concentrations2 = state2.assess_concentration();
-    assert!(concentrations2.iter().any(|c| c.description.contains("High Risk-on concentration")));
+    assert!(concentrations2
+        .iter()
+        .any(|c| c.description.contains("High Risk-on concentration")));
 }
 
 // Fuzz test for mathematical invariants

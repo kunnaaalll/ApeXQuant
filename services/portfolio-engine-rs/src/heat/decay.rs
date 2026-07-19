@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HeatDecayModel {
     pub decay_rate_per_interval: u8,

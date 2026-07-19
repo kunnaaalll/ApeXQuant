@@ -1,11 +1,11 @@
+use crate::adaptation::AdaptationResult;
+use crate::anomaly::AnomalyReport;
 use crate::decay::DecayOutput;
 use crate::discovery::DiscoveryResult;
-use crate::recommendation::LearningRecommendation;
-use crate::adaptation::AdaptationResult;
-use crate::retirement::RetirementAction;
-use crate::promotion::PromotionLevel;
 use crate::optimization::OptimizationResult;
-use crate::anomaly::AnomalyReport;
+use crate::promotion::PromotionLevel;
+use crate::recommendation::LearningRecommendation;
+use crate::retirement::RetirementAction;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

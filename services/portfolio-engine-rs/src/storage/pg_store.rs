@@ -1,8 +1,8 @@
-use anyhow::Result;
-use sqlx::{PgPool, Postgres, Transaction, Row};
 use super::events::EventRecord;
 use super::snapshots::{SnapshotFrequency, SnapshotRecord};
+use anyhow::Result;
 use rust_decimal::Decimal;
+use sqlx::{PgPool, Postgres, Row, Transaction};
 use time::OffsetDateTime;
 
 /// PostgresPortfolioStore provides asynchronous, non-blocking CRUD operations
@@ -31,7 +31,7 @@ impl PostgresPortfolioStore {
                 metadata JSONB,
                 UNIQUE (aggregate_id, version)
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -47,7 +47,7 @@ impl PostgresPortfolioStore {
                 payload JSONB NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -60,7 +60,7 @@ impl PostgresPortfolioStore {
                 allocations JSONB NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -77,7 +77,7 @@ impl PostgresPortfolioStore {
                 sharpe_ratio NUMERIC(20, 8) NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -93,7 +93,7 @@ impl PostgresPortfolioStore {
                 short_exposure NUMERIC(20, 8) NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -108,7 +108,7 @@ impl PostgresPortfolioStore {
                 breakdown JSONB NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -122,7 +122,7 @@ impl PostgresPortfolioStore {
                 breakdown JSONB NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -138,7 +138,7 @@ impl PostgresPortfolioStore {
                 data JSONB NOT NULL,
                 timestamp TIMESTAMPTZ NOT NULL
             );
-            "#
+            "#,
         )
         .execute(&self.pool)
         .await?;
@@ -153,9 +153,13 @@ impl PostgresPortfolioStore {
     }
 
     /// Appends an event to the persistent storage immutably.
-    pub async fn append_event(&self, tx: &mut Transaction<'_, Postgres>, event: &EventRecord) -> Result<()> {
+    pub async fn append_event(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        event: &EventRecord,
+    ) -> Result<()> {
         let payload_json = serde_json::to_value(&event.payload)?;
-        
+
         sqlx::query(
             r#"
             INSERT INTO portfolio_events (id, aggregate_id, version, event_type, payload, timestamp, metadata)
@@ -176,7 +180,11 @@ impl PostgresPortfolioStore {
     }
 
     /// Appends a snapshot to the persistent storage immutably.
-    pub async fn append_snapshot(&self, tx: &mut Transaction<'_, Postgres>, snapshot: &SnapshotRecord) -> Result<()> {
+    pub async fn append_snapshot(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        snapshot: &SnapshotRecord,
+    ) -> Result<()> {
         let payload_json = serde_json::to_value(&snapshot.payload)?;
         let freq_str = snapshot.frequency.to_string();
 
@@ -207,7 +215,7 @@ impl PostgresPortfolioStore {
             FROM portfolio_events
             WHERE aggregate_id = $1
             ORDER BY version ASC
-            "#
+            "#,
         )
         .bind(aggregate_id)
         .fetch_all(&self.pool)
@@ -229,14 +237,18 @@ impl PostgresPortfolioStore {
         Ok(events)
     }
 
-    pub async fn load_events_since_time(&self, aggregate_id: &str, since_time: OffsetDateTime) -> Result<Vec<EventRecord>> {
+    pub async fn load_events_since_time(
+        &self,
+        aggregate_id: &str,
+        since_time: OffsetDateTime,
+    ) -> Result<Vec<EventRecord>> {
         let records = sqlx::query(
             r#"
             SELECT id, aggregate_id, version, event_type, payload, timestamp, metadata
             FROM portfolio_events
             WHERE aggregate_id = $1 AND timestamp > $2
             ORDER BY version ASC
-            "#
+            "#,
         )
         .bind(aggregate_id)
         .bind(since_time)
@@ -260,7 +272,11 @@ impl PostgresPortfolioStore {
     }
 
     /// Loads the latest snapshot for a given aggregate ID and frequency.
-    pub async fn load_latest_snapshot(&self, aggregate_id: &str, frequency: SnapshotFrequency) -> Result<Option<SnapshotRecord>> {
+    pub async fn load_latest_snapshot(
+        &self,
+        aggregate_id: &str,
+        frequency: SnapshotFrequency,
+    ) -> Result<Option<SnapshotRecord>> {
         let freq_str = frequency.to_string();
 
         let rec = sqlx::query(
@@ -270,7 +286,7 @@ impl PostgresPortfolioStore {
             WHERE aggregate_id = $1 AND frequency = $2
             ORDER BY version DESC
             LIMIT 1
-            "#
+            "#,
         )
         .bind(aggregate_id)
         .bind(freq_str)
@@ -295,14 +311,18 @@ impl PostgresPortfolioStore {
     }
 
     /// Loads a snapshot by an exact version.
-    pub async fn load_snapshot_by_version(&self, aggregate_id: &str, version: i64) -> Result<Option<SnapshotRecord>> {
+    pub async fn load_snapshot_by_version(
+        &self,
+        aggregate_id: &str,
+        version: i64,
+    ) -> Result<Option<SnapshotRecord>> {
         let rec = sqlx::query(
             r#"
             SELECT id, aggregate_id, version, snapshot_type, frequency, payload, timestamp
             FROM portfolio_snapshots
             WHERE aggregate_id = $1 AND version = $2
             LIMIT 1
-            "#
+            "#,
         )
         .bind(aggregate_id)
         .bind(version)
@@ -326,14 +346,18 @@ impl PostgresPortfolioStore {
         }
     }
 
-    pub async fn save_allocation(&self, portfolio_id: &str, allocations: &serde_json::Value) -> Result<()> {
+    pub async fn save_allocation(
+        &self,
+        portfolio_id: &str,
+        allocations: &serde_json::Value,
+    ) -> Result<()> {
         let id = uuid::Uuid::new_v4();
         let now = OffsetDateTime::now_utc();
         sqlx::query(
             r#"
             INSERT INTO portfolio_allocations (id, portfolio_id, allocations, timestamp)
             VALUES ($1, $2, $3, $4)
-            "#
+            "#,
         )
         .bind(id)
         .bind(portfolio_id)
@@ -440,7 +464,7 @@ impl PostgresPortfolioStore {
             r#"
             INSERT INTO portfolio_quality (id, portfolio_id, quality_score, breakdown, timestamp)
             VALUES ($1, $2, $3, $4, $5)
-            "#
+            "#,
         )
         .bind(id)
         .bind(portfolio_id)

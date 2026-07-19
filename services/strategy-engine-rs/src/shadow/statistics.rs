@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use crate::shadow::comparison::ShadowComparisonState;
+use rust_decimal::Decimal;
 use std::cmp;
 
 #[derive(Debug, Clone)]
@@ -70,11 +70,11 @@ impl StatisticsEngine {
     }
 
     pub fn match_percentage(&self) -> Decimal {
-        let total = self.daily_exact_matches 
-            + self.daily_close_matches 
-            + self.daily_warnings 
+        let total = self.daily_exact_matches
+            + self.daily_close_matches
+            + self.daily_warnings
             + self.daily_mismatches;
-            
+
         if total == 0 {
             return Decimal::ZERO;
         }
@@ -83,10 +83,10 @@ impl StatisticsEngine {
         let tot = Decimal::from(total);
 
         let percentage = (exact / tot) * Decimal::new(100, 0);
-        
+
         let zero = Decimal::ZERO;
         let hundred = Decimal::new(100, 0);
-        
+
         cmp::min(cmp::max(percentage, zero), hundred)
     }
 }

@@ -27,7 +27,7 @@ impl MonteCarloValidator {
     pub fn validate(&self) -> Result<MonteCarloResult, crate::error::RiskError> {
         // Implementation utilizes deterministic scenario permutations,
         // simulating the effects of varying stress points across the mentioned metrics.
-        
+
         Ok(MonteCarloResult {
             survival_rate: Decimal::new(100, 0),
             failure_rate: Decimal::new(0, 0),

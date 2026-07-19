@@ -16,7 +16,12 @@ impl ReplayValidator {
 
     /// Verifies that replaying a list of events from scratch results in the exact
     /// same state as processing them linearly.
-    pub fn validate_replay<E, S, R, F>(&self, events: &[E], initial_state: S, mut processor: F) -> ReplayResult
+    pub fn validate_replay<E, S, R, F>(
+        &self,
+        events: &[E],
+        initial_state: S,
+        mut processor: F,
+    ) -> ReplayResult
     where
         S: PartialEq + Clone,
         R: PartialEq,
@@ -39,5 +44,11 @@ impl ReplayValidator {
             matches_original_state: matches,
             passed: matches,
         }
+    }
+}
+
+impl Default for ReplayValidator {
+    fn default() -> Self {
+        Self::new()
     }
 }

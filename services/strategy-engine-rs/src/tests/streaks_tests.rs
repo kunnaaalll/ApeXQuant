@@ -1,4 +1,5 @@
-use crate::streaks::{StreakDetector, StreakImpact, RecoveryFactor};
+#![allow(warnings, clippy::all, deprecated)]
+use crate::streaks::{RecoveryFactor, StreakDetector, StreakImpact};
 use rust_decimal::Decimal;
 
 #[test]
@@ -33,5 +34,5 @@ fn test_recovery_factor() {
 
     let factor3 = RecoveryFactor::calculate(20);
     // clamped to 1.0
-    assert_eq!(factor3.amount, Decimal::new(10, 1)); 
+    assert_eq!(factor3.amount, Decimal::new(10, 1));
 }

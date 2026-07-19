@@ -1,4 +1,4 @@
-pub mod server;
+pub mod conversions;
 pub mod error;
 pub mod portfolio_service;
-pub mod conversions;
+pub mod server;

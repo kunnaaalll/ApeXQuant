@@ -16,9 +16,7 @@ pub enum PortfolioError {
         used_margin: Decimal,
     },
     #[error("Invariant violation: Margin Level cannot be negative ({margin_level})")]
-    NegativeMarginLevel {
-        margin_level: Decimal,
-    },
+    NegativeMarginLevel { margin_level: Decimal },
     #[error("Invariant violation: Active Positions cannot be negative")]
     NegativeActivePositions,
     #[error("Invariant violation: Peak Equity ({peak_equity}) < Equity ({equity})")]
@@ -27,19 +25,14 @@ pub enum PortfolioError {
         equity: Decimal,
     },
     #[error("Invariant violation: Drawdown cannot be negative ({drawdown})")]
-    NegativeDrawdown {
-        drawdown: Decimal,
-    },
+    NegativeDrawdown { drawdown: Decimal },
     #[error("Insufficient Free Margin: Required {required}, Available {available}")]
     InsufficientMargin {
         required: Decimal,
         available: Decimal,
     },
     #[error("Invalid Transition: Cannot transition from {from:?} to {to:?}")]
-    InvalidRecoveryTransition {
-        from: String,
-        to: String,
-    },
+    InvalidRecoveryTransition { from: String, to: String },
     #[error("Position {0} not found")]
     PositionNotFound(uuid::Uuid),
     #[error("System Error: {0}")]

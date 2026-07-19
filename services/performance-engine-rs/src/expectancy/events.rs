@@ -1,8 +1,8 @@
+use super::models::ExpectancyMetrics;
+use super::states::ExpectancyState;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use super::models::ExpectancyMetrics;
-use super::states::ExpectancyState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExpectancyEvent {

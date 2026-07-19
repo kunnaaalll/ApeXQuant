@@ -1,12 +1,13 @@
-use rust_decimal::Decimal;
+#![allow(warnings, clippy::all, deprecated)]
+use crate::adequacy::{AdequacyGrade, SampleAdequacy};
+use crate::confidence::context::{ContextConfidenceScore, ContextConfidenceTier};
+use crate::pattern::{PatternAssessment, PatternGrade};
+use crate::ranking::context::{ContextRank, ContextRankTier};
 use crate::regime::{RegimeAssessment, RegimeGrade};
 use crate::session::{SessionAssessment, SessionGrade};
 use crate::symbol::{SymbolAssessment, SymbolGrade};
 use crate::timeframe::{TimeframeAssessment, TimeframeGrade};
-use crate::pattern::{PatternAssessment, PatternGrade};
-use crate::adequacy::{SampleAdequacy, AdequacyGrade};
-use crate::confidence::context::{ContextConfidenceScore, ContextConfidenceTier};
-use crate::ranking::context::{ContextRank, ContextRankTier};
+use rust_decimal::Decimal;
 
 #[test]
 fn test_regime_grading() {
@@ -18,7 +19,7 @@ fn test_regime_grading() {
         drawdown: Decimal::from(0), // Tests division by zero fallback to 1
         health: Decimal::from(50),
     };
-    
+
     // 2 * 2 * 2 * 2 * 50 = 800 (Strong)
     assert_eq!(assessment.grade(), RegimeGrade::Strong);
 
@@ -40,7 +41,7 @@ fn test_session_grading() {
         confidence: Decimal::from(2),
         degradation: Decimal::from(50),
     };
-    
+
     // (5*5*5*2) - 50 = 250 - 50 = 200 (Normal)
     assert_eq!(assessment.grade(), SessionGrade::Normal);
 }
@@ -54,7 +55,7 @@ fn test_symbol_penalties() {
         confidence: Decimal::from(10),
         sample_count: 200,
     };
-    
+
     // Base: 10 * 10 * 10 = 1000 (Elite)
     assert_eq!(assessment.grade(), SymbolGrade::Elite);
 
@@ -88,20 +89,20 @@ fn test_adequacy_grading() {
 #[test]
 fn test_confidence_clamping() {
     let conf = ContextConfidenceScore::calculate(
-        Decimal::from(100), 
-        Decimal::from(100), 
-        Decimal::from(0), 
-        Decimal::from(0)
+        Decimal::from(100),
+        Decimal::from(100),
+        Decimal::from(0),
+        Decimal::from(0),
     );
     assert_eq!(conf.value(), Decimal::from(100));
     assert_eq!(conf.tier(), ContextConfidenceTier::VeryHigh);
 
     // Check downward bounds clamping
     let conf2 = ContextConfidenceScore::calculate(
-        Decimal::from(10), 
-        Decimal::from(10), 
-        Decimal::from(100), 
-        Decimal::from(100)
+        Decimal::from(10),
+        Decimal::from(10),
+        Decimal::from(100),
+        Decimal::from(100),
     );
     assert_eq!(conf2.value(), Decimal::from(0));
 }
@@ -112,7 +113,7 @@ fn test_context_ranking() {
         Decimal::from(10),
         Decimal::from(10),
         Decimal::from(10),
-        Decimal::from(0)
+        Decimal::from(0),
     );
     // 10 * 10 * 10 = 1000 => Elite
     assert_eq!(rank.tier, ContextRankTier::Elite);
@@ -122,11 +123,11 @@ fn test_context_ranking() {
 fn test_determinism_loop() {
     let mut score = Decimal::from(1);
     let increment = Decimal::new(1, 4); // 0.0001
-    
+
     for _ in 0..100_000 {
         score += increment;
     }
-    
+
     assert_eq!(score, Decimal::from(11));
 }
 

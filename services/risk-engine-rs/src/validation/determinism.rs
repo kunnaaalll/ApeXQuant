@@ -23,25 +23,25 @@ use crate::var::parametric_var::ParametricVaR;
 /// Fixed at compile time — never generated at runtime.
 fn test_returns() -> Vec<(Decimal, bool)> {
     vec![
-        (dec!(0.012),  false),
+        (dec!(0.012), false),
         (dec!(-0.008), true),
-        (dec!(0.005),  false),
+        (dec!(0.005), false),
         (dec!(-0.015), true),
-        (dec!(0.020),  false),
+        (dec!(0.020), false),
         (dec!(-0.003), true),
-        (dec!(0.007),  false),
+        (dec!(0.007), false),
         (dec!(-0.022), true),
-        (dec!(0.018),  false),
+        (dec!(0.018), false),
         (dec!(-0.011), true),
-        (dec!(0.009),  false),
+        (dec!(0.009), false),
         (dec!(-0.006), true),
-        (dec!(0.014),  false),
+        (dec!(0.014), false),
         (dec!(-0.025), true),
-        (dec!(0.003),  false),
+        (dec!(0.003), false),
         (dec!(-0.004), true),
-        (dec!(0.016),  false),
+        (dec!(0.016), false),
         (dec!(-0.019), true),
-        (dec!(0.011),  false),
+        (dec!(0.011), false),
         (dec!(-0.007), true),
     ]
 }
@@ -50,23 +50,23 @@ fn test_returns() -> Vec<(Decimal, bool)> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeterminismResult {
-    pub identical_output:   bool,
-    pub iterations:         u64,
-    pub run_a_hash:         String,
-    pub run_b_hash:         String,
-    pub mismatch_fields:    Vec<String>,
+    pub identical_output: bool,
+    pub iterations: u64,
+    pub run_a_hash: String,
+    pub run_b_hash: String,
+    pub mismatch_fields: Vec<String>,
 }
 
 // ─── Engine State Snapshot ────────────────────────────────────────────────────
 
 #[derive(Debug)]
 struct DeterminismSnapshot {
-    historical_var_99:    String,
-    parametric_var_99:    String,
-    parametric_std_dev:   String,
-    drawdown_current:     String,
-    drawdown_max:         String,
-    circuit_breaker:      String,
+    historical_var_99: String,
+    parametric_var_99: String,
+    parametric_std_dev: String,
+    drawdown_current: String,
+    drawdown_max: String,
+    circuit_breaker: String,
 }
 
 impl DeterminismSnapshot {
@@ -90,11 +90,15 @@ impl DeterminismSnapshot {
 pub struct DeterminismValidator;
 
 impl Default for DeterminismValidator {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DeterminismValidator {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Run the identical event stream twice with fresh engines.
     /// Returns `Ok` only when both runs produce identical state hashes.
@@ -155,19 +159,21 @@ impl DeterminismValidator {
 
         Ok(DeterminismResult {
             identical_output: true,
-            iterations:       returns.len() as u64,
-            run_a_hash:       hash_a,
-            run_b_hash:       hash_b,
-            mismatch_fields:  mismatches,
+            iterations: returns.len() as u64,
+            run_a_hash: hash_a,
+            run_b_hash: hash_b,
+            mismatch_fields: mismatches,
         })
     }
 
     /// Process the fixed canonical event stream with fresh engine instances.
-    fn run_once(returns: &[(Decimal, bool)]) -> Result<DeterminismSnapshot, crate::error::RiskError> {
-        let mut hist_var   = HistoricalVaR::new(250);
-        let mut param_var  = ParametricVaR::new();
-        let mut drawdown   = DrawdownTracker::new();
-        let mut cb_state   = CircuitBreakerState::Normal;
+    fn run_once(
+        returns: &[(Decimal, bool)],
+    ) -> Result<DeterminismSnapshot, crate::error::RiskError> {
+        let mut hist_var = HistoricalVaR::new(250);
+        let mut param_var = ParametricVaR::new();
+        let mut drawdown = DrawdownTracker::new();
+        let mut cb_state = CircuitBreakerState::Normal;
 
         // Simulate equity starting at 100,000 (arbitrary deterministic base)
         let mut equity = dec!(100_000);
@@ -195,17 +201,18 @@ impl DeterminismValidator {
             };
 
             // Use transition_to for sequential safety
-            cb_state = cb_state.transition_to(next_state)
-                .unwrap_or(next_state);
+            cb_state = cb_state.transition_to(next_state).unwrap_or(next_state);
         }
 
         Ok(DeterminismSnapshot {
-            historical_var_99:  hist_var.compute_var(ConfidenceLevel::NinetyNine).to_string(),
-            parametric_var_99:  param_var.var_99().to_string(),
+            historical_var_99: hist_var
+                .compute_var(ConfidenceLevel::NinetyNine)
+                .to_string(),
+            parametric_var_99: param_var.var_99().to_string(),
             parametric_std_dev: param_var.standard_deviation().to_string(),
-            drawdown_current:   drawdown.current_drawdown.to_string(),
-            drawdown_max:       drawdown.max_drawdown.to_string(),
-            circuit_breaker:    format!("{cb_state:?}"),
+            drawdown_current: drawdown.current_drawdown.to_string(),
+            drawdown_max: drawdown.max_drawdown.to_string(),
+            circuit_breaker: format!("{cb_state:?}"),
         })
     }
 }
@@ -225,8 +232,13 @@ mod tests {
     #[test]
     fn determinism_validation_passes() {
         let validator = DeterminismValidator::new();
-        let result = validator.validate().expect("determinism validation must pass");
-        assert!(result.identical_output, "runs must produce identical output");
+        let result = validator
+            .validate()
+            .expect("determinism validation must pass");
+        assert!(
+            result.identical_output,
+            "runs must produce identical output"
+        );
         assert_eq!(result.run_a_hash, result.run_b_hash, "hashes must match");
         assert!(result.mismatch_fields.is_empty(), "no field mismatches");
     }

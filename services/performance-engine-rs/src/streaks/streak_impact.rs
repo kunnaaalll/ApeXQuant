@@ -1,6 +1,6 @@
+use crate::streaks::streak_detector::{StreakDetector, StreakState};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use crate::streaks::streak_detector::{StreakDetector, StreakState};
 
 pub struct StreakImpact;
 

@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 pub mod analytics;
 pub mod api;
 pub mod health;

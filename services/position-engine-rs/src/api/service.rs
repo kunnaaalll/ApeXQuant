@@ -2,17 +2,19 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
+use apex_protos::common::{
+    Decimal as ProtoDecimal, Empty, Money, Price, Result as CommonResult, Symbol, Volume,
+};
 use apex_protos::position::position_engine_server::PositionEngine;
 use apex_protos::position::{
-    OpenPositionRequest, OpenPositionResponse, ClosePositionRequest, ClosePositionResponse,
-    ModifyStopsRequest, ModifyStopsResponse, PositionQuery, Position as ProtoPosition,
-    ListPositionsRequest, ListPositionsResponse, PositionFilter, PositionUpdate,
-    BreakevenRequest, PositionActionResponse, TrailingStopRequest, PartialCloseRequest,
-    PositionState as ProtoPositionState,
+    BreakevenRequest, ClosePositionRequest, ClosePositionResponse, ListPositionsRequest,
+    ListPositionsResponse, ModifyStopsRequest, ModifyStopsResponse, OpenPositionRequest,
+    OpenPositionResponse, PartialCloseRequest, Position as ProtoPosition, PositionActionResponse,
+    PositionFilter, PositionQuery, PositionState as ProtoPositionState, PositionUpdate,
+    TrailingStopRequest,
 };
-use apex_protos::common::{Empty, Result as CommonResult, Symbol, Decimal as ProtoDecimal, Price, Volume, Money};
 
-use crate::positions::{PositionRegistry, PositionTracker, PositionState};
+use crate::positions::{PositionRegistry, PositionState, PositionTracker};
 use crate::storage::PostgresStore;
 
 pub struct PositionEngineService {
@@ -68,7 +70,11 @@ fn to_proto_money(dec: rust_decimal::Decimal) -> Option<Money> {
 }
 
 fn to_proto_position(tracker: &PositionTracker) -> ProtoPosition {
-    let side_val = if tracker.side.to_lowercase() == "buy" { 1 } else { 2 }; // BUY = 1, SELL = 2
+    let side_val = if tracker.side.to_lowercase() == "buy" {
+        1
+    } else {
+        2
+    }; // BUY = 1, SELL = 2
     let proto_state = match tracker.state {
         PositionState::Opening => ProtoPositionState::Opening,
         PositionState::Active => ProtoPositionState::Open,
@@ -94,8 +100,16 @@ fn to_proto_position(tracker: &PositionTracker) -> ProtoPosition {
         initial_volume: to_proto_volume(tracker.initial_size),
         current_volume: to_proto_volume(tracker.current_size),
         closed_volume: to_proto_volume(rust_decimal::Decimal::ZERO),
-        entry_price: Some(Price { value: tracker.initial_entry_price.to_string(), digits: 5, currency: "USD".to_string() }),
-        current_price: Some(Price { value: tracker.current_price.to_string(), digits: 5, currency: "USD".to_string() }),
+        entry_price: Some(Price {
+            value: tracker.initial_entry_price.to_string(),
+            digits: 5,
+            currency: "USD".to_string(),
+        }),
+        current_price: Some(Price {
+            value: tracker.current_price.to_string(),
+            digits: 5,
+            currency: "USD".to_string(),
+        }),
         exit_price: None,
         average_close_price: None,
         stop_loss: to_proto_price(tracker.current_stop_loss),
@@ -138,16 +152,30 @@ impl PositionEngine for PositionEngineService {
     ) -> std::result::Result<Response<OpenPositionResponse>, Status> {
         let req = request.into_inner();
         let position_id = Uuid::new_v4();
-        
-        let sym_str = req.symbol.map(|s| s.code).unwrap_or_else(|| "EURUSD".to_string());
-        let side_str = if req.side == 1 { "buy" } else { "sell" };
-        let init_vol = req.volume.and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok()).unwrap_or(rust_decimal::Decimal::ZERO);
-        let entry = req.entry_price.and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok()).unwrap_or(rust_decimal::Decimal::ZERO);
 
-        let mut tracker = PositionTracker::new(position_id, sym_str, side_str.to_string(), init_vol, entry);
+        let sym_str = req
+            .symbol
+            .map(|s| s.code)
+            .unwrap_or_else(|| "EURUSD".to_string());
+        let side_str = if req.side == 1 { "buy" } else { "sell" };
+        let init_vol = req
+            .volume
+            .and_then(|v| v.units.parse::<rust_decimal::Decimal>().ok())
+            .unwrap_or(rust_decimal::Decimal::ZERO);
+        let entry = req
+            .entry_price
+            .and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok())
+            .unwrap_or(rust_decimal::Decimal::ZERO);
+
+        let mut tracker =
+            PositionTracker::new(position_id, sym_str, side_str.to_string(), init_vol, entry);
         tracker.state = PositionState::Active;
-        tracker.current_stop_loss = req.stop_loss.and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
-        tracker.initial_take_profit = req.take_profit.and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
+        tracker.current_stop_loss = req
+            .stop_loss
+            .and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
+        tracker.initial_take_profit = req
+            .take_profit
+            .and_then(|p| p.value.parse::<rust_decimal::Decimal>().ok());
 
         self.registry.insert(tracker.clone());
         let _ = self.store.save_position(&tracker).await;
@@ -256,14 +284,17 @@ impl PositionEngine for PositionEngineService {
         }))
     }
 
-    type SubscribePositionUpdatesStream = tokio_stream::wrappers::ReceiverStream<std::result::Result<PositionUpdate, Status>>;
+    type SubscribePositionUpdatesStream =
+        tokio_stream::wrappers::ReceiverStream<std::result::Result<PositionUpdate, Status>>;
 
     async fn subscribe_position_updates(
         &self,
         _request: Request<PositionFilter>,
     ) -> std::result::Result<Response<Self::SubscribePositionUpdatesStream>, Status> {
         let (_tx, rx) = tokio::sync::mpsc::channel(10);
-        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(rx)))
+        Ok(Response::new(tokio_stream::wrappers::ReceiverStream::new(
+            rx,
+        )))
     }
 
     async fn set_breakeven(
@@ -303,10 +334,22 @@ impl PositionEngine for PositionEngineService {
             // Adjust tracker stop configuration (trailing is handled dynamically by background loop)
             // Just initialize a starting trailing stop-loss price if it wasn't set
             if tracker.current_stop_loss.is_none() {
-                let dist = req.distance.as_ref().map(|d| d.value.parse::<rust_decimal::Decimal>().unwrap_or(rust_decimal::Decimal::ZERO)).unwrap_or(rust_decimal::Decimal::ZERO);
+                let dist = req
+                    .distance
+                    .as_ref()
+                    .map(|d| {
+                        d.value
+                            .parse::<rust_decimal::Decimal>()
+                            .unwrap_or(rust_decimal::Decimal::ZERO)
+                    })
+                    .unwrap_or(rust_decimal::Decimal::ZERO);
                 if dist > rust_decimal::Decimal::ZERO {
                     let price = tracker.current_price;
-                    tracker.current_stop_loss = Some(if tracker.side == "buy" { price - dist } else { price + dist });
+                    tracker.current_stop_loss = Some(if tracker.side == "buy" {
+                        price - dist
+                    } else {
+                        price + dist
+                    });
                 }
             }
 
@@ -334,9 +377,12 @@ impl PositionEngine for PositionEngineService {
 
         if let Some(mut tracker) = self.registry.get(&position_id) {
             // Deduct size
-            let close_size = req.close_amount
+            let close_size = req
+                .close_amount
                 .and_then(|a| match a {
-                    apex_protos::position::partial_close_request::CloseAmount::Volume(v) => v.units.parse::<rust_decimal::Decimal>().ok(),
+                    apex_protos::position::partial_close_request::CloseAmount::Volume(v) => {
+                        v.units.parse::<rust_decimal::Decimal>().ok()
+                    }
                     _ => None,
                 })
                 .unwrap_or(rust_decimal::Decimal::ZERO);

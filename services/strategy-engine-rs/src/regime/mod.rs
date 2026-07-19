@@ -33,9 +33,15 @@ pub struct RegimeAssessment {
 
 impl RegimeAssessment {
     pub fn grade(&self) -> RegimeGrade {
-        let denominator = if self.drawdown == Decimal::from(0) { Decimal::from(1) } else { self.drawdown };
-        let mut score = (self.expectancy * self.edge * self.confidence * self.stability * self.health) / denominator;
-        
+        let denominator = if self.drawdown == Decimal::from(0) {
+            Decimal::from(1)
+        } else {
+            self.drawdown
+        };
+        let mut score =
+            (self.expectancy * self.edge * self.confidence * self.stability * self.health)
+                / denominator;
+
         if score < Decimal::from(0) {
             score = Decimal::from(0);
         }

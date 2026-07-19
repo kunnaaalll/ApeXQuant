@@ -33,7 +33,7 @@ impl BenchmarkEngine {
 
         Ok(BenchmarkResult {
             average_latency_ms: Decimal::new(10, 1), // 1.0 ms
-            p99_latency_ms: Decimal::new(50, 1), // 5.0 ms
+            p99_latency_ms: Decimal::new(50, 1),     // 5.0 ms
             allocations_per_sec: 10_000,
             throughput_events_per_sec: 50_000,
             targets_met,

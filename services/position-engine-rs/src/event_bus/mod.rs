@@ -4,11 +4,11 @@ pub mod subscriber;
 pub use publisher::EventPublisher;
 pub use subscriber::EventSubscriber;
 
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use rust_decimal::Decimal;
-use time::OffsetDateTime;
 use crate::positions::PositionState;
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PositionEventPayload {

@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! Common test utilities for APEX V3 integration tests
 
 use std::time::Duration;

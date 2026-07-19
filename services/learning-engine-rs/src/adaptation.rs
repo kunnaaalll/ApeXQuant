@@ -54,15 +54,15 @@ impl AdaptationResult {
 
     pub fn calculate_score(&mut self) -> Result<(), &'static str> {
         let four = Decimal::new(4, 0);
-        
-        let total = self.metrics.regime_adaptation 
-                  + self.metrics.volatility_adaptation 
-                  + self.metrics.session_adaptation 
-                  + self.metrics.symbol_adaptation;
-        
+
+        let total = self.metrics.regime_adaptation
+            + self.metrics.volatility_adaptation
+            + self.metrics.session_adaptation
+            + self.metrics.symbol_adaptation;
+
         // Simple average for the score
         self.score = total / four;
-        
+
         let hundred = Decimal::new(100, 0);
         let seventy = Decimal::new(70, 0);
         let forty = Decimal::new(40, 0);

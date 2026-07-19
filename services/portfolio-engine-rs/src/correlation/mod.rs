@@ -1,7 +1,7 @@
-pub mod matrix;
 pub mod clusters;
-pub mod leverage;
 pub mod events;
+pub mod leverage;
+pub mod matrix;
 
 #[cfg(test)]
 pub mod tests;

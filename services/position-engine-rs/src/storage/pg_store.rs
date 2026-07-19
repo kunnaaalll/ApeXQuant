@@ -1,7 +1,9 @@
-use crate::storage::{PositionRepository, SnapshotRepository, AnalyticsRepository, HealthRepository, EventsRepository};
+use crate::positions::PositionTracker;
+use crate::storage::{
+    AnalyticsRepository, EventsRepository, HealthRepository, PositionRepository, SnapshotRepository,
+};
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::positions::PositionTracker;
 
 pub struct PostgresStore {
     pub positions: PositionRepository,

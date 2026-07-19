@@ -46,7 +46,8 @@ impl ServiceSupervisor {
     }
 
     pub fn register_service(&mut self, service_id: String) {
-        self.service_states.insert(service_id, RuntimeState::Healthy);
+        self.service_states
+            .insert(service_id, RuntimeState::Healthy);
     }
 
     pub fn update_state(&mut self, service_id: &str, state: RuntimeState) {

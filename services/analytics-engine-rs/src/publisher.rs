@@ -8,11 +8,11 @@ pub async fn publish_metrics_snapshot<T: Serialize>(
     topic: &str,
     payload: &T,
 ) -> Result<(), String> {
-    let json = serde_json::to_string(payload)
-        .map_err(|e| format!("Serialisation failed: {}", e))?;
+    let json =
+        serde_json::to_string(payload).map_err(|e| format!("Serialisation failed: {}", e))?;
 
     let mut conn = redis_client
-        .get_tokio_connection()
+        .get_multiplexed_tokio_connection()
         .await
         .map_err(|e| format!("Redis connection failed: {}", e))?;
 

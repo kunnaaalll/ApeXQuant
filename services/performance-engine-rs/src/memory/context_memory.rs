@@ -15,9 +15,19 @@ impl ContextMemory {
     }
 
     pub fn update_context(&mut self, context: String, new_score: Decimal, alpha: Decimal) {
-        let prev_score = self.context_scores.get(&context).cloned().unwrap_or(new_score);
+        let prev_score = self
+            .context_scores
+            .get(&context)
+            .cloned()
+            .unwrap_or(new_score);
         let one_minus_alpha = rust_decimal_macros::dec!(1.0) - alpha;
         let smoothed = (new_score * alpha) + (prev_score * one_minus_alpha);
         self.context_scores.insert(context, smoothed);
+    }
+}
+
+impl Default for ContextMemory {
+    fn default() -> Self {
+        Self::new()
     }
 }

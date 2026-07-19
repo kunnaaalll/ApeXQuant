@@ -1,15 +1,16 @@
+#![allow(warnings, clippy::all, deprecated)]
+use async_nats;
+use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tonic::transport::Server;
-use sqlx::postgres::PgPoolOptions;
 use tracing::info;
-use async_nats;
 
-use position_engine::positions::{PositionRegistry, PositionManager};
-use position_engine::storage::PostgresStore;
+use apex_protos::position::position_engine_server::PositionEngineServer;
 use position_engine::api::PositionEngineService;
 use position_engine::event_bus::{EventPublisher, EventSubscriber};
-use apex_protos::position::position_engine_server::PositionEngineServer;
+use position_engine::positions::{PositionManager, PositionRegistry};
+use position_engine::storage::PostgresStore;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,14 +22,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting APEX V3 Position Engine...");
 
     // 2. Load configurations
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/apex_position".to_string());
-    let mt5_bridge_url = std::env::var("MT5_BRIDGE_URL")
-        .unwrap_or_else(|_| "http://localhost:8000".to_string());
-    let grpc_port = std::env::var("GRPC_PORT")
-        .unwrap_or_else(|_| "50054".to_string());
-    let nats_url = std::env::var("NATS_URL")
-        .unwrap_or_else(|_| "nats://localhost:4222".to_string());
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://postgres:postgres@localhost:5432/apex_position".to_string()
+    });
+    let mt5_bridge_url =
+        std::env::var("MT5_BRIDGE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+    let grpc_port = std::env::var("GRPC_PORT").unwrap_or_else(|_| "50054".to_string());
+    let nats_url =
+        std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
 
     // 3. Connect to Database and run migrations
     info!("Connecting to database...");
@@ -53,8 +54,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     subscriber.start().await?;
 
     // 5. Start Position Manager Background Thread
-    info!("Starting Position Manager sync loop pointing to {}", mt5_bridge_url);
-    let manager = Arc::new(PositionManager::new(registry.clone(), store.clone(), mt5_bridge_url.clone()));
+    info!(
+        "Starting Position Manager sync loop pointing to {}",
+        mt5_bridge_url
+    );
+    let manager = Arc::new(PositionManager::new(
+        registry.clone(),
+        store.clone(),
+        mt5_bridge_url.clone(),
+    ));
     manager.start();
 
     // 6. Start gRPC Service Server

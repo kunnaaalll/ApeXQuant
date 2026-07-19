@@ -34,7 +34,6 @@ impl Default for StreakDetector {
 }
 
 impl StreakDetector {
-
     pub fn record_win(&mut self) {
         self.current_win_streak += 1;
         self.current_loss_streak = 0;

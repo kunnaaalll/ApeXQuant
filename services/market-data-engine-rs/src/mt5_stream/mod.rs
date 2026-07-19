@@ -6,8 +6,8 @@
 //   - Exponential backoff capped at max_reconnect_attempts
 //   - FeedHealth reported through shared Arc<RwLock<FeedHealth>>
 
-use crate::tick::Tick;
 use crate::streaming::TickStream;
+use crate::tick::Tick;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use ring::hmac;
@@ -40,11 +40,11 @@ pub struct Mt5Config {
 impl Default for Mt5Config {
     fn default() -> Self {
         Self {
-            endpoint:                 "127.0.0.1:5555".to_owned(),
-            auth_token:               Vec::new(),
-            heartbeat_interval_ms:    5_000,
-            max_reconnect_attempts:   10,
-            backoff_base_ms:          250,
+            endpoint: "127.0.0.1:5555".to_owned(),
+            auth_token: Vec::new(),
+            heartbeat_interval_ms: 5_000,
+            max_reconnect_attempts: 10,
+            backoff_base_ms: 250,
         }
     }
 }
@@ -62,14 +62,14 @@ pub enum FeedHealth {
 // ─── Stream Implementation ────────────────────────────────────────────────────
 
 pub struct Mt5TickStream {
-    symbol:          String,
-    config:          Mt5Config,
-    connected:       bool,
-    last_sequence:   u64,
-    last_timestamp:  Option<DateTime<Utc>>,
-    receiver:        Option<mpsc::UnboundedReceiver<Tick>>,
-    health:          Arc<RwLock<FeedHealth>>,
-    _task:           Option<tokio::task::JoinHandle<()>>,
+    symbol: String,
+    config: Mt5Config,
+    connected: bool,
+    last_sequence: u64,
+    last_timestamp: Option<DateTime<Utc>>,
+    receiver: Option<mpsc::UnboundedReceiver<Tick>>,
+    health: Arc<RwLock<FeedHealth>>,
+    _task: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl Mt5TickStream {
@@ -77,12 +77,12 @@ impl Mt5TickStream {
         Self {
             symbol,
             config,
-            connected:      false,
-            last_sequence:  0,
+            connected: false,
+            last_sequence: 0,
             last_timestamp: None,
-            receiver:       None,
-            health:         Arc::new(RwLock::new(FeedHealth::Disconnected)),
-            _task:          None,
+            receiver: None,
+            health: Arc::new(RwLock::new(FeedHealth::Disconnected)),
+            _task: None,
         }
     }
 
@@ -98,15 +98,15 @@ impl TickStream for Mt5TickStream {
         let (tx, rx) = mpsc::unbounded_channel::<Tick>();
         self.receiver = Some(rx);
 
-        let config    = self.config.clone();
-        let symbol    = self.symbol.clone();
-        let health    = self.health.clone();
+        let config = self.config.clone();
+        let symbol = self.symbol.clone();
+        let health = self.health.clone();
 
         let task = tokio::spawn(async move {
             run_reconnect_supervisor(symbol, config, tx, health).await;
         });
 
-        self._task   = Some(task);
+        self._task = Some(task);
         self.connected = true;
         Ok(())
     }
@@ -116,7 +116,7 @@ impl TickStream for Mt5TickStream {
             task.abort();
         }
         self.connected = false;
-        self.receiver  = None;
+        self.receiver = None;
         let mut h = self.health.write().await;
         *h = FeedHealth::Disconnected;
         Ok(())
@@ -149,13 +149,13 @@ impl TickStream for Mt5TickStream {
 /// Manages the connection lifecycle with exponential backoff.
 /// Runs indefinitely (or until max_reconnect_attempts is exceeded).
 async fn run_reconnect_supervisor(
-    symbol:  String,
-    config:  Mt5Config,
-    tx:      mpsc::UnboundedSender<Tick>,
-    health:  Arc<RwLock<FeedHealth>>,
+    symbol: String,
+    config: Mt5Config,
+    tx: mpsc::UnboundedSender<Tick>,
+    health: Arc<RwLock<FeedHealth>>,
 ) {
     let max_attempts = config.max_reconnect_attempts;
-    let mut attempt  = 0u32;
+    let mut attempt = 0u32;
 
     loop {
         if max_attempts > 0 && attempt >= max_attempts {
@@ -171,7 +171,11 @@ async fn run_reconnect_supervisor(
 
         {
             let mut h = health.write().await;
-            *h = if attempt == 0 { FeedHealth::Healthy } else { FeedHealth::Reconnecting };
+            *h = if attempt == 0 {
+                FeedHealth::Healthy
+            } else {
+                FeedHealth::Reconnecting
+            };
         }
 
         tracing::info!(symbol = %symbol, attempt, endpoint = %config.endpoint, "MT5: connecting");
@@ -202,7 +206,7 @@ async fn run_reconnect_supervisor(
 async fn try_connect_and_stream(
     symbol: &str,
     config: &Mt5Config,
-    tx:     &mpsc::UnboundedSender<Tick>,
+    tx: &mpsc::UnboundedSender<Tick>,
     health: &Arc<RwLock<FeedHealth>>,
 ) -> Result<(), String> {
     // ── Connect ──────────────────────────────────────────────────────────────
@@ -213,9 +217,9 @@ async fn try_connect_and_stream(
     // ── Authenticate ─────────────────────────────────────────────────────────
     if !config.auth_token.is_empty() {
         let challenge = format!("AUTH:{symbol}:{}", Utc::now().timestamp_millis());
-        let key       = hmac::Key::new(hmac::HMAC_SHA256, &config.auth_token);
-        let sig       = hmac::sign(&key, challenge.as_bytes());
-        let hex_sig   = hex_encode(sig.as_ref());
+        let key = hmac::Key::new(hmac::HMAC_SHA256, &config.auth_token);
+        let sig = hmac::sign(&key, challenge.as_bytes());
+        let hex_sig = hex_encode(sig.as_ref());
         let auth_line = format!("{challenge}:{hex_sig}\n");
 
         stream
@@ -235,8 +239,8 @@ async fn try_connect_and_stream(
     let mut reader = BufReader::new(read_half);
 
     // ── Heartbeat task ───────────────────────────────────────────────────────
-    let hb_health  = health.clone();
-    let hb_symbol  = symbol.to_owned();
+    let hb_health = health.clone();
+    let hb_symbol = symbol.to_owned();
     let heartbeat_task = tokio::spawn(async move {
         let interval = Duration::from_millis(heartbeat_ms);
         loop {
@@ -280,15 +284,15 @@ async fn try_connect_and_stream(
                 json["timestamp"].as_i64(),
             ) {
                 if let (Ok(bid), Ok(ask)) = (Decimal::from_str(b), Decimal::from_str(a)) {
-                    let timestamp = chrono::DateTime::from_timestamp_millis(t)
-                        .unwrap_or_else(Utc::now);
+                    let timestamp =
+                        chrono::DateTime::from_timestamp_millis(t).unwrap_or_else(Utc::now);
                     let tick = Tick {
-                        symbol:    symbol.to_owned(),
+                        symbol: symbol.to_owned(),
                         bid,
                         ask,
-                        spread:    ask - bid,
+                        spread: ask - bid,
                         timestamp,
-                        sequence:  0, // assigned by TickStream::next_tick
+                        sequence: 0, // assigned by TickStream::next_tick
                     };
                     if tx.send(tick).is_err() {
                         // Receiver dropped — supervisor will restart

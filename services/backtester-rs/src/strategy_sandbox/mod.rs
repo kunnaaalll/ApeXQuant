@@ -383,7 +383,7 @@ mod tests {
         let ticks: Vec<Tick> = (0..30)
             .map(|i| {
                 // Create ascending then descending price pattern
-                let price = 11000i64 + (i as i64 % 10);
+                let price = 11000i64 + (i % 10);
                 make_tick(i * 1000, price, price + 10, 5)
             })
             .collect();
@@ -399,7 +399,7 @@ mod tests {
         let s = session();
         let ticks: Vec<Tick> = (0..50)
             .map(|i| {
-                let price = 11000i64 + i as i64;
+                let price = 11000i64 + i;
                 make_tick(i * 500, price, price + 10, 5)
             })
             .collect();

@@ -24,7 +24,7 @@ pub enum AnalyticsEventType {
 }
 
 /// An event that triggers an analytics recalculation.
-/// APEX enforces no silent mutations, so any state change 
+/// APEX enforces no silent mutations, so any state change
 /// must be driven by an explicit event.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AnalyticsEvent {

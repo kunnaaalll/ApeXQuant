@@ -3,9 +3,9 @@
 //! Maintains running totals for an account×strategy×symbol grouping
 //! using Kahan compensated summation for Decimal accuracy.
 
+use crate::trades::CompletedTrade;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
-use crate::trades::CompletedTrade;
 
 /// Key for grouping aggregations.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -60,7 +60,11 @@ impl PnLAggregate {
 
     pub fn profit_factor(&self) -> Decimal {
         if self.gross_loss == Decimal::ZERO {
-            return if self.gross_profit > Decimal::ZERO { Decimal::new(999, 0) } else { Decimal::ZERO };
+            return if self.gross_profit > Decimal::ZERO {
+                Decimal::new(999, 0)
+            } else {
+                Decimal::ZERO
+            };
         }
         self.gross_profit / self.gross_loss
     }
@@ -87,7 +91,9 @@ pub struct AggregationStore {
 }
 
 impl AggregationStore {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn ingest(&mut self, trade: &CompletedTrade) {
         let key = AggregationKey {

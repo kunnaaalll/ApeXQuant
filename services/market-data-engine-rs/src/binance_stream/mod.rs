@@ -1,7 +1,8 @@
-use crate::tick::Tick;
 use crate::streaming::TickStream;
+use crate::tick::Tick;
 use async_trait::async_trait;
 use chrono::Utc;
+use futures_util::StreamExt;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -9,7 +10,6 @@ use std::time::Duration;
 use tokio::sync::{mpsc, RwLock};
 use tokio::time;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
-use futures_util::StreamExt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FeedHealth {
@@ -48,14 +48,24 @@ pub struct BinanceTickStream {
 
 impl BinanceTickStream {
     pub fn new_spot(symbol: String) -> Self {
-        let mut config = BinanceConfig::default();
-        config.endpoint = format!("wss://stream.binance.com:9443/ws/{}@bookTicker", symbol.to_lowercase());
+        let config = BinanceConfig {
+            endpoint: format!(
+                "wss://stream.binance.com:9443/ws/{}@bookTicker",
+                symbol.to_lowercase()
+            ),
+            ..Default::default()
+        };
         Self::new(symbol, config)
     }
 
     pub fn new_futures(symbol: String) -> Self {
-        let mut config = BinanceConfig::default();
-        config.endpoint = format!("wss://fstream.binance.com/ws/{}@bookTicker", symbol.to_lowercase());
+        let config = BinanceConfig {
+            endpoint: format!(
+                "wss://fstream.binance.com/ws/{}@bookTicker",
+                symbol.to_lowercase()
+            ),
+            ..Default::default()
+        };
         Self::new(symbol, config)
     }
 
@@ -143,7 +153,11 @@ async fn run_reconnect_supervisor(
 
         {
             let mut h = health.write().await;
-            *h = if attempt == 0 { FeedHealth::Healthy } else { FeedHealth::Reconnecting };
+            *h = if attempt == 0 {
+                FeedHealth::Healthy
+            } else {
+                FeedHealth::Reconnecting
+            };
         }
 
         tracing::info!(symbol = %symbol, attempt, endpoint = %config.endpoint, "Binance: connecting");
@@ -194,7 +208,10 @@ async fn try_connect_and_stream(
                             // Extract timestamp E if present (Futures), otherwise use Utc::now() (Spot)
                             let timestamp = json["E"]
                                 .as_i64()
-                                .map(|t| chrono::DateTime::from_timestamp_millis(t).unwrap_or_else(Utc::now))
+                                .map(|t| {
+                                    chrono::DateTime::from_timestamp_millis(t)
+                                        .unwrap_or_else(Utc::now)
+                                })
                                 .unwrap_or_else(Utc::now);
 
                             let spread = ask - bid;

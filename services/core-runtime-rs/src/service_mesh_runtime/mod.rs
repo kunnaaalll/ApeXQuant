@@ -1,5 +1,5 @@
-pub mod router;
 pub mod capability;
+pub mod router;
 
-pub use router::*;
 pub use capability::*;
+pub use router::*;

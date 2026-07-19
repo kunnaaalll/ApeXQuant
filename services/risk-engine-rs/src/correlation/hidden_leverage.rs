@@ -53,9 +53,9 @@ impl HiddenLeverageAssessment {
         // It sums overlaps and duplicates with specific institutional weights.
         // E.g., synthetic duplication has a higher risk multiplier.
         let w_synth = Decimal::new(15, 1); // 1.5
-        let w_dir = Decimal::new(12, 1);   // 1.2
-        let w_curr = Decimal::new(10, 1);  // 1.0
-        let w_theme = Decimal::new(8, 1);  // 0.8
+        let w_dir = Decimal::new(12, 1); // 1.2
+        let w_curr = Decimal::new(10, 1); // 1.0
+        let w_theme = Decimal::new(8, 1); // 0.8
         let w_sector = Decimal::new(5, 1); // 0.5
 
         self.total_hidden_leverage_ratio = (self.synthetic_duplication * w_synth)
@@ -70,7 +70,7 @@ impl HiddenLeverageAssessment {
 
         let threshold_collapse = Decimal::new(400, 2); // >= 4.0
         let threshold_critical = Decimal::new(300, 2); // >= 3.0
-        let threshold_high = Decimal::new(200, 2);     // >= 2.0
+        let threshold_high = Decimal::new(200, 2); // >= 2.0
         let threshold_elevated = Decimal::new(120, 2); // >= 1.2
 
         if ratio >= threshold_collapse {

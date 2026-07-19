@@ -1,11 +1,12 @@
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use super::models::{DegradationAssessment, DegradationMetrics};
 use super::states::DegradationState;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 pub struct DegradationDetector;
 
 impl DegradationDetector {
+    #[allow(clippy::too_many_arguments)]
     pub fn detect(
         historical_edge: Decimal,
         current_edge: Decimal,
@@ -21,7 +22,7 @@ impl DegradationDetector {
         let expectancy_decay = historical_expectancy - current_expectancy;
         let stability_deterioration = historical_stability - current_stability;
         let quality_deterioration = historical_quality - current_quality;
-        
+
         // Simple heuristic for performance drift
         let performance_drift = if historical_expectancy.is_zero() {
             Decimal::ZERO
@@ -56,10 +57,7 @@ impl DegradationDetector {
 
         let state = Self::determine_state(&metrics);
 
-        DegradationAssessment {
-            metrics,
-            state,
-        }
+        DegradationAssessment { metrics, state }
     }
 
     pub fn determine_state(metrics: &DegradationMetrics) -> DegradationState {

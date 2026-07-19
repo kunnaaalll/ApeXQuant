@@ -315,13 +315,13 @@ impl StatisticsCollector {
 
     /// Get current metrics
     pub fn get_metrics(&self) -> AgreementMetrics {
-        let stats = self.inner.lock().unwrap();
+        let stats = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         stats.to_metrics()
     }
 
     /// Get full statistics
     pub fn get_statistics(&self) -> ParityStatistics {
-        let stats = self.inner.lock().unwrap();
+        let stats = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         stats.clone()
     }
 

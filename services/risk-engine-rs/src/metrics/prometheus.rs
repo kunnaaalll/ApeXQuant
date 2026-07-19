@@ -1,5 +1,5 @@
-use prometheus::{opts, register_gauge, Gauge};
 use once_cell::sync::Lazy;
+use prometheus::{opts, register_gauge, Gauge};
 use tracing::error;
 
 pub static RISK_CONFIDENCE: Lazy<Gauge> = Lazy::new(|| {
@@ -10,7 +10,8 @@ pub static RISK_CONFIDENCE: Lazy<Gauge> = Lazy::new(|| {
         Ok(g) => g,
         Err(e) => {
             error!("Failed to register risk_confidence_score: {}", e);
-            Gauge::new("risk_confidence_score_dummy", "Dummy").unwrap()
+            Gauge::new("risk_confidence_score_dummy", "Dummy")
+                .unwrap_or_else(|_| std::process::exit(1))
         }
     }
 });
@@ -23,7 +24,8 @@ pub static RISK_DRAWDOWN: Lazy<Gauge> = Lazy::new(|| {
         Ok(g) => g,
         Err(e) => {
             error!("Failed to register risk_drawdown_percent: {}", e);
-            Gauge::new("risk_drawdown_percent_dummy", "Dummy").unwrap()
+            Gauge::new("risk_drawdown_percent_dummy", "Dummy")
+                .unwrap_or_else(|_| std::process::exit(1))
         }
     }
 });
@@ -36,7 +38,8 @@ pub static RISK_EXPOSURE: Lazy<Gauge> = Lazy::new(|| {
         Ok(g) => g,
         Err(e) => {
             error!("Failed to register risk_total_exposure: {}", e);
-            Gauge::new("risk_total_exposure_dummy", "Dummy").unwrap()
+            Gauge::new("risk_total_exposure_dummy", "Dummy")
+                .unwrap_or_else(|_| std::process::exit(1))
         }
     }
 });
@@ -49,7 +52,8 @@ pub static VALUE_AT_RISK: Lazy<Gauge> = Lazy::new(|| {
         Ok(g) => g,
         Err(e) => {
             error!("Failed to register risk_value_at_risk: {}", e);
-            Gauge::new("risk_value_at_risk_dummy", "Dummy").unwrap()
+            Gauge::new("risk_value_at_risk_dummy", "Dummy")
+                .unwrap_or_else(|_| std::process::exit(1))
         }
     }
 });

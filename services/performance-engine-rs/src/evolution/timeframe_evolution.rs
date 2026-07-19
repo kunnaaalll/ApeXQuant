@@ -41,7 +41,7 @@ impl TimeframeEvolutionEngine {
 
         let timeframe = windows[0].timeframe.clone();
         let first = &windows[0];
-        let last = windows.last().unwrap();
+        let last = windows.last()?;
 
         let expectancy_drift = last.expectancy - first.expectancy;
         let stability_drift = last.stability - first.stability;
@@ -56,7 +56,8 @@ impl TimeframeEvolutionEngine {
             TimeframeTrend::Stable
         };
 
-        let explanation = format!(
+        let explanation =
+            format!(
             "Timeframe {} expectancy drifted {} over {} periods. Stability drift: {}. Trend: {:?}.",
             timeframe, expectancy_drift, windows.len(), stability_drift, trend
         );

@@ -13,7 +13,7 @@ pub struct DriftMeasurement {
 impl DriftMeasurement {
     pub fn new(metric_name: String, legacy_value: Decimal, rust_value: Decimal) -> Self {
         let absolute_drift = (rust_value - legacy_value).abs();
-        
+
         let relative_drift = if legacy_value == Decimal::ZERO {
             if rust_value == Decimal::ZERO {
                 Decimal::ZERO

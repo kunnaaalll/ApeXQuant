@@ -1,6 +1,6 @@
+use super::what_if::CounterfactualResult;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use super::what_if::CounterfactualResult;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlternateHistoryContext {
@@ -20,10 +20,7 @@ impl AlternateHistoryEngine {
         confidence: Decimal,
         context: AlternateHistoryContext,
     ) -> CounterfactualResult {
-        let reason = format!(
-            "Evaluating alternate history with context: {:?}",
-            context
-        );
+        let reason = format!("Evaluating alternate history with context: {:?}", context);
         CounterfactualResult::new(actual_expectancy, alternate_expectancy, confidence, reason)
     }
 }

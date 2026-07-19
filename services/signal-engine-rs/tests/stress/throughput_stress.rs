@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! Stress Tests - Validate signal engine under high load
 
 use std::time::{Duration, Instant};

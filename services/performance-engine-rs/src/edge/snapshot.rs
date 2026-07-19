@@ -1,6 +1,6 @@
+use super::models::EdgeAssessment;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use super::models::EdgeAssessment;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeSnapshot {

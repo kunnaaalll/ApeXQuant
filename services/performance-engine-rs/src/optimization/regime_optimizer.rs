@@ -18,7 +18,12 @@ pub struct RegimeOptimizer {
 }
 
 impl RegimeOptimizer {
-    pub fn new(min_trades: u32, min_highly: Decimal, min_favored: Decimal, min_conf: Decimal) -> Self {
+    pub fn new(
+        min_trades: u32,
+        min_highly: Decimal,
+        min_favored: Decimal,
+        min_conf: Decimal,
+    ) -> Self {
         Self {
             min_trades,
             min_highly_favored_expectancy: min_highly,

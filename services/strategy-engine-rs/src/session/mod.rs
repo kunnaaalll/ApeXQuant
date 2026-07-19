@@ -30,7 +30,8 @@ pub struct SessionAssessment {
 
 impl SessionAssessment {
     pub fn grade(&self) -> SessionGrade {
-        let score = (self.win_rate * self.expectancy * self.edge * self.confidence) - self.degradation;
+        let score =
+            (self.win_rate * self.expectancy * self.edge * self.confidence) - self.degradation;
 
         if score >= Decimal::from(1000) {
             SessionGrade::Exceptional

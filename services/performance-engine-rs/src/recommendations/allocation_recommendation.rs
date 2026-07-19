@@ -32,7 +32,12 @@ impl AllocationEngine {
         }
     }
 
-    pub fn evaluate(&self, confidence: Decimal, current_drawdown: Decimal, edge_score: Decimal) -> AllocationState {
+    pub fn evaluate(
+        &self,
+        confidence: Decimal,
+        current_drawdown: Decimal,
+        edge_score: Decimal,
+    ) -> AllocationState {
         if current_drawdown >= self.max_avoid_drawdown {
             return AllocationState::AvoidExposure;
         }
@@ -41,7 +46,8 @@ impl AllocationEngine {
             return AllocationState::ReduceExposure;
         }
 
-        if confidence >= self.min_increase_confidence && edge_score > rust_decimal_macros::dec!(0.5) {
+        if confidence >= self.min_increase_confidence && edge_score > rust_decimal_macros::dec!(0.5)
+        {
             AllocationState::IncreaseExposure
         } else {
             AllocationState::MaintainExposure

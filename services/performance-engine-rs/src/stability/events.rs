@@ -1,8 +1,8 @@
+use super::models::StabilityMetrics;
+use super::states::StabilityState;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use super::models::StabilityMetrics;
-use super::states::StabilityState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StabilityEvent {

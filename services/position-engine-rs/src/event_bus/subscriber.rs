@@ -1,13 +1,13 @@
-use std::sync::Arc;
 use async_nats::Client;
 use futures::StreamExt;
 use rust_decimal::Decimal;
 use serde::Deserialize;
+use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
-use crate::positions::{PositionRegistry, PositionState};
 use crate::pnl::UnrealizedPnL;
+use crate::positions::{PositionRegistry, PositionState};
 
 #[derive(Debug, Deserialize)]
 struct MarketTickPayload {
@@ -59,17 +59,24 @@ impl EventSubscriber {
                             match serde_json::from_slice::<OrderFilledPayload>(&msg.payload) {
                                 Ok(payload) => {
                                     let Ok(pos_id) = Uuid::parse_str(&payload.position_id) else {
-                                        warn!("Invalid position_id in fill event: {}", payload.position_id);
+                                        warn!(
+                                            "Invalid position_id in fill event: {}",
+                                            payload.position_id
+                                        );
                                         continue;
                                     };
                                     if let Some(mut tracker) = registry.get(&pos_id) {
                                         // Update average entry price on scale-in
-                                        if tracker.state == PositionState::Opening || tracker.state == PositionState::ScalingIn {
-                                            let total_cost = tracker.average_entry_price * tracker.current_size
+                                        if tracker.state == PositionState::Opening
+                                            || tracker.state == PositionState::ScalingIn
+                                        {
+                                            let total_cost = tracker.average_entry_price
+                                                * tracker.current_size
                                                 + payload.fill_price * payload.fill_size;
                                             tracker.current_size += payload.fill_size;
                                             if tracker.current_size > Decimal::ZERO {
-                                                tracker.average_entry_price = total_cost / tracker.current_size;
+                                                tracker.average_entry_price =
+                                                    total_cost / tracker.current_size;
                                             }
                                             tracker.state = PositionState::Active;
                                         }
@@ -118,7 +125,12 @@ impl EventSubscriber {
                                 if tracker.symbol != tick.symbol {
                                     continue;
                                 }
-                                if matches!(tracker.state, PositionState::Closed | PositionState::Archived | PositionState::Invalid) {
+                                if matches!(
+                                    tracker.state,
+                                    PositionState::Closed
+                                        | PositionState::Archived
+                                        | PositionState::Invalid
+                                ) {
                                     continue;
                                 }
                                 tracker.update_price(mid);
@@ -139,4 +151,3 @@ impl EventSubscriber {
         Ok(())
     }
 }
-

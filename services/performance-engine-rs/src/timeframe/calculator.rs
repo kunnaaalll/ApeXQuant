@@ -1,25 +1,36 @@
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
+
 use super::models::TimeframeAssessment;
 use super::states::TimeframeState;
 use super::types::{TimeframeType, TradeCount};
 
 pub struct TimeframeCalculator;
 
+pub struct TimeframeEvaluateParams {
+    pub timeframe: TimeframeType,
+    pub trade_count: TradeCount,
+    pub trade_frequency: Decimal,
+    pub expectancy: Decimal,
+    pub profit_factor: Decimal,
+    pub average_rr: Decimal,
+    pub drawdown: Decimal,
+    pub stability: Decimal,
+    pub edge_score: Decimal,
+}
+
 impl TimeframeCalculator {
     pub const MIN_TRADES_FOR_EVALUATION: TradeCount = 30;
 
-    pub fn evaluate(
-        timeframe: TimeframeType,
-        trade_count: TradeCount,
-        trade_frequency: Decimal,
-        expectancy: Decimal,
-        profit_factor: Decimal,
-        average_rr: Decimal,
-        drawdown: Decimal,
-        stability: Decimal,
-        edge_score: Decimal,
-    ) -> TimeframeAssessment {
+    pub fn evaluate(params: TimeframeEvaluateParams) -> TimeframeAssessment {
+        let timeframe = params.timeframe;
+        let trade_count = params.trade_count;
+        let trade_frequency = params.trade_frequency;
+        let expectancy = params.expectancy;
+        let profit_factor = params.profit_factor;
+        let average_rr = params.average_rr;
+        let drawdown = params.drawdown;
+        let stability = params.stability;
+        let edge_score = params.edge_score;
         let state = Self::determine_state(trade_count, expectancy, profit_factor, edge_score);
 
         TimeframeAssessment {
@@ -46,15 +57,18 @@ impl TimeframeCalculator {
             return TimeframeState::Normal; // Default until we have enough data
         }
 
-        let one_point_five = Decimal::from_f64(1.5).unwrap();
-        let two_point_zero = Decimal::from_f64(2.0).unwrap();
-        let high_edge = Decimal::from_f64(0.8).unwrap();
-        let moderate_edge = Decimal::from_f64(0.5).unwrap();
+        let one_point_five = Decimal::new(15, 1);
+        let two_point_zero = Decimal::new(20, 1);
+        let high_edge = Decimal::new(8, 1);
+        let moderate_edge = Decimal::new(5, 1);
         let zero = Decimal::ZERO;
 
         if expectancy > zero && profit_factor >= two_point_zero && edge_score >= high_edge {
             TimeframeState::Exceptional
-        } else if expectancy > zero && profit_factor >= one_point_five && edge_score >= moderate_edge {
+        } else if expectancy > zero
+            && profit_factor >= one_point_five
+            && edge_score >= moderate_edge
+        {
             TimeframeState::Strong
         } else if expectancy > zero && profit_factor > Decimal::ONE {
             TimeframeState::Normal

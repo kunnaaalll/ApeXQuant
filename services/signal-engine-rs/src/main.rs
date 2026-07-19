@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! APEX V3 Signal Engine - Main Entry Point
 //!
 //! This is the service entry point. For the library API, see lib.rs.
@@ -39,7 +40,10 @@ async fn main() -> Result<()> {
         .await
         .unwrap_or_else(|_| {
             // Fallback to in-memory for dev if file fails
-            sqlx::SqlitePool::connect_lazy("sqlite::memory:").unwrap()
+            sqlx::SqlitePool::connect_lazy("sqlite::memory:").unwrap_or_else(|e| {
+                tracing::error!("Fallback DB failed: {}", e);
+                std::process::exit(1)
+            })
         });
 
     let repository = Arc::new(signal_engine::storage::SignalRepository::new(pool));

@@ -37,9 +37,14 @@ impl ShadowReporter {
         Self
     }
 
-    pub fn generate(&self, report_type: ReportType, stats: ShadowStatistics, validation: Option<PortfolioValidationResult>) -> ShadowReport {
+    pub fn generate(
+        &self,
+        report_type: ReportType,
+        stats: ShadowStatistics,
+        validation: Option<PortfolioValidationResult>,
+    ) -> ShadowReport {
         let summary = format!("Shadow Mode Report - {:?}", report_type);
-        
+
         ShadowReport {
             generated_at: chrono::Utc::now(),
             report_type,

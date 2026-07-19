@@ -37,7 +37,7 @@ impl EdgeDecayEngine {
         }
 
         let first = &snapshots[0];
-        let last = snapshots.last().unwrap();
+        let last = snapshots.last()?;
         let n = snapshots.len();
 
         let total_decay = first.edge_score - last.edge_score;

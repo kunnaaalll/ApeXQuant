@@ -1,5 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SessionState {
     Improving,
     #[default]
@@ -7,4 +6,3 @@ pub enum SessionState {
     Deteriorating,
     Abandoned,
 }
-

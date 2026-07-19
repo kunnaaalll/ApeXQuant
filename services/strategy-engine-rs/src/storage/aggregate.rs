@@ -1,6 +1,10 @@
-use serde::{Deserialize, Serialize};
-use super::events::{StrategyEventWrapper, HealthEvent, ConfidenceEvent, DriftEvent, AllocationEvent, RecommendationEvent, DegradationEvent, MetaEvent, ClusterEvent, ContextEvent, ValidationEvent, ShadowEvent};
+use super::events::{
+    AllocationEvent, ClusterEvent, ConfidenceEvent, ContextEvent, DegradationEvent, DriftEvent,
+    HealthEvent, MetaEvent, RecommendationEvent, ShadowEvent, StrategyEventWrapper,
+    ValidationEvent,
+};
 use super::rebuilder::Aggregatable;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct StrategyAggregate {
@@ -15,7 +19,7 @@ pub struct StrategyAggregate {
     pub context_status: String,
     pub validation_status: String,
     pub shadow_status: String,
-    
+
     // Counters to ensure determinism
     pub health_updates: i32,
     pub confidence_updates: i32,

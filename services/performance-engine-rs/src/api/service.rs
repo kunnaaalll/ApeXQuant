@@ -1,19 +1,18 @@
 use apex_protos::analytics::analytics_engine_server::AnalyticsEngine as GrpcAnalyticsEngine;
 use apex_protos::analytics::{
-    PerformanceQuery, PerformanceReport, TradeStatsQuery, TradeStatistics,
-    DrawdownQuery, DrawdownAnalysis, EquityCurveQuery, EquityCurve,
-    MetricsQuery, StrategyMetrics, MonthlyReturnsQuery, MonthlyReturns,
-    MonteCarloRequest, MonteCarloResults,
-    ReturnMetrics, RiskMetrics, TradeMetrics,
+    DrawdownAnalysis, DrawdownQuery, EquityCurve, EquityCurveQuery, MetricsQuery,
+    MonteCarloRequest, MonteCarloResults, MonthlyReturns, MonthlyReturnsQuery, PerformanceQuery,
+    PerformanceReport, ReturnMetrics, RiskMetrics, StrategyMetrics, TradeMetrics, TradeStatistics,
+    TradeStatsQuery,
 };
-use apex_protos::common::{Empty, Result as CommonResult, Money};
+use apex_protos::common::{Empty, Money, Result as CommonResult};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
-use rust_decimal::Decimal;
 
-use crate::storage::Repositories;
 use crate::analytics::engine::AnalyticsEngine;
+use crate::storage::Repositories;
 use crate::validation::monte_carlo::PerformanceMonteCarlo;
 
 #[derive(Clone, Default)]
@@ -61,13 +60,21 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         request: Request<PerformanceQuery>,
     ) -> std::result::Result<Response<PerformanceReport>, Status> {
         let query = request.into_inner();
-        
-        // Fetch trades
-        let from = query.from.map(|t| chrono::DateTime::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default());
-        let to = query.to.map(|t| chrono::DateTime::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default());
 
-        let trades = self.repos.performance.get_trades_for_strategy(&query.strategy_id, from, to)
-            .await.map_err(|e| Status::internal(e.to_string()))?;
+        // Fetch trades
+        let from = query.from.map(|t| {
+            chrono::DateTime::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default()
+        });
+        let to = query.to.map(|t| {
+            chrono::DateTime::from_timestamp(t.seconds, t.nanos as u32).unwrap_or_default()
+        });
+
+        let trades = self
+            .repos
+            .performance
+            .get_trades_for_strategy(&query.strategy_id, from, to)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         if trades.is_empty() {
             return Ok(Response::new(PerformanceReport {
@@ -85,8 +92,9 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         }
 
         // Compute via engine
-        let result = self.engine.compute(&query.strategy_id, &trades);
-        
+        let result =
+            crate::analytics::engine::AnalyticsEngine::compute(&query.strategy_id, &trades);
+
         let returns = ReturnMetrics {
             total_return: Some(Self::to_proto_decimal(result.net_profit)),
             annualized_return: Some(Self::to_proto_decimal(result.expectancy)),
@@ -153,8 +161,12 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         request: Request<TradeStatsQuery>,
     ) -> std::result::Result<Response<TradeStatistics>, Status> {
         let query = request.into_inner();
-        let aggregates = self.repos.performance.aggregate_by_dimension(&query.strategy_id, &query.group_by)
-            .await.map_err(|e| Status::internal(e.to_string()))?;
+        let aggregates = self
+            .repos
+            .performance
+            .aggregate_by_dimension(&query.strategy_id, &query.group_by)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         let mut groups = Vec::new();
         let mut total_trades = 0;
@@ -168,7 +180,9 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
                 losses: agg.losses as u32,
                 win_rate: Some(Self::to_proto_decimal(if agg.trade_count > 0 {
                     Decimal::from(agg.wins) / Decimal::from(agg.trade_count)
-                } else { Decimal::ZERO })),
+                } else {
+                    Decimal::ZERO
+                })),
                 gross_profit: None,
                 gross_loss: None,
                 net_pnl: None,
@@ -208,8 +222,12 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         request: Request<MetricsQuery>,
     ) -> std::result::Result<Response<StrategyMetrics>, Status> {
         let query = request.into_inner();
-        let snapshot = self.repos.statistics.get_latest_snapshot(&query.strategy_id)
-            .await.map_err(|e| Status::internal(e.to_string()))?;
+        let snapshot = self
+            .repos
+            .statistics
+            .get_latest_snapshot(&query.strategy_id)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         if let Some(snap) = snapshot {
             Ok(Response::new(StrategyMetrics {
@@ -243,8 +261,12 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         request: Request<MonthlyReturnsQuery>,
     ) -> std::result::Result<Response<MonthlyReturns>, Status> {
         let query = request.into_inner();
-        let aggs = self.repos.performance.get_monthly_returns(&query.strategy_id, query.year)
-            .await.map_err(|e| Status::internal(e.to_string()))?;
+        let aggs = self
+            .repos
+            .performance
+            .get_monthly_returns(&query.strategy_id, query.year)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         let mut months = Vec::new();
         for agg in aggs {
@@ -271,11 +293,19 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         request: Request<MonteCarloRequest>,
     ) -> std::result::Result<Response<MonteCarloResults>, Status> {
         let req = request.into_inner();
-        let trades = self.repos.performance.get_trades_for_strategy(&req.strategy_id, None, None)
-            .await.map_err(|e| Status::internal(e.to_string()))?;
+        let trades = self
+            .repos
+            .performance
+            .get_trades_for_strategy(&req.strategy_id, None, None)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         let mc = PerformanceMonteCarlo::new(12345); // Seeded deterministic
-        let result = mc.simulate(req.simulations as u64, &trades, rust_decimal_macros::dec!(0.5));
+        let result = mc.simulate(
+            req.simulations as u64,
+            &trades,
+            rust_decimal_macros::dec!(0.5),
+        );
 
         Ok(Response::new(MonteCarloResults {
             strategy_id: req.strategy_id,
@@ -289,7 +319,11 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
                 percentiles: Some(apex_protos::analytics::Percentiles {
                     p1: None,
                     p5: Some(Self::to_proto_decimal(result.terminal_equity_05)),
-                    p10: None, p25: None, p50: None, p75: None, p90: None,
+                    p10: None,
+                    p25: None,
+                    p50: None,
+                    p75: None,
+                    p90: None,
                     p95: Some(Self::to_proto_decimal(result.terminal_equity_95)),
                     p99: None,
                 }),
@@ -301,7 +335,13 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
                 skewness: None,
                 kurtosis: None,
                 percentiles: Some(apex_protos::analytics::Percentiles {
-                    p1: None, p5: None, p10: None, p25: None, p50: None, p75: None, p90: None,
+                    p1: None,
+                    p5: None,
+                    p10: None,
+                    p25: None,
+                    p50: None,
+                    p75: None,
+                    p90: None,
                     p95: Some(Self::to_proto_decimal(result.max_drawdown_95)),
                     p99: None,
                 }),
@@ -322,10 +362,12 @@ impl GrpcAnalyticsEngine for AnalyticsServiceImpl {
         _request: Request<Empty>,
     ) -> std::result::Result<Response<CommonResult>, Status> {
         let db_ok = self.repos.performance.health_check().await;
-        
+
         Ok(Response::new(CommonResult {
             ok: db_ok,
-            error: if db_ok { None } else { 
+            error: if db_ok {
+                None
+            } else {
                 Some(apex_protos::common::Error {
                     code: "DB_UNHEALTHY".to_string(),
                     message: "Database unhealthy".to_string(),

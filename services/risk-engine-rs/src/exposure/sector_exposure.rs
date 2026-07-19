@@ -39,7 +39,8 @@ impl SectorExposure {
         }
 
         for exposure in exposures.values_mut() {
-            exposure.dominance = (exposure.total_exposure / total_portfolio_exposure) * Decimal::from(100);
+            exposure.dominance =
+                (exposure.total_exposure / total_portfolio_exposure) * Decimal::from(100);
             exposure.concentration = exposure.dominance; // Context dependent, could be derived differently
         }
     }

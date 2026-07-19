@@ -27,7 +27,11 @@ impl HealthMonitor {
         Self::default()
     }
 
-    pub fn report_heartbeat(&self, _service_id: &str, _latency: Duration) -> Result<(), &'static str> {
+    pub fn report_heartbeat(
+        &self,
+        _service_id: &str,
+        _latency: Duration,
+    ) -> Result<(), &'static str> {
         Ok(())
     }
 

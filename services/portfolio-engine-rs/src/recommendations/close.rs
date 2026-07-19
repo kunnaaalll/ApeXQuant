@@ -35,8 +35,14 @@ impl CloseExposureEngine {
                 outcome: CloseOutcome::EmergencyLiquidation,
                 score: 100,
                 confidence: 100,
-                reasons: vec!["Critical portfolio state requiring immediate liquidation".to_string()],
-                contributing_factors: vec!["FrozenState".to_string(), "Drawdown".to_string(), "Heat".to_string()],
+                reasons: vec![
+                    "Critical portfolio state requiring immediate liquidation".to_string()
+                ],
+                contributing_factors: vec![
+                    "FrozenState".to_string(),
+                    "Drawdown".to_string(),
+                    "Heat".to_string(),
+                ],
                 explanation: RecommendationExplanation::new(
                     "Emergency liquidation required to prevent total capital loss.",
                     "Portfolio entered a frozen, critical drawdown, or extreme heat state.",

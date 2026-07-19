@@ -1,6 +1,6 @@
+use crate::features::FeatureVector;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::features::{FeatureVector, FeatureSnapshot};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeatureEvent {

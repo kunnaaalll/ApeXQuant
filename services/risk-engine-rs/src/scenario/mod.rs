@@ -23,8 +23,18 @@ impl StressScenario {
     pub fn list_standard_scenarios() -> Vec<Self> {
         vec![
             Self::new("CHF_2015", "CHF Flash Depeg 2015", dec!(-0.15), dec!(3.5)),
-            Self::new("COVID_2020", "COVID-19 Selloff 2020", dec!(-0.25), dec!(4.0)),
-            Self::new("LEHMAN_2008", "Lehman Collapse 2008", dec!(-0.35), dec!(5.0)),
+            Self::new(
+                "COVID_2020",
+                "COVID-19 Selloff 2020",
+                dec!(-0.25),
+                dec!(4.0),
+            ),
+            Self::new(
+                "LEHMAN_2008",
+                "Lehman Collapse 2008",
+                dec!(-0.35),
+                dec!(5.0),
+            ),
         ]
     }
 }

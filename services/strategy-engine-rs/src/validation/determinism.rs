@@ -25,7 +25,7 @@ impl DeterminismValidator {
         F: FnMut(Decimal) -> Decimal,
     {
         let mut current_state = initial_state;
-        
+
         let reference_final_state = {
             let mut state = initial_state;
             for _ in 0..100_000 {

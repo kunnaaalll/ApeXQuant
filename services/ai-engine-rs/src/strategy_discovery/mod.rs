@@ -41,6 +41,7 @@ pub struct StrategyCandidate {
 pub struct StrategyDiscoveryEngine {}
 
 impl StrategyDiscoveryEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {}
     }
@@ -52,12 +53,16 @@ impl StrategyDiscoveryEngine {
         regime: &str,
     ) -> Vec<StrategyCandidate> {
         let mut candidates = Vec::new();
-        
+
         // Deterministic generation derived from historical performance memory
         // E.g. we only generate strategies if multiple patterns confluenced
         if patterns_detected >= 2 {
-            let win_rate = if regime == "TrendingUp" { Decimal::new(65, 2) } else { Decimal::new(55, 2) };
-            
+            let win_rate = if regime == "TrendingUp" {
+                Decimal::new(65, 2)
+            } else {
+                Decimal::new(55, 2)
+            };
+
             candidates.push(StrategyCandidate {
                 id: format!("{}-{}-Confluence", symbol, regime),
                 target_symbol: symbol.to_string(),
@@ -85,7 +90,7 @@ impl StrategyDiscoveryEngine {
                 }),
             });
         }
-        
+
         candidates
     }
 }

@@ -1,11 +1,11 @@
-use uuid::Uuid;
 use rust_decimal_macros::dec;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 use crate::storage::events::{EventRecord, PortfolioEventWrapper};
 
-use crate::storage::rebuilder::{RiskEventRebuilder, Aggregatable};
 use crate::drawdown::events::DrawdownEvent;
+use crate::storage::rebuilder::{Aggregatable, RiskEventRebuilder};
 
 #[derive(Debug, Clone, PartialEq)]
 struct MockRiskState {
@@ -39,7 +39,10 @@ fn test_rebuild_from_events() {
             aggregate_id: Uuid::new_v4(),
             sequence: 1,
             timestamp: OffsetDateTime::now_utc(),
-            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 1, value: dec!(0.05) }),
+            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+                timestamp: 1,
+                value: dec!(0.05),
+            }),
             version: 1,
         },
         EventRecord {
@@ -47,7 +50,10 @@ fn test_rebuild_from_events() {
             aggregate_id: Uuid::new_v4(),
             sequence: 2,
             timestamp: OffsetDateTime::now_utc(),
-            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 2, value: dec!(0.10) }),
+            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+                timestamp: 2,
+                value: dec!(0.10),
+            }),
             version: 2,
         },
         EventRecord {
@@ -55,7 +61,10 @@ fn test_rebuild_from_events() {
             aggregate_id: Uuid::new_v4(),
             sequence: 3,
             timestamp: OffsetDateTime::now_utc(),
-            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 3, value: dec!(0.08) }),
+            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+                timestamp: 3,
+                value: dec!(0.08),
+            }),
             version: 3,
         },
     ];
@@ -73,16 +82,17 @@ fn test_snapshot_plus_events() {
         current_drawdown: dec!(0.15),
     };
 
-    let events = vec![
-        EventRecord {
-            event_id: Uuid::new_v4(),
-            aggregate_id: Uuid::new_v4(),
-            sequence: 101,
-            timestamp: OffsetDateTime::now_utc(),
-            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 4, value: dec!(0.25) }),
-            version: 101,
-        },
-    ];
+    let events = vec![EventRecord {
+        event_id: Uuid::new_v4(),
+        aggregate_id: Uuid::new_v4(),
+        sequence: 101,
+        timestamp: OffsetDateTime::now_utc(),
+        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+            timestamp: 4,
+            value: dec!(0.25),
+        }),
+        version: 101,
+    }];
 
     let rebuilt_state = RiskEventRebuilder::rebuild(snapshot_state.clone(), &events);
 
@@ -102,7 +112,10 @@ fn test_ordering() {
         aggregate_id: Uuid::new_v4(),
         sequence: 1,
         timestamp: OffsetDateTime::now_utc(),
-        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 1, value: dec!(0.01) }),
+        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+            timestamp: 1,
+            value: dec!(0.01),
+        }),
         version: 1,
     };
     let e2 = EventRecord {
@@ -110,14 +123,17 @@ fn test_ordering() {
         aggregate_id: Uuid::new_v4(),
         sequence: 2,
         timestamp: OffsetDateTime::now_utc(),
-        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 2, value: dec!(0.02) }),
+        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+            timestamp: 2,
+            value: dec!(0.02),
+        }),
         version: 2,
     };
 
     let events = [e1, e2];
-    
+
     for i in 0..events.len() - 1 {
-        assert!(events[i].sequence < events[i+1].sequence);
+        assert!(events[i].sequence < events[i + 1].sequence);
     }
 }
 
@@ -128,16 +144,19 @@ fn test_determinism_100k() {
         current_drawdown: dec!(0.0),
     };
 
-    let events: Vec<EventRecord> = (1..=100).map(|i| {
-        EventRecord {
+    let events: Vec<EventRecord> = (1..=100)
+        .map(|i| EventRecord {
             event_id: Uuid::new_v4(),
             aggregate_id: Uuid::new_v4(),
             sequence: i,
             timestamp: OffsetDateTime::now_utc(),
-            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: i, value: dec!(0.05) }),
+            payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+                timestamp: i,
+                value: dec!(0.05),
+            }),
             version: i,
-        }
-    }).collect();
+        })
+        .collect();
 
     // Rebuild 100,000 times
     let first_run = RiskEventRebuilder::rebuild(initial_state.clone(), &events);
@@ -161,13 +180,22 @@ async fn test_event_append_and_load(pool: sqlx::PgPool) {
         aggregate_id,
         sequence: 1,
         timestamp: OffsetDateTime::now_utc(),
-        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: 1, value: dec!(0.05) }),
+        payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+            timestamp: 1,
+            value: dec!(0.05),
+        }),
         version: 1,
     };
 
-    store.append_event(&event).await.expect("Failed to append event");
+    store
+        .append_event(&event)
+        .await
+        .expect("Failed to append event");
 
-    let loaded_events = store.load_events(aggregate_id, 0).await.expect("Failed to load events");
+    let loaded_events = store
+        .load_events(aggregate_id, 0)
+        .await
+        .expect("Failed to load events");
     assert_eq!(loaded_events.len(), 1);
     assert_eq!(loaded_events[0].event_id, event.event_id);
     assert_eq!(loaded_events[0].sequence, 1);
@@ -186,9 +214,15 @@ async fn test_snapshot_append_and_load(pool: sqlx::PgPool) {
         snapshot: serde_json::json!({"test": 123}),
     };
 
-    store.append_snapshot(&snapshot).await.expect("Failed to append snapshot");
+    store
+        .append_snapshot(&snapshot)
+        .await
+        .expect("Failed to append snapshot");
 
-    let loaded = store.load_snapshot(aggregate_id).await.expect("Failed to load snapshot");
+    let loaded = store
+        .load_snapshot(aggregate_id)
+        .await
+        .expect("Failed to load snapshot");
     assert!(loaded.is_some());
     let loaded = loaded.unwrap();
     assert_eq!(loaded.version, 100);
@@ -210,10 +244,16 @@ async fn test_concurrent_append(pool: sqlx::PgPool) {
                 aggregate_id,
                 sequence: i,
                 timestamp: OffsetDateTime::now_utc(),
-                payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated { timestamp: i, value: dec!(0.05) }),
+                payload: PortfolioEventWrapper::Drawdown(DrawdownEvent::Updated {
+                    timestamp: i,
+                    value: dec!(0.05),
+                }),
                 version: i,
             };
-            store_clone.append_event(&event).await.expect("Append failed");
+            store_clone
+                .append_event(&event)
+                .await
+                .expect("Append failed");
         }));
     }
 
@@ -221,6 +261,9 @@ async fn test_concurrent_append(pool: sqlx::PgPool) {
         handle.await.unwrap();
     }
 
-    let loaded = store.load_events(aggregate_id, 0).await.expect("Load failed");
+    let loaded = store
+        .load_events(aggregate_id, 0)
+        .await
+        .expect("Load failed");
     assert_eq!(loaded.len(), 10);
 }

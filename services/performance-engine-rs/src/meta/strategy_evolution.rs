@@ -26,7 +26,12 @@ impl StrategyEvolutionAssessment {
         confidence_drift: Decimal,
         stability_drift: Decimal,
     ) -> Self {
-        let state = Self::determine_state(expectancy_drift, drawdown_drift, confidence_drift, stability_drift);
+        let state = Self::determine_state(
+            expectancy_drift,
+            drawdown_drift,
+            confidence_drift,
+            stability_drift,
+        );
         Self {
             expectancy_drift,
             drawdown_drift,
@@ -43,20 +48,23 @@ impl StrategyEvolutionAssessment {
         stability_drift: Decimal,
     ) -> EvolutionState {
         use rust_decimal_macros::dec;
-        
+
         let expectancy_collapse_threshold = dec!(-0.20);
         let drawdown_collapse_threshold = dec!(0.20);
         let confidence_collapse_threshold = dec!(-0.30);
-        
-        if expectancy_drift <= expectancy_collapse_threshold 
+
+        if expectancy_drift <= expectancy_collapse_threshold
             || drawdown_drift >= drawdown_collapse_threshold
-            || confidence_drift <= confidence_collapse_threshold 
+            || confidence_drift <= confidence_collapse_threshold
         {
             return EvolutionState::Collapsing;
         }
 
         let improving_threshold = dec!(0.05);
-        if expectancy_drift >= improving_threshold && drawdown_drift <= dec!(0) && stability_drift >= dec!(0) {
+        if expectancy_drift >= improving_threshold
+            && drawdown_drift <= dec!(0)
+            && stability_drift >= dec!(0)
+        {
             return EvolutionState::Improving;
         }
 

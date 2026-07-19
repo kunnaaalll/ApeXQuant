@@ -13,6 +13,7 @@ pub struct ExecutionFeedback {
 pub struct FeedbackEngine;
 
 impl FeedbackEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
@@ -20,12 +21,12 @@ impl FeedbackEngine {
     pub fn process_execution_feedback(&self, feedback: &ExecutionFeedback) -> bool {
         // Deterministic analysis: flag if slippage is > 0.05%
         let slippage_threshold = feedback.expected_price * Decimal::new(5, 4); // 0.0005
-        
+
         if feedback.slippage > slippage_threshold {
             // High slippage detected, we could trigger a regime re-evaluation or strategy pause
             return true;
         }
-        
+
         false
     }
 }

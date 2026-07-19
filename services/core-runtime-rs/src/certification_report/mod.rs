@@ -40,6 +40,7 @@ impl CertificationReportGenerator {
             certification_status: status,
         };
 
-        serde_json::to_string_pretty(&report).map_err(|_| "Failed to serialize certification report")
+        serde_json::to_string_pretty(&report)
+            .map_err(|_| "Failed to serialize certification report")
     }
 }

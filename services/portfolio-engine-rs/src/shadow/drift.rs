@@ -1,6 +1,6 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DriftState {
@@ -63,8 +63,12 @@ impl DriftMonitor {
             // Upgrade overall state if needed
             match (overall_state.clone(), state) {
                 (DriftState::Stable, new_state) => overall_state = new_state,
-                (DriftState::Watch, DriftState::Elevated | DriftState::Critical) => overall_state = DriftState::Elevated, // Needs refined logic
-                (DriftState::Elevated, DriftState::Critical) => overall_state = DriftState::Critical,
+                (DriftState::Watch, DriftState::Elevated | DriftState::Critical) => {
+                    overall_state = DriftState::Elevated
+                } // Needs refined logic
+                (DriftState::Elevated, DriftState::Critical) => {
+                    overall_state = DriftState::Critical
+                }
                 _ => {}
             }
         }

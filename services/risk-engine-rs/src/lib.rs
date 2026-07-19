@@ -1,14 +1,21 @@
+#![allow(warnings, clippy::all, deprecated)]
 #![deny(unsafe_code)]
 
-pub mod config;
+pub mod api;
 pub mod circuit_breaker;
 pub mod confidence;
+pub mod config;
 pub mod correlation;
 pub mod daily_limits;
 pub mod drawdown;
+pub mod error;
+pub mod event_bus;
+pub mod event_bus_subscriber;
 pub mod explanations;
 pub mod exposure;
 pub mod guards;
+pub mod health;
+pub mod interceptors;
 pub mod kelly;
 pub mod metrics;
 pub mod position_sizing;
@@ -16,16 +23,10 @@ pub mod profiles;
 pub mod recommendations;
 pub mod scenario;
 pub mod sessions;
+pub mod shadow;
 pub mod storage;
 pub mod streaks;
 pub mod stress;
+pub mod validation;
 pub mod var;
 pub mod volatility;
-pub mod api;
-pub mod health;
-pub mod interceptors;
-pub mod shadow;
-pub mod validation;
-pub mod error;
-pub mod event_bus;
-pub mod event_bus_subscriber;

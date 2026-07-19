@@ -8,8 +8,8 @@
 //!
 //! Produces a composite confidence score in [0, 100].
 
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use rust_decimal::Decimal;
-use rust_decimal::prelude::{ToPrimitive, FromPrimitive};
 use serde::{Deserialize, Serialize};
 
 /// Input metrics for confidence computation.
@@ -40,11 +40,15 @@ pub struct ConfidenceOutput {
 pub struct ConfidenceEngine;
 
 impl Default for ConfidenceEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ConfidenceEngine {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Compute Bayesian confidence for a strategy.
     ///
@@ -65,7 +69,8 @@ impl ConfidenceEngine {
             let p_hat = wins / n;
             let z = 1.96_f64;
             let z2 = z * z;
-            let numerator = p_hat + z2 / (2.0 * n) - z * (p_hat * (1.0 - p_hat) / n + z2 / (4.0 * n * n)).sqrt();
+            let numerator = p_hat + z2 / (2.0 * n)
+                - z * (p_hat * (1.0 - p_hat) / n + z2 / (4.0 * n * n)).sqrt();
             let denominator = 1.0 + z2 / n;
             (numerator / denominator).clamp(0.0, 1.0)
         } else {
@@ -77,8 +82,16 @@ impl ConfidenceEngine {
 
         // Composite: (wilson_lower × 0.6 + posterior_mean × 0.4) × sample_adequacy
         // × regime_quality × execution_quality
-        let regime_f = metrics.regime_quality.to_f64().unwrap_or(1.0).clamp(0.5, 1.5);
-        let exec_f = metrics.execution_quality.to_f64().unwrap_or(1.0).clamp(0.5, 1.0);
+        let regime_f = metrics
+            .regime_quality
+            .to_f64()
+            .unwrap_or(1.0)
+            .clamp(0.5, 1.5);
+        let exec_f = metrics
+            .execution_quality
+            .to_f64()
+            .unwrap_or(1.0)
+            .clamp(0.5, 1.0);
 
         let base = wilson_lower * 0.6 + posterior_mean * 0.4;
         let adjusted = (base * sample_adequacy * regime_f * exec_f).clamp(0.0, 1.0);
@@ -113,7 +126,11 @@ mod tests {
             execution_quality: Decimal::ONE,
         };
         let out = engine.compute_confidence(&metrics);
-        assert!(out.composite_score > 50, "70% WR at n=200 should score > 50, got {}", out.composite_score);
+        assert!(
+            out.composite_score > 50,
+            "70% WR at n=200 should score > 50, got {}",
+            out.composite_score
+        );
     }
 
     #[test]
@@ -144,6 +161,9 @@ mod tests {
         };
         let base_score = engine.compute_confidence(&base).composite_score;
         let adverse_score = engine.compute_confidence(&adverse).composite_score;
-        assert!(adverse_score < base_score, "Adverse regime should reduce score");
+        assert!(
+            adverse_score < base_score,
+            "Adverse regime should reduce score"
+        );
     }
 }

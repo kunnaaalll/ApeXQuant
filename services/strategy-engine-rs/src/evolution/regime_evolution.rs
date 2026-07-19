@@ -1,5 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum EvolutionState {
     Strengthening,
     #[default]
@@ -7,4 +6,3 @@ pub enum EvolutionState {
     Weakening,
     Abandoned,
 }
-

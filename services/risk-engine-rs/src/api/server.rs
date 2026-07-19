@@ -1,7 +1,7 @@
+use redis::Client;
+use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
-use sqlx::PgPool;
-use redis::Client;
 
 use apex_protos::risk::risk_engine_server::RiskEngineServer;
 
@@ -11,8 +11,8 @@ use crate::interceptors::auth::auth_interceptor;
 use crate::interceptors::logging::LoggingLayer;
 use crate::interceptors::metrics::MetricsLayer;
 
-use std::sync::Arc;
 use crate::event_bus::EventBusPublisher;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -37,7 +37,9 @@ pub async fn start_server(
         redis_client,
     };
 
-    let repository = Arc::new(crate::storage::repository::RiskRepository::new(pg_pool.clone()));
+    let repository = Arc::new(crate::storage::repository::RiskRepository::new(
+        pg_pool.clone(),
+    ));
 
     let health_router = health_routes(app_state);
 

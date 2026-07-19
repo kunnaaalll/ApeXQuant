@@ -1,8 +1,6 @@
 // Kafka implementation module for future dual-write support.
 // NATS JetStream is the current primary distribution layer.
 
-use anyhow::Result;
-
 pub trait KafkaProvider: Send + Sync {
     fn is_connected(&self) -> bool;
 }

@@ -10,6 +10,18 @@ pub enum PatternState {
     Negative,
 }
 
+pub struct PatternEvaluateParams {
+    pub pattern_name: String,
+    pub trade_count: u32,
+    pub wins: u32,
+    pub _losses: u32,
+    pub gross_profit: Decimal,
+    pub gross_loss: Decimal,
+    pub average_win: Decimal,
+    pub average_loss: Decimal,
+    pub max_drawdown: Decimal,
+}
+
 #[derive(Debug, Clone)]
 pub struct PatternAssessment {
     pub pattern_name: String,
@@ -25,19 +37,17 @@ pub struct PatternAssessment {
 }
 
 impl PatternAssessment {
-    pub fn evaluate(
-        pattern_name: String,
-        trade_count: u32,
-        wins: u32,
-        _losses: u32,
-        gross_profit: Decimal,
-        gross_loss: Decimal,
-        average_win: Decimal,
-        average_loss: Decimal,
-        max_drawdown: Decimal,
-    ) -> Self {
+    pub fn evaluate(params: PatternEvaluateParams) -> Self {
+        let trade_count = params.trade_count;
+        let average_win = params.average_win;
+        let average_loss = params.average_loss;
+        let gross_profit = params.gross_profit;
+        let gross_loss = params.gross_loss;
+        let max_drawdown = params.max_drawdown;
+        let pattern_name = params.pattern_name;
+
         let win_rate = if trade_count > 0 {
-            Decimal::from(wins) / Decimal::from(trade_count)
+            Decimal::from(params.wins) / Decimal::from(trade_count)
         } else {
             Decimal::ZERO
         };
@@ -88,7 +98,11 @@ impl PatternAssessment {
         }
     }
 
-    fn derive_state(expectancy: Decimal, profit_factor: Decimal, win_rate: Decimal) -> PatternState {
+    fn derive_state(
+        expectancy: Decimal,
+        profit_factor: Decimal,
+        win_rate: Decimal,
+    ) -> PatternState {
         if expectancy < Decimal::ZERO || profit_factor < dec!(1.0) {
             PatternState::Negative
         } else if expectancy > dec!(0.5) && profit_factor > dec!(2.0) && win_rate > dec!(0.4) {

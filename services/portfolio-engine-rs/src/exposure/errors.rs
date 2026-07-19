@@ -4,14 +4,9 @@ use thiserror::Error;
 #[derive(Debug, Error, Clone, PartialEq)]
 pub enum ExposureError {
     #[error("Invariant violation: Total weight ({total_weight}) exceeds 100%")]
-    WeightExceedsMax {
-        total_weight: Decimal,
-    },
+    WeightExceedsMax { total_weight: Decimal },
     #[error("Invariant violation: Gross exposure ({gross}) < Net exposure ({net})")]
-    GrossLessThanNet {
-        gross: Decimal,
-        net: Decimal,
-    },
+    GrossLessThanNet { gross: Decimal, net: Decimal },
     #[error("Invariant violation: Position count cannot be negative")]
     NegativePositionCount,
     #[error("Invariant violation: Negative gross exposure is impossible")]

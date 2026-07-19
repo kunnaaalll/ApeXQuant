@@ -1,6 +1,6 @@
-use axum::{response::IntoResponse, Json, http::StatusCode, extract::State};
-use serde::Serialize;
 use crate::api::server::AppState;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ReadinessResponse {
@@ -46,4 +46,3 @@ pub async fn readiness_check(State(state): State<AppState>) -> impl IntoResponse
         (StatusCode::SERVICE_UNAVAILABLE, Json(response))
     }
 }
-

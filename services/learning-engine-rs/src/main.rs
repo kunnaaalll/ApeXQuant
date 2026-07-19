@@ -2,19 +2,19 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::expect_used)]
 
-use learning_engine::confidence::{ConfidenceEngine, ConfidenceMetrics};
-use learning_engine::decay::{DecayTracker, DecayMetrics};
-use learning_engine::database::{LearningRepository, MemoryRepository};
-use learning_engine::metrics::LearningEngineMetrics;
-use learning_engine::api::server::GrpcLearningEngine;
 use apex_protos::learning::learning_engine_server::LearningEngineServer;
+use learning_engine::api::server::GrpcLearningEngine;
+use learning_engine::confidence::{ConfidenceEngine, ConfidenceMetrics};
+use learning_engine::database::{LearningRepository, MemoryRepository};
+use learning_engine::decay::{DecayMetrics, DecayTracker};
+use learning_engine::metrics::LearningEngineMetrics;
 use rust_decimal::Decimal;
-use std::sync::Arc;
-use tokio::time::{sleep, Duration};
 use serde_json::Value;
 use sqlx::PgPool;
-use tonic::transport::Server;
+use std::sync::Arc;
 use tokio::signal;
+use tokio::time::{sleep, Duration};
+use tonic::transport::Server;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -34,15 +34,17 @@ async fn main() -> anyhow::Result<()> {
         .or_else(|_| std::env::var("EVENT_BUS_URL"))
         .unwrap_or_else(|_| "http://localhost:50050".to_string());
 
-    let redis_url = std::env::var("REDIS_URL")
-        .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_url =
+        std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/apex_learning".to_string());
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://postgres:postgres@localhost:5432/apex_learning".to_string()
+    });
 
     // Connect to Postgres
     tracing::info!("Connecting to PostgreSQL at {}...", database_url);
-    let pool = PgPool::connect(&database_url).await
+    let pool = PgPool::connect(&database_url)
+        .await
         .map_err(|e| anyhow::anyhow!("Postgres connection failed: {}", e))?;
 
     // Run Migrations
@@ -61,7 +63,11 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("Event Bus publisher connected at {}", event_bus_url);
         }
         Err(e) => {
-            tracing::warn!("Failed to connect to Event Bus publisher at {}: {}", event_bus_url, e);
+            tracing::warn!(
+                "Failed to connect to Event Bus publisher at {}: {}",
+                event_bus_url,
+                e
+            );
         }
     }
 
@@ -80,7 +86,14 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::spawn(async move {
         loop {
-            match run_learning_loop(&redis_client_clone, &memory_repo_clone, &conf_clone, &decay_clone).await {
+            match run_learning_loop(
+                &redis_client_clone,
+                &memory_repo_clone,
+                &conf_clone,
+                &decay_clone,
+            )
+            .await
+            {
                 Ok(()) => {
                     tracing::info!("Learning loop completed gracefully");
                     break;
@@ -98,7 +111,9 @@ async fn main() -> anyhow::Result<()> {
 
     let learning_service = GrpcLearningEngine::new(learning_repo);
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-    health_reporter.set_serving::<LearningEngineServer<GrpcLearningEngine>>().await;
+    health_reporter
+        .set_serving::<LearningEngineServer<GrpcLearningEngine>>()
+        .await;
 
     Server::builder()
         .add_service(health_service)
@@ -113,17 +128,23 @@ async fn main() -> anyhow::Result<()> {
 
 async fn shutdown_signal() {
     let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
+        if let Err(e) = signal::ctrl_c().await {
+            tracing::error!("Failed to install Ctrl+C handler: {}", e);
+            std::future::pending::<()>().await;
+        }
     };
 
     #[cfg(unix)]
     let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
+        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
+            Ok(mut sig) => {
+                sig.recv().await;
+            }
+            Err(e) => {
+                tracing::error!("Failed to install signal handler: {}", e);
+                std::future::pending::<()>().await;
+            }
+        }
     };
 
     #[cfg(not(unix))]
@@ -143,9 +164,13 @@ async fn run_learning_loop(
     confidence_engine: &ConfidenceEngine,
     decay_tracker: &DecayTracker,
 ) -> anyhow::Result<()> {
-    let mut pubsub = redis_client.get_async_pubsub().await
+    let mut pubsub = redis_client
+        .get_async_pubsub()
+        .await
         .map_err(|e| anyhow::anyhow!("Redis pubsub connection failed: {}", e))?;
-    pubsub.subscribe("apex:events:trade_completed").await
+    pubsub
+        .subscribe("apex:events:trade_completed")
+        .await
         .map_err(|e| anyhow::anyhow!("Subscribe failed: {}", e))?;
 
     tracing::info!("Learning Engine subscribed to apex:events:trade_completed");
@@ -174,7 +199,8 @@ async fn process_trade_event(
         Some(s) => s.to_string(),
         None => return,
     };
-    let net_pnl = event["net_pnl"].as_str()
+    let net_pnl = event["net_pnl"]
+        .as_str()
         .and_then(|s| s.parse::<Decimal>().ok())
         .unwrap_or(Decimal::new(0, 0));
     let is_winner = net_pnl > Decimal::new(0, 0);
@@ -230,22 +256,27 @@ async fn process_trade_event(
     };
     let decay_output = decay_tracker.compute_decay(&decay_metrics);
 
-    let regime_delta = event["regime_delta"].as_str()
+    let regime_delta = event["regime_delta"]
+        .as_str()
         .and_then(|s| s.parse::<Decimal>().ok())
         .unwrap_or(Decimal::new(0, 0));
-    let exec_delta = event["execution_delta"].as_str()
+    let exec_delta = event["execution_delta"]
+        .as_str()
         .and_then(|s| s.parse::<Decimal>().ok())
         .unwrap_or(Decimal::new(0, 0));
 
     // Write back to repository
-    if let Err(e) = memory_repo.update_memory(
-        &strategy_id,
-        net_pnl,
-        is_winner,
-        regime_delta,
-        exec_delta,
-        new_ema
-    ).await {
+    if let Err(e) = memory_repo
+        .update_memory(
+            &strategy_id,
+            net_pnl,
+            is_winner,
+            regime_delta,
+            exec_delta,
+            new_ema,
+        )
+        .await
+    {
         tracing::error!("Failed to update memory for {}: {}", strategy_id, e);
     }
 

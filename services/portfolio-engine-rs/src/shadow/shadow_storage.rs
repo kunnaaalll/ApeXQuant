@@ -10,7 +10,11 @@ pub trait ShadowStorage: Send + Sync {
     fn store_snapshot(&self, snapshot: ShadowSnapshot) -> Result<(), StorageError>;
 
     /// Fetch events for a given time window or specific run
-    fn fetch_events(&self, start_time: chrono::DateTime<chrono::Utc>, end_time: chrono::DateTime<chrono::Utc>) -> Result<Vec<ShadowEvent>, StorageError>;
+    fn fetch_events(
+        &self,
+        start_time: chrono::DateTime<chrono::Utc>,
+        end_time: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<ShadowEvent>, StorageError>;
 }
 
 #[derive(Debug)]
@@ -49,7 +53,11 @@ impl ShadowStorage for PgShadowStorage {
         Ok(())
     }
 
-    fn fetch_events(&self, _start_time: chrono::DateTime<chrono::Utc>, _end_time: chrono::DateTime<chrono::Utc>) -> Result<Vec<ShadowEvent>, StorageError> {
+    fn fetch_events(
+        &self,
+        _start_time: chrono::DateTime<chrono::Utc>,
+        _end_time: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<ShadowEvent>, StorageError> {
         Ok(vec![])
     }
 }

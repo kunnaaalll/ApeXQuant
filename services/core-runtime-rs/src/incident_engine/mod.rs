@@ -1,5 +1,5 @@
-pub mod incident;
 pub mod chaos;
+pub mod incident;
 
-pub use incident::*;
 pub use chaos::*;
+pub use incident::*;

@@ -24,15 +24,20 @@ impl ContextConfidenceScore {
         self.score
     }
 
-    pub fn calculate(sample_quality: Decimal, stability: Decimal, degradation: Decimal, drawdown: Decimal) -> Self {
+    pub fn calculate(
+        sample_quality: Decimal,
+        stability: Decimal,
+        degradation: Decimal,
+        drawdown: Decimal,
+    ) -> Self {
         let mut base = (sample_quality + stability) / Decimal::from(2);
-        
+
         let penalty = (drawdown * Decimal::from(2)) + degradation;
         base -= penalty;
-        
+
         Self::new(base)
     }
-    
+
     pub fn tier(&self) -> ContextConfidenceTier {
         if self.score >= Decimal::from(80) {
             ContextConfidenceTier::VeryHigh

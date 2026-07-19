@@ -35,7 +35,8 @@ impl GoLiveValidator {
             return;
         }
 
-        if *comparison == ComparisonState::ExactMatch || *comparison == ComparisonState::CloseMatch {
+        if *comparison == ComparisonState::ExactMatch || *comparison == ComparisonState::CloseMatch
+        {
             self.consecutive_matches += 1;
         } else {
             self.consecutive_matches = 0;

@@ -1,10 +1,10 @@
 use learning_engine::adaptation::{AdaptationResult, AdaptationState};
-use learning_engine::promotion::{PromotionLadder, PromotionLevel, StrategyPerformance};
-use learning_engine::retirement::{RetirementAction, RetirementManager};
 use learning_engine::anomaly::{AnomalyDetector, AnomalySeverity};
-use learning_engine::drift::{DriftMonitor, DriftMetrics, DriftStatus};
-use learning_engine::regime_memory::{RegimeMemory, MarketRegime};
 use learning_engine::clustering::ClusterManager;
+use learning_engine::drift::{DriftMetrics, DriftMonitor, DriftStatus};
+use learning_engine::promotion::{PromotionLadder, PromotionLevel, StrategyPerformance};
+use learning_engine::regime_memory::{MarketRegime, RegimeMemory};
+use learning_engine::retirement::{RetirementAction, RetirementManager};
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
@@ -18,7 +18,9 @@ fn test_promotion_progression() {
         regime_robustness: Decimal::new(65, 0),
     };
 
-    let next = ladder.evaluate_promotion(PromotionLevel::Shadow, &perf).unwrap();
+    let next = ladder
+        .evaluate_promotion(PromotionLevel::Shadow, &perf)
+        .unwrap();
     assert_eq!(next, Some(PromotionLevel::Candidate));
 }
 
@@ -26,10 +28,10 @@ fn test_promotion_progression() {
 fn test_retirement_triggers() {
     let manager = RetirementManager::new();
     let action = manager.evaluate(
-        Decimal::new(5, 0), // below 10 edge
+        Decimal::new(5, 0),  // below 10 edge
         Decimal::new(20, 0), // below 30 confidence
-        60, // over 50 duration
-        false, // regime drift
+        60,                  // over 50 duration
+        false,               // regime drift
     );
     // 3 triggers -> Retire
     assert_eq!(action, Some(RetirementAction::Retire));
@@ -39,15 +41,19 @@ fn test_retirement_triggers() {
 fn test_regime_replay() {
     let mut memory = RegimeMemory::new();
     memory.record_success(MarketRegime::Trend, "strat_1".to_string());
-    
+
     let record = memory.get_record(&MarketRegime::Trend).unwrap();
-    assert!(record.successful_strategies.contains(&"strat_1".to_string()));
+    assert!(record
+        .successful_strategies
+        .contains(&"strat_1".to_string()));
 }
 
 #[test]
 fn test_anomaly_detection() {
     let detector = AnomalyDetector::new();
-    let anomaly = detector.detect_slippage_anomaly(Decimal::new(10, 0), Decimal::new(1, 0), Decimal::new(1, 0)).unwrap();
+    let anomaly = detector
+        .detect_slippage_anomaly(Decimal::new(10, 0), Decimal::new(1, 0), Decimal::new(1, 0))
+        .unwrap();
     assert_eq!(anomaly.severity, AnomalySeverity::Critical);
 }
 
@@ -71,7 +77,10 @@ fn test_drift_detection() {
 fn test_clustering_deterministic() {
     let manager = ClusterManager::new();
     let mut traits = HashMap::new();
-    traits.insert("momentum".to_string(), vec!["s1".to_string(), "s2".to_string()]);
+    traits.insert(
+        "momentum".to_string(),
+        vec!["s1".to_string(), "s2".to_string()],
+    );
     let clusters = manager.cluster_strategies(&traits);
     assert_eq!(clusters.len(), 1);
     assert_eq!(clusters[0].id, "cluster_momentum");
@@ -86,7 +95,7 @@ fn stress_test_100k_adaptation_cycles() {
         adapt.metrics.volatility_adaptation = Decimal::new(70, 0);
         adapt.metrics.session_adaptation = Decimal::new(90, 0);
         adapt.metrics.symbol_adaptation = Decimal::new(60, 0);
-        
+
         adapt.calculate_score().unwrap();
         assert_eq!(adapt.state, AdaptationState::Stable);
     }

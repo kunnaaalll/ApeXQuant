@@ -2,13 +2,13 @@ use anyhow::Result;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tokio::signal;
-use tracing::{info, error, Level};
+use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-use performance_engine::config::AppConfig;
-use performance_engine::storage::Repositories;
 use performance_engine::analytics::engine::AnalyticsEngine;
-use performance_engine::event_bus::{EventBusSubscriber, EventBusPublisher};
+use performance_engine::config::AppConfig;
+use performance_engine::event_bus::{EventBusPublisher, EventBusSubscriber};
+use performance_engine::storage::Repositories;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,8 +16,7 @@ async fn main() -> Result<()> {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Failed to set tracing subscriber");
+    tracing::subscriber::set_global_default(subscriber).expect("Failed to set tracing subscriber");
 
     info!("Starting APEX Performance Engine V1 in Zero Trust Production Mode...");
 
@@ -30,9 +29,9 @@ async fn main() -> Result<()> {
         .max_connections(50)
         .connect(&config.database_url)
         .await?;
-    
+
     let repos = Arc::new(Repositories::new(pool));
-    
+
     // Run idempotent migrations
     info!("Running database migrations...");
     repos.migrate().await?;
@@ -45,13 +44,15 @@ async fn main() -> Result<()> {
     let _publisher = EventBusPublisher::connect(
         config.event_bus_url.clone(),
         "performance-engine".to_string(),
-    ).await?;
+    )
+    .await?;
 
     let subscriber = EventBusSubscriber::connect(
         config.event_bus_url.clone(),
         "performance_engine_group".to_string(),
         uuid::Uuid::new_v4().to_string(),
-    ).await?;
+    )
+    .await?;
 
     // Subscribe to required domain events
     let topics = vec![
@@ -65,7 +66,7 @@ async fn main() -> Result<()> {
 
     for topic in topics {
         let mut rx = subscriber.subscribe(topic).await?;
-        let repos_clone = repos.clone();
+        let _repos_clone = repos.clone();
         tokio::spawn(async move {
             while let Some(event) = rx.recv().await {
                 // In a full implementation, we'd route these to specific handlers
@@ -79,19 +80,21 @@ async fn main() -> Result<()> {
     }
 
     // 5. API Server (gRPC + HTTP Metrics/Health)
-    let grpc_addr = format!("0.0.0.0:{}", config.grpc_port).parse().unwrap();
-    let http_addr = format!("0.0.0.0:{}", config.http_port).parse().unwrap();
-    
+    let grpc_addr = format!("0.0.0.0:{}", config.grpc_port)
+        .parse()
+        .unwrap_or_else(|_| "0.0.0.0:50055".parse().unwrap());
+    let http_addr = format!("0.0.0.0:{}", config.http_port)
+        .parse()
+        .unwrap_or_else(|_| "0.0.0.0:8085".parse().unwrap());
+
     let api_repos = repos.clone();
     let api_engine = engine.clone();
 
     tokio::spawn(async move {
-        if let Err(e) = performance_engine::api::start_api_server(
-            grpc_addr,
-            http_addr,
-            api_repos,
-            api_engine,
-        ).await {
+        if let Err(e) =
+            performance_engine::api::start_api_server(grpc_addr, http_addr, api_repos, api_engine)
+                .await
+        {
             error!("API server error: {:?}", e);
         }
     });
@@ -102,10 +105,10 @@ async fn main() -> Result<()> {
     match signal::ctrl_c().await {
         Ok(()) => {
             info!("Shutting down gracefully...");
-        },
+        }
         Err(err) => {
             error!("Unable to listen for shutdown signal: {}", err);
-        },
+        }
     }
 
     Ok(())

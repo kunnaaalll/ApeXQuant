@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::simulator::replay_engine::{ReplayEngine, ReplayFilter, ReplayResult, TradeRecord};
+use serde::{Deserialize, Serialize};
 
 /// A configuration variant to test against historical data.
 #[derive(Debug, Clone, Serialize, Deserialize)]

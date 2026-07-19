@@ -4,7 +4,7 @@ use rust_decimal_macros::dec;
 #[test]
 fn test_weight_bounds() {
     let mut optimizer = WeightOptimizer::new(dec!(1.0));
-    
+
     // Test upper bound
     optimizer.update(dec!(3.0));
     assert_eq!(optimizer.weight(), dec!(1.05)); // Only shifted by max 0.05
@@ -15,7 +15,7 @@ fn test_weight_bounds() {
         optimizer.update(dec!(3.0));
     }
     assert_eq!(optimizer.weight(), dec!(2.00));
-    
+
     // Test lower bound
     let mut optimizer2 = WeightOptimizer::new(dec!(1.0));
     for _ in 0..20 {
@@ -27,11 +27,11 @@ fn test_weight_bounds() {
 #[test]
 fn test_max_shift_per_cycle() {
     let mut optimizer = WeightOptimizer::new(dec!(1.0));
-    
+
     // Upward shift bounded to 0.05
     optimizer.update(dec!(1.5));
     assert_eq!(optimizer.weight(), dec!(1.05));
-    
+
     // Downward shift bounded to 0.05
     optimizer.update(dec!(0.5));
     assert_eq!(optimizer.weight(), dec!(1.00));
@@ -49,6 +49,6 @@ fn test_decay_model_bounds() {
     // Bound checks - we test clamping indirectly via behavior or internal access
     // min alpha = 0.01
     assert_eq!(decay_under.update(dec!(100.0), dec!(200.0)), dec!(101.0)); // 200 * 0.01 + 100 * 0.99 = 2 + 99 = 101
-    // max alpha = 0.50
+                                                                           // max alpha = 0.50
     assert_eq!(decay_over.update(dec!(100.0), dec!(200.0)), dec!(150.0)); // 200 * 0.5 + 100 * 0.5 = 100 + 50 = 150
 }

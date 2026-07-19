@@ -20,7 +20,7 @@ impl SessionOptimizer {
 
     pub fn evaluate(&self, trades: u32, raw_edge: Decimal, confidence: Decimal) -> SessionOutputs {
         let sample_adequacy = trades >= self.min_sample_size;
-        
+
         // Priority score is edge * confidence if sample is adequate
         let priority_score = if sample_adequacy {
             raw_edge * confidence

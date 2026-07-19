@@ -49,3 +49,9 @@ impl DeterminismValidator {
         }
     }
 }
+
+impl Default for DeterminismValidator {
+    fn default() -> Self {
+        Self::new()
+    }
+}

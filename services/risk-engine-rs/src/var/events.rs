@@ -1,6 +1,6 @@
-use rust_decimal::Decimal;
 use super::confidence_levels::ConfidenceLevel;
 use super::Severity;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum VarRiskEvent {

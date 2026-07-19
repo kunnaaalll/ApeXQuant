@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone)]
 pub struct TailRiskAssessment {
@@ -54,10 +54,10 @@ impl TailRiskAssessment {
         let avg_loss = self.average_tail_loss();
         // Just a bounded function based on severity and frequency
         let frequency = self.frequency_of_extreme_events(total_events);
-        
+
         let score = (avg_loss * Decimal::new(100, 0)) + (frequency * Decimal::new(500, 0));
         let raw_score = score.to_u32().unwrap_or(0);
-        
+
         if raw_score > 100 {
             100
         } else {
@@ -104,5 +104,3 @@ pub enum TailSeverity {
     Extreme,
     Collapse,
 }
-
-

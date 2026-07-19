@@ -1,6 +1,6 @@
-use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
 use super::confidence_levels::ConfidenceLevel;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone)]
 pub struct HistoricalVaR {
@@ -37,10 +37,10 @@ impl HistoricalVaR {
         let percentile = level.percentile();
         let index = (Decimal::from(sorted_returns.len()) * percentile).floor();
         let idx = usize::try_from(index.to_i64().unwrap_or(0)).unwrap_or(0);
-        
+
         let target_idx = if idx > 0 { idx - 1 } else { 0 };
         let worst_return = sorted_returns[target_idx];
-        
+
         if worst_return < Decimal::ZERO {
             -worst_return
         } else {

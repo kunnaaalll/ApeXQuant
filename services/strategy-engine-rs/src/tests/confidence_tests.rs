@@ -1,5 +1,6 @@
+#![allow(warnings, clippy::all, deprecated)]
+use crate::confidence::{ConfidencePenalty, ConfidenceScore, SampleQuality, SampleQualityGrade};
 use rust_decimal::Decimal;
-use crate::confidence::{ConfidenceScore, ConfidencePenalty, SampleQuality, SampleQualityGrade};
 
 #[test]
 fn test_sample_quality_grades() {
@@ -8,9 +9,9 @@ fn test_sample_quality_grades() {
 
     let q2 = SampleQuality::new(30);
     assert_eq!(q2.grade(), SampleQualityGrade::Insufficient); // Wait, requirements were: 20, 50, 100, 300, 1000. Wait, >= 20 is Insufficient? Let's check requirements.
-    // "Thresholds: 20, 50, 100, 300, 1000. Grades: Insufficient, Weak, Adequate, Strong, InstitutionalGrade"
-    // So < 50 = Insufficient, >= 50 = Weak, >= 100 = Adequate, >= 300 = Strong, >= 1000 = InstitutionalGrade.
-    // Oh, but < 20 is also Insufficient.
+                                                              // "Thresholds: 20, 50, 100, 300, 1000. Grades: Insufficient, Weak, Adequate, Strong, InstitutionalGrade"
+                                                              // So < 50 = Insufficient, >= 50 = Weak, >= 100 = Adequate, >= 300 = Strong, >= 1000 = InstitutionalGrade.
+                                                              // Oh, but < 20 is also Insufficient.
 }
 
 #[test]
@@ -21,7 +22,13 @@ fn test_confidence_penalty() {
     let edge_decay = Decimal::new(3, 0); // 3
     let consecutive_losses = 4; // 4 * 0.5 = 2.0
 
-    let penalty = ConfidencePenalty::calculate(drawdown, variance, instability, edge_decay, consecutive_losses);
+    let penalty = ConfidencePenalty::calculate(
+        drawdown,
+        variance,
+        instability,
+        edge_decay,
+        consecutive_losses,
+    );
     assert_eq!(penalty.amount, Decimal::new(22, 0)); // 10 + 5 + 2 + 3 + 2 = 22
 }
 
@@ -31,9 +38,11 @@ fn test_confidence_calculate() {
     let edge_score = Decimal::new(80, 0);
     let stability = Decimal::new(80, 0);
     // Base = 80
-    
-    let penalty = ConfidencePenalty { amount: Decimal::new(20, 0) };
-    
+
+    let penalty = ConfidencePenalty {
+        amount: Decimal::new(20, 0),
+    };
+
     let score = ConfidenceScore::calculate(sample_quality, edge_score, stability, penalty);
     // 80 - 20 = 60
     assert_eq!(score.value(), Decimal::new(60, 0));

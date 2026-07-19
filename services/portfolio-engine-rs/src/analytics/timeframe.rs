@@ -1,6 +1,6 @@
 // src/analytics/timeframe.rs
-use serde::{Deserialize, Serialize};
 use super::regime::RegimePerformanceMetrics;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct TimeframePerformanceProfile {

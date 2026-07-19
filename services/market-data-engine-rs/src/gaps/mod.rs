@@ -39,7 +39,12 @@ impl GapDetector {
         }
     }
 
-    pub fn process_tick(&mut self, timestamp: DateTime<Utc>, sequence_missing: u64, is_duplicate: bool) -> Option<GapEvent> {
+    pub fn process_tick(
+        &mut self,
+        timestamp: DateTime<Utc>,
+        sequence_missing: u64,
+        is_duplicate: bool,
+    ) -> Option<GapEvent> {
         if is_duplicate {
             return Some(GapEvent {
                 severity: GapSeverity::Minor,
@@ -81,17 +86,17 @@ impl GapDetector {
                     });
                 }
             } else if timestamp < last {
-                 // Out of order timestamps? 
-                 let duration = last.signed_duration_since(timestamp);
-                 self.last_timestamp = Some(timestamp);
-                 return Some(GapEvent {
-                     severity: GapSeverity::Moderate,
-                     gap_type: GapType::TimestampJump(-duration),
-                     timestamp,
-                 });
+                // Out of order timestamps?
+                let duration = last.signed_duration_since(timestamp);
+                self.last_timestamp = Some(timestamp);
+                return Some(GapEvent {
+                    severity: GapSeverity::Moderate,
+                    gap_type: GapType::TimestampJump(-duration),
+                    timestamp,
+                });
             }
         }
-        
+
         self.last_timestamp = Some(timestamp);
         None
     }

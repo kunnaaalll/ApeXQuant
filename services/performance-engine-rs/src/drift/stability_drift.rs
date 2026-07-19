@@ -1,6 +1,6 @@
+use crate::drift::DriftState;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use crate::drift::DriftState;
 
 #[derive(Debug, Clone)]
 pub struct StabilityDrift {
@@ -12,9 +12,13 @@ pub struct StabilityDrift {
 }
 
 impl StabilityDrift {
-    pub fn evaluate(current_stability: Decimal, previous_stability: Decimal, historical_avg: Decimal) -> Self {
+    pub fn evaluate(
+        current_stability: Decimal,
+        previous_stability: Decimal,
+        historical_avg: Decimal,
+    ) -> Self {
         let difference = current_stability - historical_avg;
-        
+
         let percentage_change = if historical_avg.abs() > Decimal::ZERO {
             difference / historical_avg.abs()
         } else {

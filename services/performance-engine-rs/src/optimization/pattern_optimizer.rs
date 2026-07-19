@@ -19,7 +19,13 @@ pub struct PatternOptimizer {
 }
 
 impl PatternOptimizer {
-    pub fn new(min_elite: Decimal, min_strong: Decimal, min_avg: Decimal, max_dd: Decimal, min_quality: Decimal) -> Self {
+    pub fn new(
+        min_elite: Decimal,
+        min_strong: Decimal,
+        min_avg: Decimal,
+        max_dd: Decimal,
+        min_quality: Decimal,
+    ) -> Self {
         Self {
             min_elite_expectancy: min_elite,
             min_strong_expectancy: min_strong,
@@ -29,7 +35,12 @@ impl PatternOptimizer {
         }
     }
 
-    pub fn evaluate(&self, expectancy: Decimal, drawdown: Decimal, sample_quality: Decimal) -> PatternState {
+    pub fn evaluate(
+        &self,
+        expectancy: Decimal,
+        drawdown: Decimal,
+        sample_quality: Decimal,
+    ) -> PatternState {
         if drawdown >= self.max_disabled_drawdown {
             return PatternState::Disabled;
         }

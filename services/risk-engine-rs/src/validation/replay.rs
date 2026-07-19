@@ -6,42 +6,42 @@
 //   - Final state compared field-by-field against the baseline (run 0)
 //   - Mismatch returns Err with diagnostic
 
-use serde::{Deserialize, Serialize};
 use ring::digest;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::{Deserialize, Serialize};
 
-use crate::var::historical_var::HistoricalVaR;
-use crate::var::confidence_levels::ConfidenceLevel;
 use crate::drawdown::DrawdownTracker;
+use crate::var::confidence_levels::ConfidenceLevel;
+use crate::var::historical_var::HistoricalVaR;
 
 // ─── Replay event model ───────────────────────────────────────────────────────
 
 /// A single replayed risk event — deterministic input for validation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplayEvent {
-    pub sequence:  u64,
-    pub ret:       Decimal,   // portfolio return for this tick
-    pub equity:    Decimal,   // equity after applying ret
+    pub sequence: u64,
+    pub ret: Decimal,    // portfolio return for this tick
+    pub equity: Decimal, // equity after applying ret
 }
 
 // ─── Replay result ────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplayResult {
-    pub exact_match:      bool,
-    pub event_count:      u64,
-    pub baseline_hash:    String,
-    pub replay_hash:      String,
-    pub mismatch_fields:  Vec<String>,
+    pub exact_match: bool,
+    pub event_count: u64,
+    pub baseline_hash: String,
+    pub replay_hash: String,
+    pub mismatch_fields: Vec<String>,
 }
 
 // ─── Reference snapshot ───────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 struct ReplaySnapshot {
-    var_99:          String,
-    drawdown_max:    String,
+    var_99: String,
+    drawdown_max: String,
     drawdown_current: String,
 }
 
@@ -49,9 +49,7 @@ impl ReplaySnapshot {
     fn state_hash(&self) -> String {
         let canonical = format!(
             "{}|{}|{}",
-            self.var_99,
-            self.drawdown_max,
-            self.drawdown_current,
+            self.var_99, self.drawdown_max, self.drawdown_current,
         );
         let d = digest::digest(&digest::SHA256, canonical.as_bytes());
         hex_encode(d.as_ref())
@@ -63,11 +61,15 @@ impl ReplaySnapshot {
 pub struct ReplayValidator;
 
 impl Default for ReplayValidator {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ReplayValidator {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Verify that events 1..N, when folded into fresh engines,
     /// rebuild exactly the same state as the baseline run.
@@ -81,12 +83,15 @@ impl ReplayValidator {
         let replayed = Self::fold_events(&events)?;
 
         // ── Compare ──────────────────────────────────────────────────────────
-        let base_hash   = baseline.state_hash();
+        let base_hash = baseline.state_hash();
         let replay_hash = replayed.state_hash();
 
         let mut mismatches = Vec::new();
         if baseline.var_99 != replayed.var_99 {
-            mismatches.push(format!("var_99: {} vs {}", baseline.var_99, replayed.var_99));
+            mismatches.push(format!(
+                "var_99: {} vs {}",
+                baseline.var_99, replayed.var_99
+            ));
         }
         if baseline.drawdown_max != replayed.drawdown_max {
             mismatches.push(format!(
@@ -111,9 +116,9 @@ impl ReplayValidator {
         }
 
         Ok(ReplayResult {
-            exact_match:     true,
-            event_count:     events.len() as u64,
-            baseline_hash:   base_hash,
+            exact_match: true,
+            event_count: events.len() as u64,
+            baseline_hash: base_hash,
             replay_hash,
             mismatch_fields: mismatches,
         })
@@ -122,16 +127,15 @@ impl ReplayValidator {
     /// Deterministic canonical event sequence — fixed return series.
     fn build_canonical_event_sequence() -> Vec<ReplayEvent> {
         let returns: &[&str] = &[
-            "0.010", "-0.005", "0.008", "-0.012", "0.015",
-            "-0.003", "0.007", "-0.020", "0.011", "-0.009",
+            "0.010", "-0.005", "0.008", "-0.012", "0.015", "-0.003", "0.007", "-0.020", "0.011",
+            "-0.009",
         ];
 
         let mut events = Vec::with_capacity(returns.len());
         let mut equity = dec!(100_000);
 
         for (i, ret_str) in returns.iter().enumerate() {
-            let ret = Decimal::from_str_exact(ret_str)
-                .unwrap_or(Decimal::ZERO); // safe: these are compile-time constants
+            let ret = Decimal::from_str_exact(ret_str).unwrap_or(Decimal::ZERO); // safe: these are compile-time constants
             equity += equity * ret;
             events.push(ReplayEvent {
                 sequence: i as u64 + 1,
@@ -153,8 +157,10 @@ impl ReplayValidator {
         }
 
         Ok(ReplaySnapshot {
-            var_99:           hist_var.compute_var(ConfidenceLevel::NinetyNine).to_string(),
-            drawdown_max:     drawdown.max_drawdown.to_string(),
+            var_99: hist_var
+                .compute_var(ConfidenceLevel::NinetyNine)
+                .to_string(),
+            drawdown_max: drawdown.max_drawdown.to_string(),
             drawdown_current: drawdown.current_drawdown.to_string(),
         })
     }

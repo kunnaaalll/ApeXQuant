@@ -41,7 +41,7 @@ impl SymbolEvolutionEngine {
 
         let symbol = windows[0].symbol.clone();
         let first = &windows[0];
-        let last = windows.last().unwrap();
+        let last = windows.last()?;
 
         let expectancy_drift = last.expectancy - first.expectancy;
         // Drawdown is a positive magnitude; increase = worse
@@ -59,7 +59,11 @@ impl SymbolEvolutionEngine {
 
         let explanation = format!(
             "Symbol {} expectancy drifted {} over {} periods. Drawdown drift: {}. Trend: {:?}.",
-            symbol, expectancy_drift, windows.len(), drawdown_drift, trend
+            symbol,
+            expectancy_drift,
+            windows.len(),
+            drawdown_drift,
+            trend
         );
 
         Some(SymbolEvolutionReport {

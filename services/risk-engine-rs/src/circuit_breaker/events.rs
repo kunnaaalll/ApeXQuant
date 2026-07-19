@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use crate::circuit_breaker::CircuitBreakerState;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum CircuitBreakerEvent {

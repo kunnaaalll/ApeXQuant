@@ -3,8 +3,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::meta::strategy_state::StrategyState;
 use crate::api::service::StrategyState as ApiStrategyState;
+use crate::meta::strategy_state::StrategyState;
 
 #[derive(Clone)]
 pub struct StrategyEntry {
@@ -64,7 +64,7 @@ impl StrategyRegistry {
             Err("Strategy not found".to_string())
         }
     }
-    
+
     pub async fn active_strategies(&self) -> Vec<StrategyEntry> {
         let r = self.strategies.read().await;
         r.values().cloned().collect()

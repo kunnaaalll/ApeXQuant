@@ -1,8 +1,8 @@
+use super::block::{BlockEngine, BlockOutcome};
+use super::close::{CloseExposureEngine, CloseOutcome};
+use super::consistency::RecommendationConsistencyValidator;
 use super::increase::{IncreaseExposureEngine, IncreaseOutcome};
 use super::reduce::{ReduceExposureEngine, ReduceOutcome};
-use super::close::{CloseExposureEngine, CloseOutcome};
-use super::block::{BlockEngine, BlockOutcome};
-use super::consistency::RecommendationConsistencyValidator;
 
 #[test]
 fn test_frozen_portfolio_recommendations() {
@@ -88,7 +88,10 @@ fn test_consistency_validator_contradiction_frozen_increase() {
     );
 
     assert!(err.is_err());
-    assert_eq!(err.unwrap_err(), "Contradiction: Cannot increase exposure when trading is frozen.");
+    assert_eq!(
+        err.unwrap_err(),
+        "Contradiction: Cannot increase exposure when trading is frozen."
+    );
 }
 
 #[test]

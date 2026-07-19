@@ -39,7 +39,10 @@ impl ComparisonResult {
 pub struct PortfolioComparison;
 
 impl PortfolioComparison {
-    pub fn compare(expected_ts: &serde_json::Value, actual_rust: &serde_json::Value) -> ComparisonResult {
+    pub fn compare(
+        expected_ts: &serde_json::Value,
+        actual_rust: &serde_json::Value,
+    ) -> ComparisonResult {
         let mut differences = Vec::new();
         Self::compare_json(expected_ts, actual_rust, "", &mut differences);
 
@@ -76,11 +79,20 @@ impl PortfolioComparison {
         ComparisonResult::new(classification, differences)
     }
 
-    fn compare_json(expected: &serde_json::Value, actual: &serde_json::Value, path: &str, differences: &mut Vec<DifferenceDetail>) {
+    fn compare_json(
+        expected: &serde_json::Value,
+        actual: &serde_json::Value,
+        path: &str,
+        differences: &mut Vec<DifferenceDetail>,
+    ) {
         match (expected, actual) {
             (serde_json::Value::Object(exp_map), serde_json::Value::Object(act_map)) => {
                 for (key, exp_val) in exp_map {
-                    let current_path = if path.is_empty() { key.clone() } else { format!("{}.{}", path, key) };
+                    let current_path = if path.is_empty() {
+                        key.clone()
+                    } else {
+                        format!("{}.{}", path, key)
+                    };
                     if let Some(act_val) = act_map.get(key) {
                         Self::compare_json(exp_val, act_val, &current_path, differences);
                     } else {
@@ -94,7 +106,11 @@ impl PortfolioComparison {
                 }
                 for (key, act_val) in act_map {
                     if !exp_map.contains_key(key) {
-                        let current_path = if path.is_empty() { key.clone() } else { format!("{}.{}", path, key) };
+                        let current_path = if path.is_empty() {
+                            key.clone()
+                        } else {
+                            format!("{}.{}", path, key)
+                        };
                         differences.push(DifferenceDetail {
                             field: current_path,
                             expected: "null".to_string(),

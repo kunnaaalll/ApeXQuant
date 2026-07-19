@@ -244,7 +244,7 @@ pub fn get_nearest_fvgs(
         .min_by(|a, b| {
             let da = (a.bottom - current_price).abs();
             let db = (b.bottom - current_price).abs();
-            da.partial_cmp(&db).unwrap()
+            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
         });
 
     let bearish = fresh
@@ -252,7 +252,7 @@ pub fn get_nearest_fvgs(
         .min_by(|a, b| {
             let da = (a.top - current_price).abs();
             let db = (b.top - current_price).abs();
-            da.partial_cmp(&db).unwrap()
+            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
         });
 
     (bullish, bearish)

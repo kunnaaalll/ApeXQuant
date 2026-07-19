@@ -8,7 +8,10 @@ pub struct DecayModel {
 
 impl DecayModel {
     pub fn new(alpha: Decimal) -> Self {
-        assert!(alpha > dec!(0.0) && alpha <= dec!(1.0), "Alpha must be between 0 and 1 exclusive");
+        assert!(
+            alpha > dec!(0.0) && alpha <= dec!(1.0),
+            "Alpha must be between 0 and 1 exclusive"
+        );
         Self { alpha }
     }
 

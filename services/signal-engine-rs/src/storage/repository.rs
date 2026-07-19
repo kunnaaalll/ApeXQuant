@@ -94,7 +94,7 @@ impl ComparisonRepository {
     /// Get today's statistics
     pub fn get_today_statistics(&self) -> SqliteResult<AgreementMetrics> {
         let now = Utc::now();
-        let start_of_day = now.date_naive().and_hms_opt(0, 0, 0).unwrap();
+        let start_of_day = now.date_naive().and_hms_opt(0, 0, 0).unwrap_or_default();
         let start = DateTime::from_naive_utc_and_offset(start_of_day, chrono::Utc);
 
         self.get_statistics(start, now)
@@ -376,7 +376,7 @@ pub struct GoLiveCheck {
 // Extend Storage with purge method
 impl Storage {
     fn purge_before(&self, cutoff: DateTime<Utc>) -> SqliteResult<usize> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn.lock().unwrap_or_else(|e| e.into_inner());
         let count = conn.execute(
             "DELETE FROM signal_comparisons WHERE timestamp < ?1",
             [cutoff.to_rfc3339()],

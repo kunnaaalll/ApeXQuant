@@ -155,8 +155,12 @@ impl TimeSeriesDriftTracker {
             return 0.0;
         }
 
-        let first = self.points.front().unwrap();
-        let last = self.points.back().unwrap();
+        let Some(first) = self.points.front() else {
+            return 0.0;
+        };
+        let Some(last) = self.points.back() else {
+            return 0.0;
+        };
         let duration_hours = last
             .timestamp
             .signed_duration_since(first.timestamp)

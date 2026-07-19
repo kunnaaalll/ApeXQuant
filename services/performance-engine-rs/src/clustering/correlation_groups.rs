@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CorrelationGroups {
     // Maps pair of entities to their correlation coefficient (-1.0 to 1.0)
     pub correlations: HashMap<(String, String), Decimal>,

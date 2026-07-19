@@ -18,7 +18,11 @@ impl ShadowStatistics {
         Self::default()
     }
 
-    pub fn record_result(&mut self, state: super::comparison::ShadowComparisonState, max_difference: Decimal) {
+    pub fn record_result(
+        &mut self,
+        state: super::comparison::ShadowComparisonState,
+        max_difference: Decimal,
+    ) {
         self.total_evaluations += 1;
         match state {
             super::comparison::ShadowComparisonState::ExactMatch => self.exact_matches += 1,
@@ -40,7 +44,8 @@ impl ShadowStatistics {
         }
 
         let positive_matches = self.exact_matches + self.close_matches;
-        let percentage = (Decimal::from(positive_matches) / Decimal::from(self.total_evaluations)) * Decimal::new(100, 0);
+        let percentage = (Decimal::from(positive_matches) / Decimal::from(self.total_evaluations))
+            * Decimal::new(100, 0);
         percentage.round_dp(4)
     }
 

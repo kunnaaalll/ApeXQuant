@@ -3,31 +3,31 @@
 #![cfg_attr(not(test), deny(clippy::expect_used))]
 #![cfg_attr(not(test), deny(clippy::panic))]
 
-pub mod publisher;
-pub mod subscriber;
-pub mod router;
-pub mod dispatcher;
-pub mod serialization;
-pub mod protobuf;
-pub mod grpc;
-pub mod nats;
-pub mod redis;
-pub mod kafka;
 pub mod ack;
-pub mod retry;
-pub mod dead_letter;
-pub mod health;
-pub mod metrics;
-pub mod storage;
 pub mod config;
-pub mod security;
+pub mod dead_letter;
+pub mod dispatcher;
+pub mod grpc;
+pub mod health;
 pub mod interceptors;
+pub mod kafka;
+pub mod metrics;
+pub mod nats;
+pub mod protobuf;
+pub mod publisher;
+pub mod redis;
+pub mod retry;
+pub mod router;
+pub mod security;
+pub mod serialization;
+pub mod storage;
+pub mod subscriber;
 
 // Legacy/temp modules
 pub mod event;
-pub mod subscriptions;
-pub mod validation;
 pub mod replay;
-pub mod shadow;
 pub mod server;
+pub mod shadow;
+pub mod subscriptions;
 pub mod topics;
+pub mod validation;

@@ -1,7 +1,7 @@
-use sqlx::{PgPool, Row};
-use uuid::Uuid;
 use crate::storage::events::EventRecord;
 use crate::storage::snapshots::SnapshotRecord;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
 
 pub struct PostgresRiskStore {
     pool: PgPool,
@@ -20,7 +20,7 @@ impl PostgresRiskStore {
             r#"
             INSERT INTO risk_events (event_id, aggregate_id, sequence, timestamp, payload, version)
             VALUES ($1, $2, $3, $4, $5, $6)
-            "#
+            "#,
         )
         .bind(event.event_id)
         .bind(event.aggregate_id)
@@ -39,7 +39,7 @@ impl PostgresRiskStore {
             r#"
             INSERT INTO risk_snapshots (aggregate_id, version, timestamp, snapshot)
             VALUES ($1, $2, $3, $4)
-            "#
+            "#,
         )
         .bind(snapshot.aggregate_id)
         .bind(snapshot.version)
@@ -51,14 +51,18 @@ impl PostgresRiskStore {
         Ok(())
     }
 
-    pub async fn load_events(&self, aggregate_id: Uuid, since_sequence: i64) -> Result<Vec<EventRecord>, sqlx::Error> {
+    pub async fn load_events(
+        &self,
+        aggregate_id: Uuid,
+        since_sequence: i64,
+    ) -> Result<Vec<EventRecord>, sqlx::Error> {
         let records = sqlx::query(
             r#"
             SELECT event_id, aggregate_id, sequence, timestamp, payload, version
             FROM risk_events
             WHERE aggregate_id = $1 AND sequence > $2
             ORDER BY sequence ASC
-            "#
+            "#,
         )
         .bind(aggregate_id)
         .bind(since_sequence)
@@ -70,7 +74,7 @@ impl PostgresRiskStore {
             let payload_value: serde_json::Value = record.try_get("payload")?;
             let payload = serde_json::from_value(payload_value)
                 .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
-            
+
             events.push(EventRecord {
                 event_id: record.try_get("event_id")?,
                 aggregate_id: record.try_get("aggregate_id")?,
@@ -84,7 +88,10 @@ impl PostgresRiskStore {
         Ok(events)
     }
 
-    pub async fn load_snapshot(&self, aggregate_id: Uuid) -> Result<Option<SnapshotRecord>, sqlx::Error> {
+    pub async fn load_snapshot(
+        &self,
+        aggregate_id: Uuid,
+    ) -> Result<Option<SnapshotRecord>, sqlx::Error> {
         let record_opt = sqlx::query(
             r#"
             SELECT aggregate_id, version, timestamp, snapshot
@@ -92,7 +99,7 @@ impl PostgresRiskStore {
             WHERE aggregate_id = $1
             ORDER BY version DESC
             LIMIT 1
-            "#
+            "#,
         )
         .bind(aggregate_id)
         .fetch_optional(&self.pool)

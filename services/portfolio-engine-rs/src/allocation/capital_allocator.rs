@@ -1,16 +1,15 @@
 use rust_decimal::Decimal;
 
+use crate::exposure::global::GlobalExposure;
 use crate::heat::heat_score::{PortfolioHeat, PortfolioHeatState};
 use crate::heat::risk_budget::RiskBudget;
-use crate::exposure::global::GlobalExposure;
 
-use super::models::{
-    AdmissionFactor, AllocationState, CapitalAllocationDecision,
-    TradeAdmissionDecision,
-};
-use super::reserve_manager::ReserveManager;
-use super::recovery::AllocationRecoveryModel;
 use super::errors::AllocationError;
+use super::models::{
+    AdmissionFactor, AllocationState, CapitalAllocationDecision, TradeAdmissionDecision,
+};
+use super::recovery::AllocationRecoveryModel;
+use super::reserve_manager::ReserveManager;
 
 #[derive(Debug, Clone)]
 pub struct CapitalAllocator {
@@ -21,10 +20,7 @@ pub struct CapitalAllocator {
 }
 
 impl CapitalAllocator {
-    pub fn new(
-        reserve_manager: ReserveManager,
-        recovery_model: AllocationRecoveryModel,
-    ) -> Self {
+    pub fn new(reserve_manager: ReserveManager, recovery_model: AllocationRecoveryModel) -> Self {
         Self {
             reserve_manager,
             recovery_model,
@@ -44,7 +40,7 @@ impl CapitalAllocator {
         timestamp: i64,
     ) -> Result<CapitalAllocationDecision, AllocationError> {
         let mut factors = Vec::new();
-        
+
         // 1. Evaluate Heat
         let heat_factor = match heat.state {
             PortfolioHeatState::Frozen => {
@@ -90,7 +86,10 @@ impl CapitalAllocator {
         let total_available = risk_budget.total_risk_capacity; // Using risk capacity as capital proxy for now
         let mut reserve_decision = TradeAdmissionDecision::Approve;
 
-        if !self.reserve_manager.can_deploy(requested_capital, total_available) {
+        if !self
+            .reserve_manager
+            .can_deploy(requested_capital, total_available)
+        {
             if is_opportunity && requested_capital <= self.reserve_manager.opportunity_reserve {
                 factors.push(AdmissionFactor {
                     name: "Opportunity Reserve Used".into(),
@@ -111,11 +110,22 @@ impl CapitalAllocator {
         let mut final_decision = TradeAdmissionDecision::Approve;
         for decision in [&heat_factor, &risk_factor, &reserve_decision] {
             final_decision = match (final_decision, decision) {
-                (TradeAdmissionDecision::Freeze, _) | (_, TradeAdmissionDecision::Freeze) => TradeAdmissionDecision::Freeze,
-                (TradeAdmissionDecision::Reject, _) | (_, TradeAdmissionDecision::Reject) => TradeAdmissionDecision::Reject,
-                (TradeAdmissionDecision::Delay, _) | (_, TradeAdmissionDecision::Delay) => TradeAdmissionDecision::Delay,
-                (TradeAdmissionDecision::ApproveReduced, _) | (_, TradeAdmissionDecision::ApproveReduced) => TradeAdmissionDecision::ApproveReduced,
-                (TradeAdmissionDecision::Approve, TradeAdmissionDecision::Approve) => TradeAdmissionDecision::Approve,
+                (TradeAdmissionDecision::Freeze, _) | (_, TradeAdmissionDecision::Freeze) => {
+                    TradeAdmissionDecision::Freeze
+                }
+                (TradeAdmissionDecision::Reject, _) | (_, TradeAdmissionDecision::Reject) => {
+                    TradeAdmissionDecision::Reject
+                }
+                (TradeAdmissionDecision::Delay, _) | (_, TradeAdmissionDecision::Delay) => {
+                    TradeAdmissionDecision::Delay
+                }
+                (TradeAdmissionDecision::ApproveReduced, _)
+                | (_, TradeAdmissionDecision::ApproveReduced) => {
+                    TradeAdmissionDecision::ApproveReduced
+                }
+                (TradeAdmissionDecision::Approve, TradeAdmissionDecision::Approve) => {
+                    TradeAdmissionDecision::Approve
+                }
             };
         }
 
@@ -124,11 +134,22 @@ impl CapitalAllocator {
         if final_decision == TradeAdmissionDecision::ApproveReduced {
             // Apply a 50% reduction
             final_allocation_size *= Decimal::new(50, 2);
-        } else if matches!(final_decision, TradeAdmissionDecision::Reject | TradeAdmissionDecision::Freeze | TradeAdmissionDecision::Delay) {
+        } else if matches!(
+            final_decision,
+            TradeAdmissionDecision::Reject
+                | TradeAdmissionDecision::Freeze
+                | TradeAdmissionDecision::Delay
+        ) {
             final_allocation_size = Decimal::ZERO;
         }
 
-        let is_accepted = final_allocation_size > Decimal::ZERO && !matches!(final_decision, TradeAdmissionDecision::Reject | TradeAdmissionDecision::Freeze | TradeAdmissionDecision::Delay);
+        let is_accepted = final_allocation_size > Decimal::ZERO
+            && !matches!(
+                final_decision,
+                TradeAdmissionDecision::Reject
+                    | TradeAdmissionDecision::Freeze
+                    | TradeAdmissionDecision::Delay
+            );
 
         Ok(CapitalAllocationDecision {
             can_accept_trade: is_accepted,
@@ -137,7 +158,11 @@ impl CapitalAllocator {
             remaining_capacity: risk_budget.remaining_risk,
             reserved_capacity: self.reserve_manager.total_reserved(),
             emergency_capacity: self.reserve_manager.emergency_reserve,
-            reason: if is_accepted { "Trade admitted".into() } else { "Trade rejected by admission factors".into() },
+            reason: if is_accepted {
+                "Trade admitted".into()
+            } else {
+                "Trade rejected by admission factors".into()
+            },
             contributing_factors: factors,
             heat_contribution: heat.score,
             exposure_contribution: global_exposure.net_exposure,

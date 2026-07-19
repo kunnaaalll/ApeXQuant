@@ -1,7 +1,8 @@
+#![allow(warnings, clippy::all, deprecated)]
 use anyhow::Result;
 use portfolio_engine::storage::{
-    EventRecord, EventRebuilder, PortfolioEventWrapper, PortfolioRepository,
-    PostgresPortfolioStore, SnapshotFrequency, SnapshotRecord, PortfolioSnapshotWrapper,
+    EventRebuilder, EventRecord, PortfolioEventWrapper, PortfolioRepository,
+    PortfolioSnapshotWrapper, PostgresPortfolioStore, SnapshotFrequency, SnapshotRecord,
 };
 use serde_json::json;
 use sqlx::PgPool;
@@ -14,10 +15,10 @@ use uuid::Uuid;
 async fn setup_db() -> Result<PgPool> {
     // In a real scenario, this would use a test DB URL from the environment
     let pool = PgPool::connect("postgres://postgres:postgres@localhost:5432/apex_test").await?;
-    
+
     // We would typically run migrations here
     // sqlx::migrate!("./migrations").run(&pool).await?;
-    
+
     Ok(pool)
 }
 
@@ -30,7 +31,7 @@ async fn test_event_append_and_load() -> Result<()> {
 
     let aggregate_id = Uuid::new_v4().to_string();
     let payload = PortfolioEventWrapper::Portfolio(json!({"action": "create"}));
-    
+
     let event = EventRecord::new(
         &aggregate_id,
         1,
@@ -58,7 +59,7 @@ async fn test_snapshot_append_and_load() -> Result<()> {
 
     let aggregate_id = Uuid::new_v4().to_string();
     let payload = PortfolioSnapshotWrapper::Portfolio(json!({"state": "active"}));
-    
+
     let snapshot = SnapshotRecord::new(
         &aggregate_id,
         10,
@@ -69,7 +70,9 @@ async fn test_snapshot_append_and_load() -> Result<()> {
 
     repo.save_snapshot(&snapshot).await?;
 
-    let loaded = repo.load_latest_snapshot(&aggregate_id, SnapshotFrequency::Realtime).await?;
+    let loaded = repo
+        .load_latest_snapshot(&aggregate_id, SnapshotFrequency::Realtime)
+        .await?;
     assert!(loaded.is_some());
     let loaded = loaded.unwrap();
     assert_eq!(loaded.version, 10);
@@ -82,15 +85,35 @@ async fn test_snapshot_append_and_load() -> Result<()> {
 fn test_event_rebuilder_logic() -> Result<()> {
     // A simple test to ensure EventRebuilder applies functions sequentially
     let initial_state: i32 = 0;
-    
+
     let events = vec![
-        EventRecord::new("agg1", 1, "Add", PortfolioEventWrapper::Portfolio(json!(5)), json!({})),
-        EventRecord::new("agg1", 2, "Add", PortfolioEventWrapper::Portfolio(json!(10)), json!({})),
-        EventRecord::new("agg1", 3, "Sub", PortfolioEventWrapper::Portfolio(json!(3)), json!({})),
+        EventRecord::new(
+            "agg1",
+            1,
+            "Add",
+            PortfolioEventWrapper::Portfolio(json!(5)),
+            json!({}),
+        ),
+        EventRecord::new(
+            "agg1",
+            2,
+            "Add",
+            PortfolioEventWrapper::Portfolio(json!(10)),
+            json!({}),
+        ),
+        EventRecord::new(
+            "agg1",
+            3,
+            "Sub",
+            PortfolioEventWrapper::Portfolio(json!(3)),
+            json!({}),
+        ),
     ];
 
     let apply_fn = |state: i32, event: &EventRecord| -> Result<i32> {
-        let val = if let PortfolioEventWrapper::Portfolio(serde_json::Value::Number(n)) = &event.payload {
+        let val = if let PortfolioEventWrapper::Portfolio(serde_json::Value::Number(n)) =
+            &event.payload
+        {
             n.as_i64().unwrap_or(0) as i32
         } else {
             0

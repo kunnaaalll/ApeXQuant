@@ -1,4 +1,6 @@
-use super::{clusters::CorrelationCluster, hidden_leverage::HiddenLeverageState, CorrelationSeverity};
+use super::{
+    clusters::CorrelationCluster, hidden_leverage::HiddenLeverageState, CorrelationSeverity,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

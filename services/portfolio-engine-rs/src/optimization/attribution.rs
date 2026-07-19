@@ -30,9 +30,11 @@ impl AttributionEngine {
         benchmark_return: Decimal,
         total_benchmark_return: Decimal,
     ) -> PerformanceAttribution {
-        let allocation_effect = (portfolio_weight - benchmark_weight) * (benchmark_return - total_benchmark_return);
+        let allocation_effect =
+            (portfolio_weight - benchmark_weight) * (benchmark_return - total_benchmark_return);
         let selection_effect = benchmark_weight * (portfolio_return - benchmark_return);
-        let interaction_effect = (portfolio_weight - benchmark_weight) * (portfolio_return - benchmark_return);
+        let interaction_effect =
+            (portfolio_weight - benchmark_weight) * (portfolio_return - benchmark_return);
         let total_excess_return = allocation_effect + selection_effect + interaction_effect;
 
         PerformanceAttribution {

@@ -1,6 +1,6 @@
+use crate::integrations::execution::ExecutionOrder;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::integrations::execution::ExecutionOrder;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrchestrationCommand {
@@ -34,7 +34,7 @@ impl MultiAccountOrchestrator {
             if *multiplier > Decimal::ZERO {
                 let mut slave_order = master_order.clone();
                 slave_order.quantity = master_order.quantity * multiplier;
-                
+
                 commands.push(OrchestrationCommand {
                     account_id: account_id.clone(),
                     action: "EXECUTE_TRADE".to_string(),

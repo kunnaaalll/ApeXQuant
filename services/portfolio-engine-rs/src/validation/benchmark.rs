@@ -1,6 +1,5 @@
-use std::time::Duration;
 use rust_decimal::Decimal;
-
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct BenchmarkReport {
@@ -15,9 +14,9 @@ pub struct BenchmarkReport {
 
 impl BenchmarkReport {
     pub fn is_passing(&self) -> bool {
-        self.avg_latency < Duration::from_millis(5) &&
-        self.p99_latency < Duration::from_millis(20) &&
-        self.memory_leaks_detected == 0
+        self.avg_latency < Duration::from_millis(5)
+            && self.p99_latency < Duration::from_millis(20)
+            && self.memory_leaks_detected == 0
     }
 }
 
@@ -37,7 +36,7 @@ impl PortfolioBenchmark {
     pub fn run_benchmark(&self, _event_count: usize) -> BenchmarkReport {
         // In a real scenario, we would execute event_count events, tracking timing,
         // memory allocations, and throughput.
-        
+
         BenchmarkReport {
             avg_latency: Duration::from_millis(2),
             p50_latency: Duration::from_millis(2),

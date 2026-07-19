@@ -209,7 +209,11 @@ pub fn has_recent_choch(
         .into_iter()
         .filter(|c| candles.len().saturating_sub(c.break_index) <= lookback)
         .filter(|c| c.direction == direction)
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
+        .max_by(|a, b| {
+            a.strength
+                .partial_cmp(&b.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
 }
 
 /// Get CHoCH as trend bias indicator

@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use time::OffsetDateTime;
-use rust_decimal::Decimal;
-use sqlx::{PgPool, Row};
 use anyhow::Result;
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
+use sqlx::{PgPool, Row};
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MemoryType {
@@ -66,7 +66,7 @@ impl MemoryRepository {
             r#"
             INSERT INTO memories (id, memory_type, reference_id, score, context, recorded_at)
             VALUES ($1, $2, $3, $4, $5, $6)
-            "#
+            "#,
         )
         .bind(memory.id)
         .bind(memory.memory_type.to_string())
@@ -86,7 +86,7 @@ impl MemoryRepository {
             SELECT id, memory_type, reference_id, score, context, recorded_at
             FROM memories
             WHERE id = $1
-            "#
+            "#,
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -94,7 +94,9 @@ impl MemoryRepository {
 
         if let Some(r) = record {
             let memory_type_str: String = r.get("memory_type");
-            let m_type: MemoryType = memory_type_str.parse().map_err(|_| anyhow::anyhow!("Invalid memory type"))?;
+            let m_type: MemoryType = memory_type_str
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid memory type"))?;
             Ok(Some(InstitutionalMemory {
                 id: r.get("id"),
                 memory_type: m_type,

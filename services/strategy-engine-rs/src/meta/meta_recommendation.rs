@@ -1,7 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum MetaRecommendation {
     Retire,
     Pause,
@@ -11,7 +10,6 @@ pub enum MetaRecommendation {
     #[default]
     Continue,
 }
-
 
 impl fmt::Display for MetaRecommendation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

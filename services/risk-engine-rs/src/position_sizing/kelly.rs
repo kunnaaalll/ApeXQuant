@@ -23,7 +23,13 @@ impl KellySizer {
     }
 
     /// Calculate size: (equity * kelly_fraction) / stop_loss_distance
-    pub fn calculate_size(&self, equity: Decimal, stop_loss_distance: Decimal, win_probability: Decimal, win_loss_ratio: Decimal) -> Decimal {
+    pub fn calculate_size(
+        &self,
+        equity: Decimal,
+        stop_loss_distance: Decimal,
+        win_probability: Decimal,
+        win_loss_ratio: Decimal,
+    ) -> Decimal {
         if stop_loss_distance <= Decimal::ZERO {
             return Decimal::ZERO;
         }

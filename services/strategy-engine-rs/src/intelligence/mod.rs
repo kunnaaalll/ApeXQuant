@@ -32,7 +32,13 @@ pub struct EdgeIntelligence {
 }
 
 impl EdgeIntelligence {
-    pub fn new(expectancy: Decimal, win_rate: Decimal, rr: Decimal, stability: Decimal, drawdown: Decimal) -> Self {
+    pub fn new(
+        expectancy: Decimal,
+        win_rate: Decimal,
+        rr: Decimal,
+        stability: Decimal,
+        drawdown: Decimal,
+    ) -> Self {
         Self {
             expectancy,
             win_rate,
@@ -80,6 +86,10 @@ pub struct ExpectancyAssessment {
 
 impl ExpectancyAssessment {
     pub fn new(quality: Decimal, degradation: Decimal, acceleration: Decimal) -> Self {
-        Self { quality, degradation, acceleration }
+        Self {
+            quality,
+            degradation,
+            acceleration,
+        }
     }
 }

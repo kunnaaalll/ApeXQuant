@@ -24,6 +24,7 @@ pub struct PredictionExplanation {
 pub struct ExplainabilityEngine;
 
 impl ExplainabilityEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
@@ -38,7 +39,7 @@ impl ExplainabilityEngine {
     ) -> PredictionExplanation {
         // Deterministic generation of explanations
         let mut top_features = features.to_vec();
-        top_features.sort_by(|a, b| b.weight.cmp(&a.weight));
+        top_features.sort_by_key(|b| std::cmp::Reverse(b.weight));
         top_features.truncate(5); // Top 5 features
 
         let historical_similarity = if base_confidence > Decimal::new(70, 2) {
@@ -48,7 +49,10 @@ impl ExplainabilityEngine {
         };
 
         let risk_factors = if regime == "HighVolatility" || regime == "LiquidityCrisis" {
-            vec!["High slippage expected".to_string(), "Wider spreads".to_string()]
+            vec![
+                "High slippage expected".to_string(),
+                "Wider spreads".to_string(),
+            ]
         } else {
             vec!["Standard market risk".to_string()]
         };
@@ -65,7 +69,14 @@ impl ExplainabilityEngine {
             historical_similarity_score: historical_similarity,
             regime_match: regime.to_string(),
             risk_factors,
-            decision_summary: format!("Prediction driven by {} in {} regime.", top_features.first().map(|f| f.feature_name.as_str()).unwrap_or("unknown features"), regime),
+            decision_summary: format!(
+                "Prediction driven by {} in {} regime.",
+                top_features
+                    .first()
+                    .map(|f| f.feature_name.as_str())
+                    .unwrap_or("unknown features"),
+                regime
+            ),
             alternative_actions: vec!["Scale down position size by 50%".to_string()],
         }
     }

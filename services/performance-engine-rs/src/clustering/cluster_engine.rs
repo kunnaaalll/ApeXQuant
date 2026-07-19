@@ -24,20 +24,29 @@ impl ClusterEngine {
         }
     }
 
-    pub fn evaluate_cluster(&mut self, name: String, members: Vec<String>, expectancy: Decimal, stability: Decimal) {
+    pub fn evaluate_cluster(
+        &mut self,
+        name: String,
+        members: Vec<String>,
+        expectancy: Decimal,
+        stability: Decimal,
+    ) {
         if members.len() < self.min_members {
             return; // Not a valid cluster
         }
 
         let quality_score = expectancy * stability;
-        
-        self.clusters.insert(name.clone(), ClusterMetrics {
-            name,
-            quality_score,
-            stability,
-            expectancy,
-            members,
-        });
+
+        self.clusters.insert(
+            name.clone(),
+            ClusterMetrics {
+                name,
+                quality_score,
+                stability,
+                expectancy,
+                members,
+            },
+        );
     }
 
     pub fn get_cluster(&self, name: &str) -> Option<&ClusterMetrics> {

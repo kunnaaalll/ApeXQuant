@@ -40,7 +40,13 @@ pub struct ConfidencePenalty {
 }
 
 impl ConfidencePenalty {
-    pub fn calculate(drawdown: Decimal, variance: Decimal, instability: Decimal, edge_decay: Decimal, consecutive_losses: u32) -> Self {
+    pub fn calculate(
+        drawdown: Decimal,
+        variance: Decimal,
+        instability: Decimal,
+        edge_decay: Decimal,
+        consecutive_losses: u32,
+    ) -> Self {
         // Penalty = Drawdown + Variance + Instability + Edge Decay + Consecutive Losses Penalty
         let loss_penalty = Decimal::from(consecutive_losses) * Decimal::new(5, 1); // 0.5 per loss
         let total = drawdown + variance + instability + edge_decay + loss_penalty;

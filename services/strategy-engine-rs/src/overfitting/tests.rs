@@ -1,5 +1,5 @@
-use super::sample_bias::SampleBias;
 use super::overfit_detector::OverfitDetector;
+use super::sample_bias::SampleBias;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
@@ -18,7 +18,7 @@ fn test_sample_penalties() {
 #[test]
 fn test_oos_ratio() {
     let detector = OverfitDetector::new();
-    
+
     // Case 1: Healthy ratio
     let healthy_ratio = detector.check_overfit(dec!(1.5), dec!(1.2), 1);
     assert_eq!(healthy_ratio, dec!(1.5) / dec!(1.2) + dec!(0.15));

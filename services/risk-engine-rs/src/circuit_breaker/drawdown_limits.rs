@@ -20,7 +20,7 @@ pub struct DrawdownLimitAssessment {
 impl DrawdownLimitAssessment {
     pub fn new(current_drawdown: Decimal, max_drawdown_limit: Decimal) -> Self {
         let mut remaining = max_drawdown_limit - current_drawdown;
-        
+
         // Guarantee: remaining_drawdown_capacity >= 0
         if remaining.is_sign_negative() {
             remaining = Decimal::ZERO;
@@ -38,12 +38,12 @@ impl DrawdownLimitAssessment {
 
     pub fn update_drawdown(&mut self, current_drawdown: Decimal) {
         self.current_drawdown = current_drawdown;
-        
+
         let mut remaining = self.max_drawdown_limit - self.current_drawdown;
         if remaining.is_sign_negative() {
             remaining = Decimal::ZERO;
         }
-        
+
         self.remaining_drawdown_capacity = remaining;
         self.update_state();
     }

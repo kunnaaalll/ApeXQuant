@@ -1,8 +1,8 @@
 //! Daily / Weekly / Monthly Statistics — time-bucketed aggregations.
 
+use crate::trades::CompletedTrade;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
-use crate::trades::CompletedTrade;
 
 /// Rolling statistics for a single time bucket (day/week/month).
 #[derive(Debug, Clone, Default)]
@@ -18,7 +18,9 @@ pub struct TimeBucketStats {
 
 impl TimeBucketStats {
     pub fn win_rate(&self) -> Decimal {
-        if self.total_trades == 0 { return Decimal::ZERO; }
+        if self.total_trades == 0 {
+            return Decimal::ZERO;
+        }
         Decimal::from(self.winning_trades) / Decimal::from(self.total_trades)
     }
 
@@ -66,7 +68,6 @@ pub fn bucket_trades(
 fn bucket_key(exit_ms: i64, resolution: BucketResolution) -> String {
     let secs = exit_ms / 1000;
     let days_since_epoch = secs / 86400;
-    let total_secs = secs;
 
     // Simple calendar computation (no chrono dependency here)
     let year = days_to_year(days_since_epoch);
@@ -91,8 +92,12 @@ fn bucket_key(exit_ms: i64, resolution: BucketResolution) -> String {
 fn days_to_year(days: i64) -> i64 {
     // Approx: 400-year cycle = 146097 days
     let mut y = 1970 + (days / 365);
-    while year_start_day(y + 1) <= days { y += 1; }
-    while year_start_day(y) > days { y -= 1; }
+    while year_start_day(y + 1) <= days {
+        y += 1;
+    }
+    while year_start_day(y) > days {
+        y -= 1;
+    }
     y
 }
 
@@ -141,7 +146,7 @@ mod tests {
             swap: Decimal::ZERO,
             gross_pnl: Decimal::new(pnl, 0),
             net_pnl: Decimal::new(pnl, 0),
-            entry_time_ms: exit_ms - 3600_000,
+            entry_time_ms: exit_ms - 3_600_000,
             exit_time_ms: exit_ms,
             mae: Decimal::ZERO,
             mfe: Decimal::ZERO,
@@ -153,8 +158,8 @@ mod tests {
     fn test_daily_bucketing() {
         // Same epoch-day: 1970-01-01 (ms 0) and 1970-01-01 (ms 3600)
         let trades = vec![
-            trade_at(3_600_000, 100),  // Jan 1 1970
-            trade_at(3_600_000, -50),  // Jan 1 1970
+            trade_at(3_600_000, 100), // Jan 1 1970
+            trade_at(3_600_000, -50), // Jan 1 1970
         ];
         let buckets = bucket_trades(&trades, BucketResolution::Daily);
         assert_eq!(buckets.len(), 1, "same day → same bucket");

@@ -13,12 +13,10 @@ pub enum RiskFactor {
     Yield,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct FactorExposures {
     pub exposures: HashMap<RiskFactor, Decimal>,
 }
-
 
 pub struct FactorEngine;
 
@@ -43,7 +41,9 @@ impl FactorEngine {
         for (symbol, weight) in asset_weights {
             if let Some(loadings) = asset_factor_loadings.get(symbol) {
                 for (factor, loading) in loadings {
-                    let current = portfolio_exposures.entry(factor.clone()).or_insert(Decimal::ZERO);
+                    let current = portfolio_exposures
+                        .entry(factor.clone())
+                        .or_insert(Decimal::ZERO);
                     *current += weight * loading;
                 }
             }

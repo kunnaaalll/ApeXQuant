@@ -1,12 +1,12 @@
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
+use tracing::{error, info, warn};
 use uuid::Uuid;
-use tracing::{info, warn, error};
 
-use crate::positions::{PositionTracker, PositionState, PositionRegistry};
+use crate::positions::{PositionRegistry, PositionState, PositionTracker};
 use crate::storage::PostgresStore;
 
 #[derive(serde::Deserialize, Debug)]
@@ -65,7 +65,10 @@ impl PositionManager {
         let url = format!("{}/positions", self.mt5_bridge_url);
         let res = self.client.get(&url).send().await?;
         if !res.status().is_success() {
-            warn!("Failed to fetch positions from bridge: status={}", res.status());
+            warn!(
+                "Failed to fetch positions from bridge: status={}",
+                res.status()
+            );
             return Ok(());
         }
 
@@ -86,12 +89,19 @@ impl PositionManager {
             } else {
                 // Check if it exists in Postgres
                 if let Ok(Some(db_pos)) = self.store.get_position(position_id).await {
-                    info!("Loaded active position {} (ticket {}) from DB", position_id, pos.ticket);
+                    info!(
+                        "Loaded active position {} (ticket {}) from DB",
+                        position_id, pos.ticket
+                    );
                     self.registry.insert(db_pos.clone());
                     db_pos
                 } else {
                     // Create new position tracker
-                    let side_str = if pos.side.to_lowercase().contains("buy") { "buy" } else { "sell" };
+                    let side_str = if pos.side.to_lowercase().contains("buy") {
+                        "buy"
+                    } else {
+                        "sell"
+                    };
                     let mut new_tracker = PositionTracker::new(
                         position_id,
                         pos.symbol.clone(),
@@ -100,10 +110,21 @@ impl PositionManager {
                         Decimal::from_f64(pos.entry_price).unwrap_or(Decimal::ZERO),
                     );
                     new_tracker.state = PositionState::Active;
-                    new_tracker.current_stop_loss = if pos.sl > 0.0 { Decimal::from_f64(pos.sl) } else { None };
-                    new_tracker.initial_take_profit = if pos.tp > 0.0 { Decimal::from_f64(pos.tp) } else { None };
-                    
-                    info!("Registered new position {} for symbol {} (ticket {})", position_id, pos.symbol, pos.ticket);
+                    new_tracker.current_stop_loss = if pos.sl > 0.0 {
+                        Decimal::from_f64(pos.sl)
+                    } else {
+                        None
+                    };
+                    new_tracker.initial_take_profit = if pos.tp > 0.0 {
+                        Decimal::from_f64(pos.tp)
+                    } else {
+                        None
+                    };
+
+                    info!(
+                        "Registered new position {} for symbol {} (ticket {})",
+                        position_id, pos.symbol, pos.ticket
+                    );
                     self.registry.insert(new_tracker.clone());
                     if let Err(e) = self.store.save_position(&new_tracker).await {
                         error!("Failed to save new position to DB: {:?}", e);
@@ -122,11 +143,21 @@ impl PositionManager {
             // Set current prices
             let entry = tracker.initial_entry_price;
             let size = tracker.current_size;
-            
+
             // EURUSD standard forex lot size is 100,000. JPY is 1,000. BTC is 1.
-            let mult = if pos.symbol.contains("JPY") { dec!(1000.0) } else if pos.symbol.contains("BTC") { dec!(1.0) } else { dec!(100000.0) };
-            let pnl_pips = if size.is_zero() { Decimal::ZERO } else { float_pnl / (size * mult) };
-            
+            let mult = if pos.symbol.contains("JPY") {
+                dec!(1000.0)
+            } else if pos.symbol.contains("BTC") {
+                dec!(1.0)
+            } else {
+                dec!(100000.0)
+            };
+            let pnl_pips = if size.is_zero() {
+                Decimal::ZERO
+            } else {
+                float_pnl / (size * mult)
+            };
+
             let current_price = if pos.side.to_lowercase() == "buy" {
                 entry + pnl_pips
             } else {
@@ -157,10 +188,14 @@ impl PositionManager {
                 };
 
                 if let Some(new_sl) = should_modify {
-                    info!("Trailing SL triggered for ticket {}: old_sl={}, new_sl={}", pos.ticket, sl_val, new_sl);
-                    
+                    info!(
+                        "Trailing SL triggered for ticket {}: old_sl={}, new_sl={}",
+                        pos.ticket, sl_val, new_sl
+                    );
+
                     // Call the stop modify endpoint
-                    let stops_url = format!("{}/positions/{}/stops", self.mt5_bridge_url, pos.ticket);
+                    let stops_url =
+                        format!("{}/positions/{}/stops", self.mt5_bridge_url, pos.ticket);
                     let stops_req = StopsModifyRequest {
                         stop_loss: new_sl.to_f64().unwrap_or(0.0),
                         take_profit: tracker.initial_take_profit.and_then(|tp| tp.to_f64()),
@@ -169,11 +204,17 @@ impl PositionManager {
                     match self.client.post(&stops_url).json(&stops_req).send().await {
                         Ok(stops_res) => {
                             if stops_res.status().is_success() {
-                                info!("Stops successfully modified on MT5 for ticket {}", pos.ticket);
+                                info!(
+                                    "Stops successfully modified on MT5 for ticket {}",
+                                    pos.ticket
+                                );
                                 tracker.current_stop_loss = Some(new_sl);
                                 tracker.last_updated_at = SystemTime::now();
                             } else {
-                                warn!("Broker stops modification rejected: status={}", stops_res.status());
+                                warn!(
+                                    "Broker stops modification rejected: status={}",
+                                    stops_res.status()
+                                );
                             }
                         }
                         Err(e) => {
@@ -188,8 +229,11 @@ impl PositionManager {
                 } else {
                     current_price + trailing_pips
                 };
-                
-                info!("Initializing trailing SL for ticket {} at {}", pos.ticket, initial_sl);
+
+                info!(
+                    "Initializing trailing SL for ticket {} at {}",
+                    pos.ticket, initial_sl
+                );
                 let stops_url = format!("{}/positions/{}/stops", self.mt5_bridge_url, pos.ticket);
                 let stops_req = StopsModifyRequest {
                     stop_loss: initial_sl.to_f64().unwrap_or(0.0),
@@ -236,7 +280,10 @@ impl PositionManager {
                     error!("Failed to save closed position state to DB: {:?}", e);
                 }
                 self.registry.remove(&pid);
-                info!("Position {} removed from cache and marked CLOSED in DB", pid);
+                info!(
+                    "Position {} removed from cache and marked CLOSED in DB",
+                    pid
+                );
             }
         }
 

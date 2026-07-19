@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -35,8 +35,8 @@ pub struct FeatureVector {
     pub momentum: Option<Decimal>,
     pub ema_distance: Option<Decimal>,
     pub correlation: Option<Decimal>,
-    pub regime: Option<Decimal>, 
-    pub session: Option<Decimal>, 
+    pub regime: Option<Decimal>,
+    pub session: Option<Decimal>,
     pub market_quality: Option<Decimal>,
     pub trend_strength: Option<Decimal>,
     pub breakout_state: Option<Decimal>,

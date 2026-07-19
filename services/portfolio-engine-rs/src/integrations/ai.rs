@@ -1,5 +1,5 @@
-use tonic::transport::Channel;
 use apex_protos::learning::learning_engine_client::LearningEngineClient;
+use tonic::transport::Channel;
 
 pub struct AiClient {
     pub client: Option<LearningEngineClient<Channel>>,
@@ -10,7 +10,9 @@ impl AiClient {
         let client = LearningEngineClient::connect(url)
             .await
             .map_err(|e| format!("Failed to connect to AI/Learning engine: {}", e))?;
-        Ok(Self { client: Some(client) })
+        Ok(Self {
+            client: Some(client),
+        })
     }
 
     pub fn new() -> Self {

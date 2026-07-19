@@ -18,7 +18,12 @@ pub struct SymbolOptimizer {
 }
 
 impl SymbolOptimizer {
-    pub fn new(min_elite: Decimal, min_strong: Decimal, min_avg: Decimal, max_forbidden_dd: Decimal) -> Self {
+    pub fn new(
+        min_elite: Decimal,
+        min_strong: Decimal,
+        min_avg: Decimal,
+        max_forbidden_dd: Decimal,
+    ) -> Self {
         Self {
             min_elite_expectancy: min_elite,
             min_strong_expectancy: min_strong,
@@ -27,7 +32,12 @@ impl SymbolOptimizer {
         }
     }
 
-    pub fn evaluate(&self, expectancy: Decimal, drawdown: Decimal, confidence: Decimal) -> SymbolState {
+    pub fn evaluate(
+        &self,
+        expectancy: Decimal,
+        drawdown: Decimal,
+        confidence: Decimal,
+    ) -> SymbolState {
         if drawdown >= self.max_forbidden_drawdown {
             return SymbolState::Forbidden;
         }

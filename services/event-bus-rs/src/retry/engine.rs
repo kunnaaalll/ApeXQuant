@@ -1,5 +1,5 @@
-use anyhow::{Result, Context};
-use backoff::{ExponentialBackoff, Error as BackoffError, future::retry};
+use anyhow::{Context, Result};
+use backoff::{future::retry, Error as BackoffError, ExponentialBackoff};
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -14,7 +14,7 @@ impl RetryEngine {
         }
     }
 
-    pub async fn execute_with_retry<F, Fut, T>(&self, mut operation: F) -> Result<T>
+    pub async fn execute_with_retry<F, Fut, T>(&self, operation: F) -> Result<T>
     where
         F: FnMut() -> Fut,
         Fut: std::future::Future<Output = Result<T, BackoffError<anyhow::Error>>>,
@@ -24,7 +24,7 @@ impl RetryEngine {
             ..Default::default()
         };
 
-        retry(backoff, || operation())
+        retry(backoff, operation)
             .await
             .context("Operation failed after maximum retries")
     }

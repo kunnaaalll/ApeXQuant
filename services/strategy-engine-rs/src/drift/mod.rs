@@ -36,12 +36,14 @@ impl Default for DriftEngine {
 
 impl DriftEngine {
     pub fn state(&self) -> DriftState {
-        let min_drift = self.edge_drift
+        let min_drift = self
+            .edge_drift
             .min(self.expectancy_drift)
             .min(self.confidence_drift)
             .min(self.stability_drift);
 
-        let max_drift = self.edge_drift
+        let max_drift = self
+            .edge_drift
             .max(self.expectancy_drift)
             .max(self.confidence_drift)
             .max(self.stability_drift);

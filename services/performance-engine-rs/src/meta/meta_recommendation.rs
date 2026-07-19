@@ -11,23 +11,23 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MetaAction {
-    Continue,         // Strategy is performing — maintain current allocation.
+    Continue,           // Strategy is performing — maintain current allocation.
     IncreaseAllocation, // Strategy is outperforming — increase exposure.
-    Reduce,           // Strategy is weakening — reduce exposure.
-    Pause,            // Strategy needs observation — halt new entries.
-    Retire,           // Strategy has lost edge — permanently decommission.
-    Research,         // Strategy requires investigation before any action.
+    Reduce,             // Strategy is weakening — reduce exposure.
+    Pause,              // Strategy needs observation — halt new entries.
+    Retire,             // Strategy has lost edge — permanently decommission.
+    Research,           // Strategy requires investigation before any action.
 }
 
 impl std::fmt::Display for MetaAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MetaAction::Continue          => write!(f, "Continue"),
+            MetaAction::Continue => write!(f, "Continue"),
             MetaAction::IncreaseAllocation => write!(f, "IncreaseAllocation"),
-            MetaAction::Reduce            => write!(f, "Reduce"),
-            MetaAction::Pause             => write!(f, "Pause"),
-            MetaAction::Retire            => write!(f, "Retire"),
-            MetaAction::Research          => write!(f, "Research"),
+            MetaAction::Reduce => write!(f, "Reduce"),
+            MetaAction::Pause => write!(f, "Pause"),
+            MetaAction::Retire => write!(f, "Retire"),
+            MetaAction::Research => write!(f, "Research"),
         }
     }
 }
@@ -37,17 +37,17 @@ impl std::fmt::Display for MetaAction {
 pub struct MetaRecommendation {
     pub action: MetaAction,
     pub reason: String,
-    pub largest_contributor: String,   // the single metric most responsible for this decision
-    pub largest_weakness: String,      // the single metric most at risk
-    pub confidence: Decimal,           // [0, 1]
-    pub historical_evidence: u32,      // number of trades backing this recommendation
+    pub largest_contributor: String, // the single metric most responsible for this decision
+    pub largest_weakness: String,    // the single metric most at risk
+    pub confidence: Decimal,         // [0, 1]
+    pub historical_evidence: u32,    // number of trades backing this recommendation
 }
 
 /// Inputs required for the engine — all derived from previously computed analytics.
 #[derive(Debug, Clone)]
 pub struct MetaRecommendationInput {
     pub strategy_name: String,
-    pub health_score: u8,                   // 0–100 from StrategyHealth
+    pub health_score: u8, // 0–100 from StrategyHealth
     pub expectancy: Decimal,
     pub profit_factor: Decimal,
     pub win_rate: Decimal,
@@ -135,7 +135,7 @@ impl MetaRecommendationEngine {
         // ── Gate 4: Research — insufficient sample or ambiguous signal ────────
         if input.trade_count < 50
             || input.confidence < dec!(0.40)
-            || input.oos_ratio.map_or(false, |r| r < dec!(0.70))
+            || input.oos_ratio.is_some_and(|r| r < dec!(0.70))
         {
             return MetaRecommendation {
                 action: MetaAction::Research,

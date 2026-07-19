@@ -40,7 +40,7 @@ impl StrategyDegradationEngine {
         }
 
         let first = &windows[0];
-        let last = windows.last().unwrap();
+        let last = windows.last()?;
 
         let expectancy_decline = first.expectancy - last.expectancy;
         let profit_factor_decline = first.profit_factor - last.profit_factor;

@@ -114,8 +114,8 @@ impl ReplayEngine {
         // Calculate latency statistics
         let latencies_ms: Vec<f64> = latencies.iter().map(|d| d.as_secs_f64() * 1000.0).collect();
         let avg_latency = latencies_ms.iter().sum::<f64>() / latencies_ms.len() as f64;
-        let max_latency = *latencies_ms.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.0);
-        let min_latency = *latencies_ms.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(&0.0);
+        let max_latency = *latencies_ms.iter().max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)).unwrap_or(&0.0);
+        let min_latency = *latencies_ms.iter().min_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)).unwrap_or(&0.0);
 
         Ok(DeterminismResult {
             scenario_id: scenario.scenario_id.clone(),

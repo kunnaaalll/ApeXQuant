@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use time::OffsetDateTime;
-use sqlx::PgPool;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
@@ -40,7 +40,7 @@ impl StorageEngine {
             r#"
             INSERT INTO ai_events (event_id, aggregate_id, event_type, payload, recorded_at)
             VALUES ($1, $2, $3, $4, $5)
-            "#
+            "#,
         )
         .bind(record.event_id)
         .bind(record.aggregate_id)

@@ -3,8 +3,8 @@
 #[cfg(test)]
 mod tests {
     use crate::correlation::*;
-    use rust_decimal::Decimal;
     use proptest::prelude::*;
+    use rust_decimal::Decimal;
 
     proptest! {
         #[test]
@@ -13,10 +13,10 @@ mod tests {
         ) {
             let mut matrix = CorrelationMatrix::new();
             let raw_decimal = Decimal::new(corr as i64, 2); // Ranges roughly -2.00 to 2.00
-            
+
             matrix.set_correlation("Symbol", "AAPL", "MSFT", raw_decimal);
             let retrieved = matrix.get_correlation("Symbol", "AAPL", "MSFT");
-            
+
             // Should be bounded [-1, 1]
             let pos_one = Decimal::new(1, 0);
             let neg_one = Decimal::new(-1, 0);
@@ -32,12 +32,12 @@ mod tests {
         ) {
             let mut matrix = CorrelationMatrix::new();
             let decimal_corr = Decimal::new(corr as i64, 2);
-            
+
             matrix.set_correlation("Theme", &entity_a, &entity_b, decimal_corr);
-            
+
             let a_to_b = matrix.get_correlation("Theme", &entity_a, &entity_b);
             let b_to_a = matrix.get_correlation("Theme", &entity_b, &entity_a);
-            
+
             assert_eq!(a_to_b, b_to_a);
         }
     }
@@ -45,7 +45,10 @@ mod tests {
     #[test]
     fn test_diagonal_equals_one() {
         let matrix = CorrelationMatrix::new();
-        assert_eq!(matrix.get_correlation("Sector", "Tech", "Tech"), Decimal::new(1, 0));
+        assert_eq!(
+            matrix.get_correlation("Sector", "Tech", "Tech"),
+            Decimal::new(1, 0)
+        );
     }
 
     #[test]
@@ -80,12 +83,12 @@ mod tests {
     fn test_100k_deterministic_iterations() {
         let mut matrix = CorrelationMatrix::new();
         let base_corr = Decimal::new(5, 1); // 0.5
-        
+
         for i in 0..100_000 {
             let a = format!("SYM_{}", i % 100);
             let b = format!("SYM_{}", (i + 1) % 100);
             let factor = Decimal::new((i % 10) as i64, 1);
-            let corr = (base_corr * factor).min(Decimal::new(1,0));
+            let corr = (base_corr * factor).min(Decimal::new(1, 0));
             matrix.set_correlation("Symbol", &a, &b, corr);
         }
 
@@ -93,15 +96,19 @@ mod tests {
         let test_val = matrix.get_correlation("Symbol", "SYM_10", "SYM_11");
         assert_eq!(test_val, Decimal::new(0, 0));
         // Let's just check bounds and deterministic completion without panics
-        assert!(test_val >= Decimal::new(-1,0));
-        assert!(test_val <= Decimal::new(1,0));
+        assert!(test_val >= Decimal::new(-1, 0));
+        assert!(test_val <= Decimal::new(1, 0));
     }
 
     #[test]
     fn test_snapshot_replay() {
         let matrix = CorrelationMatrix::new();
         let hla = HiddenLeverageAssessment::new(
-            Decimal::new(0,0), Decimal::new(0,0), Decimal::new(0,0), Decimal::new(0,0), Decimal::new(0,0)
+            Decimal::new(0, 0),
+            Decimal::new(0, 0),
+            Decimal::new(0, 0),
+            Decimal::new(0, 0),
+            Decimal::new(0, 0),
         );
         let cluster = CorrelationCluster::new(
             CorrelationCategory::RiskOffBonds,
@@ -109,11 +116,13 @@ mod tests {
             Decimal::new(10, 0),
             Decimal::new(50, 0),
         );
-        
+
         let snapshot = CorrelationRiskSnapshot::new(
             1,
             1670000000,
-            CorrelationRiskEvent::ClusterDetected { cluster: cluster.clone() },
+            CorrelationRiskEvent::ClusterDetected {
+                cluster: cluster.clone(),
+            },
             matrix.clone(),
             hla.state,
             vec![cluster],

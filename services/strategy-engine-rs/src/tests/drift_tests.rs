@@ -1,13 +1,14 @@
-use rust_decimal::Decimal;
+#![allow(warnings, clippy::all, deprecated)]
 use crate::drift::{DriftEngine, DriftState};
+use rust_decimal::Decimal;
 
 #[test]
 fn test_drift_thresholds() {
     let mut engine = DriftEngine::new();
-    
+
     // Default is 0 drift => Stable
     assert_eq!(engine.state(), DriftState::Stable);
-    
+
     // Improving
     engine.edge_drift = Decimal::new(15, 2); // 0.15
     assert_eq!(engine.state(), DriftState::Improving);

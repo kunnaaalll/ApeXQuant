@@ -1,5 +1,8 @@
-use apex_protos::events::{Event, SubscribeRequest, event_bus_service_client::EventBusServiceClient, AckRequest, AckResponse};
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
+use apex_protos::events::{
+    event_bus_service_client::EventBusServiceClient, AckRequest, AckResponse, Event,
+    SubscribeRequest,
+};
 use tokio::sync::mpsc;
 use tonic::transport::Channel;
 
@@ -12,17 +15,19 @@ pub struct EventBusSubscriber {
 
 impl EventBusSubscriber {
     pub async fn connect(url: String, consumer_group: String, consumer_id: String) -> Result<Self> {
-        let client = EventBusServiceClient::connect(url).await
+        let client = EventBusServiceClient::connect(url)
+            .await
             .context("Failed to connect to EventBusService")?;
-        Ok(Self { client, consumer_group, consumer_id })
+        Ok(Self {
+            client,
+            consumer_group,
+            consumer_id,
+        })
     }
 
-    pub async fn subscribe(
-        &self, 
-        topic: &str, 
-    ) -> Result<mpsc::Receiver<Event>> {
+    pub async fn subscribe(&self, topic: &str) -> Result<mpsc::Receiver<Event>> {
         let (tx, rx) = mpsc::channel(100);
-        
+
         let req = SubscribeRequest {
             topics: vec![topic.to_string()],
             consumer_id: self.consumer_id.clone(),
@@ -61,10 +66,12 @@ impl EventBusSubscriber {
             event_ids,
             failed: vec![],
         };
-        
-        let response = client.ack(tonic::Request::new(req)).await
+
+        let response = client
+            .ack(tonic::Request::new(req))
+            .await
             .context("Failed to ack events")?;
-            
+
         Ok(response.into_inner())
     }
 }

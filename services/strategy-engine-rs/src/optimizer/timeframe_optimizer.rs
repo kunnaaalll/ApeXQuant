@@ -23,13 +23,7 @@ impl TimeframeOptimizer {
         drawdown: Decimal,
         sample_quality: Decimal,
     ) {
-        self.score = calculate_score(
-            expectancy,
-            confidence,
-            stability,
-            drawdown,
-            sample_quality,
-        );
+        self.score = calculate_score(expectancy, confidence, stability, drawdown, sample_quality);
         self.grade = grade_from_score(self.score);
     }
 

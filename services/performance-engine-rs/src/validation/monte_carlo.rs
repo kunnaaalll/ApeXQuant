@@ -1,25 +1,23 @@
+use rand::prelude::*;
+use rand::rngs::StdRng;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
-use rand::prelude::*;
-use rand::rngs::StdRng;
-use std::collections::BTreeMap;
 
-use crate::storage::ClosedTradeRecord;
 use crate::drawdown::DrawdownCalculator;
-use crate::analytics::engine::AnalyticsEngine;
+use crate::storage::ClosedTradeRecord;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonteCarloResult {
     pub total_trials: u64,
     pub original_expectancy: Decimal,
-    pub survival_rate: Decimal,           // Probability of avoiding ruin
-    pub collapse_probability: Decimal,    // Probability of hitting risk of ruin
-    pub max_drawdown_95: Decimal,         // 95th percentile worst max drawdown
-    pub median_drawdown: Decimal,         // Median max drawdown
-    pub terminal_equity_95: Decimal,      // 95th percentile best terminal equity
-    pub terminal_equity_05: Decimal,      // 5th percentile worst terminal equity
-    pub median_confidence: Decimal,       // Derived confidence from simulation stability
+    pub survival_rate: Decimal,        // Probability of avoiding ruin
+    pub collapse_probability: Decimal, // Probability of hitting risk of ruin
+    pub max_drawdown_95: Decimal,      // 95th percentile worst max drawdown
+    pub median_drawdown: Decimal,      // Median max drawdown
+    pub terminal_equity_95: Decimal,   // 95th percentile best terminal equity
+    pub terminal_equity_05: Decimal,   // 5th percentile worst terminal equity
+    pub median_confidence: Decimal,    // Derived confidence from simulation stability
 }
 
 pub struct PerformanceMonteCarlo {
@@ -55,9 +53,9 @@ impl PerformanceMonteCarlo {
 
         let r_outcomes: Vec<Decimal> = historical_trades.iter().map(|t| t.r_outcome).collect();
         let trade_count = r_outcomes.len();
-        
+
         let mut rng = StdRng::seed_from_u64(self.seed);
-        
+
         let mut ruin_count = 0u64;
         let mut max_drawdowns = Vec::with_capacity(trials as usize);
         let mut terminal_equities = Vec::with_capacity(trials as usize);
@@ -66,28 +64,28 @@ impl PerformanceMonteCarlo {
             let mut current_equity = Decimal::ZERO;
             let mut equity_curve = Vec::with_capacity(trade_count + 1);
             equity_curve.push(Decimal::ZERO);
-            
+
             let mut ruined = false;
 
             for _ in 0..trade_count {
                 // Uniform sampling with replacement (bootstrap)
                 let idx = rng.gen_range(0..trade_count);
                 let r = r_outcomes[idx];
-                
+
                 current_equity += r;
                 equity_curve.push(current_equity);
-                
+
                 if current_equity <= -ruin_threshold_r {
                     ruined = true;
                     // We don't break early; we want to capture the full path for stats,
                     // but we do count it as a ruin event.
                 }
             }
-            
+
             if ruined {
                 ruin_count += 1;
             }
-            
+
             let trial_max_dd = DrawdownCalculator::calculate_max_drawdown(&equity_curve);
             max_drawdowns.push(trial_max_dd);
             terminal_equities.push(current_equity);
@@ -115,21 +113,37 @@ impl PerformanceMonteCarlo {
         } else {
             (dec!(0.50) - median_drawdown) / dec!(0.30)
         };
-        
+
         let median_confidence = (confidence_survival * dec!(0.7) + confidence_dd * dec!(0.3))
             .clamp(Decimal::ZERO, dec!(1.0));
 
         // Original Expectancy via AnalyticsEngine helpers
         let original_expectancy = {
             let win_count = historical_trades.iter().filter(|t| t.is_win).count() as u32;
-            let loss_count = historical_trades.iter().filter(|t| !t.is_win && t.pnl_usd < Decimal::ZERO).count() as u32;
+            let loss_count = historical_trades
+                .iter()
+                .filter(|t| !t.is_win && t.pnl_usd < Decimal::ZERO)
+                .count() as u32;
             let breakeven = trade_count as u32 - win_count - loss_count;
-            let gross_profit: Decimal = historical_trades.iter().filter(|t| t.is_win).map(|t| t.pnl_usd).sum();
-            let gross_loss: Decimal = historical_trades.iter().filter(|t| !t.is_win && t.pnl_usd < Decimal::ZERO).map(|t| t.pnl_usd.abs()).sum();
-            
+            let gross_profit: Decimal = historical_trades
+                .iter()
+                .filter(|t| t.is_win)
+                .map(|t| t.pnl_usd)
+                .sum();
+            let gross_loss: Decimal = historical_trades
+                .iter()
+                .filter(|t| !t.is_win && t.pnl_usd < Decimal::ZERO)
+                .map(|t| t.pnl_usd.abs())
+                .sum();
+
             crate::expectancy::calculator::ExpectancyCalculator::calculate(
-                win_count, loss_count, breakeven, gross_profit, gross_loss
-            ).expectancy
+                win_count,
+                loss_count,
+                breakeven,
+                gross_profit,
+                gross_loss,
+            )
+            .expectancy
         };
 
         MonteCarloResult {

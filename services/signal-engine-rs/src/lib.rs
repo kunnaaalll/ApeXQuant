@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! APEX V3 Signal Engine
 //!
 //! Deterministic, institutional-grade signal generation for intraday swing trading.

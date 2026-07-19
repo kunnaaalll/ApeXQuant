@@ -1,10 +1,10 @@
 use rust_decimal::Decimal;
 
-pub mod penalty;
 pub mod context;
+pub mod penalty;
 
-pub use penalty::*;
 pub use context::*;
+pub use penalty::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ConfidenceTier {
@@ -30,13 +30,18 @@ impl ConfidenceScore {
         self.score
     }
 
-    pub fn calculate(sample_quality: Decimal, edge_score: Decimal, stability: Decimal, penalty: ConfidencePenalty) -> Self {
+    pub fn calculate(
+        sample_quality: Decimal,
+        edge_score: Decimal,
+        stability: Decimal,
+        penalty: ConfidencePenalty,
+    ) -> Self {
         let base = (sample_quality + edge_score + stability) / Decimal::from(3);
         let adjusted = base - penalty.amount;
-        
+
         Self::new(adjusted)
     }
-    
+
     pub fn tier(&self) -> ConfidenceTier {
         if self.score >= Decimal::from(80) {
             ConfidenceTier::VeryHigh

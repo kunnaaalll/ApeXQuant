@@ -6,29 +6,25 @@
 //   - All data read from Arc<RwLock<StrategyState>>
 //   - rust_decimal for every financial value
 
+use apex_protos::common::{Decimal as ProtoDecimal, Result as ProtoResult, Timestamp};
 use apex_protos::strategy::strategy_service_server::StrategyService;
 use apex_protos::strategy::{
-    EvaluateStrategyRequest, EvaluateStrategyResponse,
-    GetStrategyHealthRequest, GetStrategyHealthResponse,
-    GetConfidenceRequest, GetConfidenceResponse,
-    GetAllocationRequest, GetAllocationResponse,
-    GetClusterProfileRequest, GetClusterProfileResponse,
-    GetRecommendationsRequest, GetRecommendationsResponse,
-    GetContextProfileRequest, GetContextProfileResponse,
-    GetDriftAnalysisRequest, GetDriftAnalysisResponse,
-    GetMetaIntelligenceRequest, GetMetaIntelligenceResponse,
-    GetLifecycleStateRequest, GetLifecycleStateResponse,
-    GetStrategyRankingRequest, GetStrategyRankingResponse,
-    GetEvidenceSummaryRequest, GetEvidenceSummaryResponse,
-    GetValidationStatusRequest, GetValidationStatusResponse,
-    GetCertificationStatusRequest, GetCertificationStatusResponse,
+    EvaluateStrategyRequest, EvaluateStrategyResponse, GetAllocationRequest, GetAllocationResponse,
+    GetCertificationStatusRequest, GetCertificationStatusResponse, GetClusterProfileRequest,
+    GetClusterProfileResponse, GetConfidenceRequest, GetConfidenceResponse,
+    GetContextProfileRequest, GetContextProfileResponse, GetDriftAnalysisRequest,
+    GetDriftAnalysisResponse, GetEvidenceSummaryRequest, GetEvidenceSummaryResponse,
+    GetLifecycleStateRequest, GetLifecycleStateResponse, GetMetaIntelligenceRequest,
+    GetMetaIntelligenceResponse, GetRecommendationsRequest, GetRecommendationsResponse,
+    GetStrategyHealthRequest, GetStrategyHealthResponse, GetStrategyRankingRequest,
+    GetStrategyRankingResponse, GetValidationStatusRequest, GetValidationStatusResponse,
 };
-use apex_protos::common::{Decimal as ProtoDecimal, Timestamp, Result as ProtoResult};
-use tonic::{Request, Response, Status};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tonic::{Request, Response, Status};
 
 use crate::allocation::AllocationEngine;
+use crate::api::errors::ApiError;
 use crate::clustering::ClusterEngine;
 use crate::confidence::ConfidenceScore;
 use crate::drift::DriftEngine;
@@ -38,7 +34,6 @@ use crate::lifecycle::{LifecycleProfile, LifecycleState};
 use crate::ranking::StrategyRank;
 use crate::recommendations::RecommendationEngine;
 use crate::validation::certification::{CertificationEngine, CertificationState};
-use crate::api::errors::ApiError;
 
 // ─── Shared State ─────────────────────────────────────────────────────────────
 
@@ -46,24 +41,24 @@ use crate::api::errors::ApiError;
 /// All fields are Arc<RwLock<>> so reads never block writes.
 #[derive(Clone)]
 pub struct StrategyState {
-    pub health:          Arc<RwLock<HealthScore>>,
-    pub confidence:      Arc<RwLock<ConfidenceScore>>,
-    pub allocation:      Arc<RwLock<AllocationEngine>>,
-    pub lifecycle:       Arc<RwLock<LifecycleProfile>>,
-    pub ranking:         Arc<RwLock<StrategyRank>>,
-    pub evidence:        Arc<RwLock<EvidenceAccumulator>>,
-    pub drift:           Arc<RwLock<DriftEngine>>,
-    pub cluster:         Arc<RwLock<ClusterEngine>>,
+    pub health: Arc<RwLock<HealthScore>>,
+    pub confidence: Arc<RwLock<ConfidenceScore>>,
+    pub allocation: Arc<RwLock<AllocationEngine>>,
+    pub lifecycle: Arc<RwLock<LifecycleProfile>>,
+    pub ranking: Arc<RwLock<StrategyRank>>,
+    pub evidence: Arc<RwLock<EvidenceAccumulator>>,
+    pub drift: Arc<RwLock<DriftEngine>>,
+    pub cluster: Arc<RwLock<ClusterEngine>>,
     pub recommendations: Arc<RwLock<RecommendationEngine>>,
-    pub certification:   Arc<RwLock<CertificationEngine>>,
+    pub certification: Arc<RwLock<CertificationEngine>>,
 }
 
 impl StrategyState {
     pub fn new() -> Self {
         // Default zero-state; engines are updated by the event processing loop
         let confidence = ConfidenceScore::new(rust_decimal::Decimal::from(0));
-        let health     = HealthScore::new(rust_decimal::Decimal::from(0));
-        let ranking    = StrategyRank::calculate(
+        let health = HealthScore::new(rust_decimal::Decimal::from(0));
+        let ranking = StrategyRank::calculate(
             rust_decimal::Decimal::from(0),
             rust_decimal::Decimal::from(0),
             rust_decimal::Decimal::from(0),
@@ -71,22 +66,24 @@ impl StrategyState {
         );
 
         Self {
-            health:          Arc::new(RwLock::new(health)),
-            confidence:      Arc::new(RwLock::new(confidence)),
-            allocation:      Arc::new(RwLock::new(AllocationEngine::new())),
-            lifecycle:       Arc::new(RwLock::new(LifecycleProfile::new())),
-            ranking:         Arc::new(RwLock::new(ranking)),
-            evidence:        Arc::new(RwLock::new(EvidenceAccumulator::new())),
-            drift:           Arc::new(RwLock::new(DriftEngine::new())),
-            cluster:         Arc::new(RwLock::new(ClusterEngine::new())),
+            health: Arc::new(RwLock::new(health)),
+            confidence: Arc::new(RwLock::new(confidence)),
+            allocation: Arc::new(RwLock::new(AllocationEngine::new())),
+            lifecycle: Arc::new(RwLock::new(LifecycleProfile::new())),
+            ranking: Arc::new(RwLock::new(ranking)),
+            evidence: Arc::new(RwLock::new(EvidenceAccumulator::new())),
+            drift: Arc::new(RwLock::new(DriftEngine::new())),
+            cluster: Arc::new(RwLock::new(ClusterEngine::new())),
             recommendations: Arc::new(RwLock::new(RecommendationEngine::new())),
-            certification:   Arc::new(RwLock::new(CertificationEngine::new())),
+            certification: Arc::new(RwLock::new(CertificationEngine::new())),
         }
     }
 }
 
 impl Default for StrategyState {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 // ─── Service Implementation ───────────────────────────────────────────────────
@@ -114,7 +111,7 @@ fn now_ts() -> Timestamp {
     let now = chrono::Utc::now();
     Timestamp {
         seconds: now.timestamp(),
-        nanos:   now.timestamp_subsec_nanos() as i32,
+        nanos: now.timestamp_subsec_nanos() as i32,
     }
 }
 
@@ -140,7 +137,7 @@ impl StrategyService for StrategyServiceImpl {
 
         // Composite score: blend health + confidence + ranking
         let health_val = self.state.health.read().await.value();
-        let conf_val   = self.state.confidence.read().await.value();
+        let conf_val = self.state.confidence.read().await.value();
         let rank_score = self.state.ranking.read().await.score;
 
         // Normalised score [0, 1]: (health/100 + confidence/100 + rank_score/2000) / 3
@@ -151,8 +148,13 @@ impl StrategyService for StrategyServiceImpl {
 
         Ok(Response::new(EvaluateStrategyResponse {
             evaluation_id: req.strategy_id,
-            score: Some(ProtoDecimal { value: dec_str(score) }),
-            result: Some(ProtoResult { ok: true, error: None }),
+            score: Some(ProtoDecimal {
+                value: dec_str(score),
+            }),
+            result: Some(ProtoResult {
+                ok: true,
+                error: None,
+            }),
         }))
     }
 
@@ -161,15 +163,17 @@ impl StrategyService for StrategyServiceImpl {
         &self,
         _request: Request<GetStrategyHealthRequest>,
     ) -> Result<Response<GetStrategyHealthResponse>, Status> {
-        let h     = self.state.health.read().await;
-        let ev    = self.state.evidence.read().await;
+        let h = self.state.health.read().await;
+        let ev = self.state.evidence.read().await;
         let state_str = format!("{:?}", h.state());
-        let streak    = ev.wins.saturating_sub(ev.losses) as i64;
+        let streak = ev.wins.saturating_sub(ev.losses) as i64;
 
         Ok(Response::new(GetStrategyHealthResponse {
-            status:       state_str,
-            health_score: Some(ProtoDecimal { value: dec_str(h.value()) }),
-            streak:       streak as i32,
+            status: state_str,
+            health_score: Some(ProtoDecimal {
+                value: dec_str(h.value()),
+            }),
+            streak: streak as i32,
         }))
     }
 
@@ -178,12 +182,14 @@ impl StrategyService for StrategyServiceImpl {
         &self,
         _request: Request<GetConfidenceRequest>,
     ) -> Result<Response<GetConfidenceResponse>, Status> {
-        let conf  = self.state.confidence.read().await;
-        let tier  = format!("{:?}", conf.tier());
+        let conf = self.state.confidence.read().await;
+        let tier = format!("{:?}", conf.tier());
         let score = conf.value();
 
         Ok(Response::new(GetConfidenceResponse {
-            confidence_score: Some(ProtoDecimal { value: dec_str(score) }),
+            confidence_score: Some(ProtoDecimal {
+                value: dec_str(score),
+            }),
             factors: vec![tier],
         }))
     }
@@ -194,10 +200,12 @@ impl StrategyService for StrategyServiceImpl {
         _request: Request<GetAllocationRequest>,
     ) -> Result<Response<GetAllocationResponse>, Status> {
         let alloc = self.state.allocation.read().await;
-        let mult  = alloc.state().multiplier;
+        let mult = alloc.state().multiplier;
 
         Ok(Response::new(GetAllocationResponse {
-            recommended_allocation: Some(ProtoDecimal { value: dec_str(mult) }),
+            recommended_allocation: Some(ProtoDecimal {
+                value: dec_str(mult),
+            }),
         }))
     }
 
@@ -207,13 +215,15 @@ impl StrategyService for StrategyServiceImpl {
         _request: Request<GetClusterProfileRequest>,
     ) -> Result<Response<GetClusterProfileResponse>, Status> {
         let cluster = self.state.cluster.read().await;
-        let state   = cluster.state();
-        let id      = format!("{:?}", state.active_cluster).to_lowercase();
-        let sim     = state.confidence / rust_decimal::Decimal::from(100);
+        let state = cluster.state();
+        let id = format!("{:?}", state.active_cluster).to_lowercase();
+        let sim = state.confidence / rust_decimal::Decimal::from(100);
 
         Ok(Response::new(GetClusterProfileResponse {
-            cluster_id:       id,
-            similarity_score: Some(ProtoDecimal { value: dec_str(sim) }),
+            cluster_id: id,
+            similarity_score: Some(ProtoDecimal {
+                value: dec_str(sim),
+            }),
         }))
     }
 
@@ -224,7 +234,7 @@ impl StrategyService for StrategyServiceImpl {
     ) -> Result<Response<GetRecommendationsResponse>, Status> {
         let rec = self.state.recommendations.read().await;
         let current = rec.current();
-        let action  = format!("{:?}", current.action).to_lowercase();
+        let action = format!("{:?}", current.action).to_lowercase();
         let codes: Vec<String> = current
             .reason_codes
             .iter()
@@ -243,23 +253,25 @@ impl StrategyService for StrategyServiceImpl {
         _request: Request<GetContextProfileRequest>,
     ) -> Result<Response<GetContextProfileResponse>, Status> {
         let drift = self.state.drift.read().await;
-        let conf  = self.state.confidence.read().await;
+        let conf = self.state.confidence.read().await;
 
         // Derive market regime from drift state
         let regime = match drift.state() {
             crate::drift::DriftState::Improving => "trending_up",
-            crate::drift::DriftState::Stable    => "ranging",
+            crate::drift::DriftState::Stable => "ranging",
             crate::drift::DriftState::Weakening => "high_volatility",
-            crate::drift::DriftState::Critical  => "high_volatility",
-            crate::drift::DriftState::Collapse  => "crisis",
+            crate::drift::DriftState::Critical => "high_volatility",
+            crate::drift::DriftState::Collapse => "crisis",
         };
 
         // Volatility index proxy: inverse of confidence score normalised to 0-100
         let vol_index = rust_decimal::Decimal::from(100) - conf.value();
 
         Ok(Response::new(GetContextProfileResponse {
-            market_regime:   regime.to_owned(),
-            volatility_index: Some(ProtoDecimal { value: dec_str(vol_index) }),
+            market_regime: regime.to_owned(),
+            volatility_index: Some(ProtoDecimal {
+                value: dec_str(vol_index),
+            }),
         }))
     }
 
@@ -283,7 +295,9 @@ impl StrategyService for StrategyServiceImpl {
         );
 
         Ok(Response::new(GetDriftAnalysisResponse {
-            drift_score:         Some(ProtoDecimal { value: dec_str(avg_drift) }),
+            drift_score: Some(ProtoDecimal {
+                value: dec_str(avg_drift),
+            }),
             requires_retraining,
         }))
     }
@@ -294,7 +308,7 @@ impl StrategyService for StrategyServiceImpl {
         _request: Request<GetMetaIntelligenceRequest>,
     ) -> Result<Response<GetMetaIntelligenceResponse>, Status> {
         // Meta-intelligence derived from evidence EMA and confidence
-        let ev   = self.state.evidence.read().await;
+        let ev = self.state.evidence.read().await;
         let conf = self.state.confidence.read().await;
 
         // Learning rate proxy: EMA of expectancy history (normalised)
@@ -309,8 +323,10 @@ impl StrategyService for StrategyServiceImpl {
         let adapt = conf.value() / rust_decimal::Decimal::from(100);
 
         Ok(Response::new(GetMetaIntelligenceResponse {
-            learning_rate:    Some(ProtoDecimal { value: dec_str(lr) }),
-            adaptation_score: Some(ProtoDecimal { value: dec_str(adapt) }),
+            learning_rate: Some(ProtoDecimal { value: dec_str(lr) }),
+            adaptation_score: Some(ProtoDecimal {
+                value: dec_str(adapt),
+            }),
         }))
     }
 
@@ -323,7 +339,7 @@ impl StrategyService for StrategyServiceImpl {
         let state_str = format!("{:?}", lc.state);
 
         Ok(Response::new(GetLifecycleStateResponse {
-            state:           state_str,
+            state: state_str,
             transition_time: Some(now_ts()),
         }))
     }
@@ -333,29 +349,31 @@ impl StrategyService for StrategyServiceImpl {
         &self,
         _request: Request<GetStrategyRankingRequest>,
     ) -> Result<Response<GetStrategyRankingResponse>, Status> {
-        let rank    = self.state.ranking.read().await;
-        let ev      = self.state.evidence.read().await;
-        let total   = (ev.wins + ev.losses) as i64;
+        let rank = self.state.ranking.read().await;
+        let ev = self.state.evidence.read().await;
+        let total = (ev.wins + ev.losses) as i64;
 
         // Ordinal rank derived from score — higher score = better rank (lower number)
         // Score is unbounded above 0; map to rank bucket 1..=5
         let ordinal_rank = match rank.tier {
-            crate::ranking::RankTier::Elite    => 1,
-            crate::ranking::RankTier::Strong   => 2,
-            crate::ranking::RankTier::Normal   => 3,
-            crate::ranking::RankTier::Weak     => 4,
+            crate::ranking::RankTier::Elite => 1,
+            crate::ranking::RankTier::Strong => 2,
+            crate::ranking::RankTier::Normal => 3,
+            crate::ranking::RankTier::Weak => 4,
             crate::ranking::RankTier::Forbidden => 5,
         };
 
         // Percent rank: normalise score to [0, 1]
-        let pct = (rank.score / rust_decimal::Decimal::from(2000))
-            .min(rust_decimal::Decimal::from(1));
+        let pct =
+            (rank.score / rust_decimal::Decimal::from(2000)).min(rust_decimal::Decimal::from(1));
 
         let _ = total; // available for telemetry
 
         Ok(Response::new(GetStrategyRankingResponse {
-            rank:         ordinal_rank,
-            percent_rank: Some(ProtoDecimal { value: dec_str(pct) }),
+            rank: ordinal_rank,
+            percent_rank: Some(ProtoDecimal {
+                value: dec_str(pct),
+            }),
         }))
     }
 
@@ -380,9 +398,13 @@ impl StrategyService for StrategyServiceImpl {
         };
 
         Ok(Response::new(GetEvidenceSummaryResponse {
-            total_trades:  total as i32,
-            win_rate:      Some(ProtoDecimal { value: dec_str(win_rate) }),
-            profit_factor: Some(ProtoDecimal { value: dec_str(profit_factor) }),
+            total_trades: total as i32,
+            win_rate: Some(ProtoDecimal {
+                value: dec_str(win_rate),
+            }),
+            profit_factor: Some(ProtoDecimal {
+                value: dec_str(profit_factor),
+            }),
         }))
     }
 
@@ -391,7 +413,7 @@ impl StrategyService for StrategyServiceImpl {
         &self,
         _request: Request<GetValidationStatusRequest>,
     ) -> Result<Response<GetValidationStatusResponse>, Status> {
-        let lc   = self.state.lifecycle.read().await;
+        let lc = self.state.lifecycle.read().await;
         let conf = self.state.confidence.read().await;
 
         let mut errors = Vec::new();
@@ -404,7 +426,7 @@ impl StrategyService for StrategyServiceImpl {
         }
 
         Ok(Response::new(GetValidationStatusResponse {
-            is_valid:          errors.is_empty(),
+            is_valid: errors.is_empty(),
             validation_errors: errors,
         }))
     }

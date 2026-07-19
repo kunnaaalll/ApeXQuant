@@ -20,7 +20,10 @@ impl CurrencyExposure {
         }
     }
 
-    pub fn is_short_usd_cluster(exposures: &HashMap<String, CurrencyExposure>, threshold: Decimal) -> bool {
+    pub fn is_short_usd_cluster(
+        exposures: &HashMap<String, CurrencyExposure>,
+        threshold: Decimal,
+    ) -> bool {
         if let Some(usd) = exposures.get("USD") {
             if usd.net_exposure < Decimal::ZERO && usd.net_exposure.abs() > threshold {
                 return true;

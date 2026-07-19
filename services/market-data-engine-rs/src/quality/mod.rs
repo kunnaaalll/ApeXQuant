@@ -74,13 +74,25 @@ pub struct MarketQualityMetrics {
 }
 
 #[derive(Debug, Clone)]
-pub struct QualityEngine {
-}
+pub struct QualityEngine {}
 
 impl Default for QualityEngine {
     fn default() -> Self {
         Self::new()
     }
+}
+
+pub struct QualityEvaluationParams {
+    pub spread: Decimal,
+    pub average_spread: Decimal,
+    pub liquidity_depth: Decimal,
+    pub average_liquidity: Decimal,
+    pub is_feed_healthy: bool,
+    pub sequence_gaps: u32,
+    pub current_volatility: Decimal,
+    pub average_volatility: Decimal,
+    pub current_participation: Decimal,
+    pub average_participation: Decimal,
 }
 
 impl QualityEngine {
@@ -90,24 +102,14 @@ impl QualityEngine {
 
     pub fn evaluate(
         &self,
-        spread: Decimal,
-        average_spread: Decimal,
-        liquidity_depth: Decimal,
-        average_liquidity: Decimal,
-        is_feed_healthy: bool,
-        sequence_gaps: u32,
-        current_volatility: Decimal,
-        average_volatility: Decimal,
-        current_participation: Decimal,
-        average_participation: Decimal,
+        params: QualityEvaluationParams,
     ) -> Result<MarketQualityMetrics, &'static str> {
-        
         // Ensure no zero division
-        if average_spread.is_zero() {
+        if params.average_spread.is_zero() {
             return Err("Average spread cannot be zero");
         }
 
-        let spread_ratio = spread / average_spread;
+        let spread_ratio = params.spread / params.average_spread;
         let spread_score = if spread_ratio < Decimal::ONE {
             100
         } else if spread_ratio < Decimal::from(2) {
@@ -118,65 +120,77 @@ impl QualityEngine {
             10
         };
 
-        let liq_ratio = if average_liquidity.is_zero() {
+        let liq_ratio = if params.average_liquidity.is_zero() {
             Decimal::ZERO
         } else {
-            liquidity_depth / average_liquidity
+            params.liquidity_depth / params.average_liquidity
         };
 
         let liq_score = if liq_ratio > Decimal::from(2) {
             100
         } else if liq_ratio > Decimal::ONE {
             80
-        } else if liq_ratio > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO) {
+        } else if liq_ratio
+            > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO)
+        {
             50
         } else {
             20
         };
 
-        let seq_score = if sequence_gaps == 0 {
+        let seq_score = if params.sequence_gaps == 0 {
             100
-        } else if sequence_gaps < 3 {
+        } else if params.sequence_gaps < 3 {
             70
         } else {
             10
         };
 
-        let feed_score = if is_feed_healthy { 100 } else { 0 };
+        let feed_score = if params.is_feed_healthy { 100 } else { 0 };
 
-        let vol_ratio = if average_volatility.is_zero() {
+        let vol_ratio = if params.average_volatility.is_zero() {
             Decimal::ONE
         } else {
-            current_volatility / average_volatility
+            params.current_volatility / params.average_volatility
         };
 
         let vol_score = if vol_ratio > Decimal::from(3) {
             20 // Flash crash or extreme spike
         } else if vol_ratio > Decimal::from(2) {
             50
-        } else if vol_ratio > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO) {
+        } else if vol_ratio
+            > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO)
+        {
             100 // Healthy normal volatility
         } else {
             40 // Dead market
         };
 
-        let part_ratio = if average_participation.is_zero() {
+        let part_ratio = if params.average_participation.is_zero() {
             Decimal::ONE
         } else {
-            current_participation / average_participation
+            params.current_participation / params.average_participation
         };
 
         let part_score = if part_ratio > Decimal::from(2) {
             100
         } else if part_ratio > Decimal::ONE {
             80
-        } else if part_ratio > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO) {
+        } else if part_ratio
+            > rust_decimal::prelude::FromStr::from_str("0.5").unwrap_or(Decimal::ZERO)
+        {
             50
         } else {
             20
         };
 
-        let overall = ((spread_score as u16 + liq_score as u16 + seq_score as u16 + feed_score as u16 + vol_score as u16 + part_score as u16) / 6) as u8;
+        let overall = ((spread_score as u16
+            + liq_score as u16
+            + seq_score as u16
+            + feed_score as u16
+            + vol_score as u16
+            + part_score as u16)
+            / 6) as u8;
 
         let grade = match overall {
             s if s >= 90 => QualityGrade::Elite,

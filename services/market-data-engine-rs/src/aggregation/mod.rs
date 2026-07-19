@@ -1,8 +1,8 @@
 // Aggregation Engine
 
+use crate::candle::{Timeframe, OHLCV};
 use crate::tick::Tick;
-use crate::candle::{OHLCV, Timeframe};
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Duration, Utc};
 use rust_decimal::Decimal;
 
 pub struct CandleAggregator {
@@ -20,7 +20,7 @@ impl CandleAggregator {
 
     pub fn process_tick(&mut self, tick: &Tick) -> Option<OHLCV> {
         let tick_time = tick.timestamp;
-        
+
         // If no current candle, start a new one
         if self.current_candle.is_none() {
             self.start_new_candle(tick);
@@ -44,7 +44,7 @@ impl CandleAggregator {
                     candle.low = price;
                 }
                 candle.close = price;
-                
+
                 // Volume is incremented by 1 tick unit for simplicity (or can be based on trade size if available)
                 candle.volume += Decimal::from(1);
             }
@@ -101,13 +101,13 @@ impl MultiTimeframeAggregator {
 
     pub fn process_tick(&mut self, tick: &Tick) -> Vec<(Timeframe, OHLCV)> {
         let mut completed_candles = Vec::new();
-        
+
         for agg in &mut self.aggregators {
             if let Some(candle) = agg.process_tick(tick) {
                 completed_candles.push((agg.timeframe, candle));
             }
         }
-        
+
         completed_candles
     }
 }

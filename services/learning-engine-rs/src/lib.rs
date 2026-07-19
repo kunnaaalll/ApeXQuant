@@ -15,16 +15,16 @@ pub mod replay;
 
 // Phase 2 modules
 pub mod adaptation;
-pub mod promotion;
-pub mod retirement;
-pub mod optimization;
-pub mod clustering;
-pub mod regime_memory;
-pub mod drift;
 pub mod anomaly;
-pub mod explanation;
-pub mod certification;
-pub mod event_bus;
-pub mod database;
 pub mod api;
+pub mod certification;
+pub mod clustering;
+pub mod database;
+pub mod drift;
+pub mod event_bus;
+pub mod explanation;
 pub mod metrics;
+pub mod optimization;
+pub mod promotion;
+pub mod regime_memory;
+pub mod retirement;

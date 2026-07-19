@@ -10,7 +10,7 @@ pub async fn run_setup(pool: &PgPool) -> Result<(), sqlx::Error> {
             profit_factor NUMERIC NOT NULL,
             net_profit NUMERIC NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );"
+        );",
     )
     .execute(pool)
     .await?;

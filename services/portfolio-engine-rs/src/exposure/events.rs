@@ -13,7 +13,7 @@ pub enum ExposureEvent {
         sector: Sector,
         base_currency: Currency,
         quote_currency: Currency,
-        base_size: Decimal, // Positive for Long, Negative for Short
+        base_size: Decimal,  // Positive for Long, Negative for Short
         quote_size: Decimal, // Opposite sign of base_size based on entry price
         margin_used: Decimal,
         risk_amount: Decimal,

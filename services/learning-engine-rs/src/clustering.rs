@@ -29,9 +29,7 @@ impl Default for ClusterManager {
 
 impl ClusterManager {
     pub fn new() -> Self {
-        Self {
-            clusters: vec![],
-        }
+        Self { clusters: vec![] }
     }
 
     pub fn add_cluster(&mut self, cluster: Cluster) {
@@ -41,7 +39,9 @@ impl ClusterManager {
     pub fn get_clusters_by_type(&self, cluster_type: ClusterType) -> Vec<Cluster> {
         self.clusters
             .iter()
-            .filter(|c| std::mem::discriminant(&c.cluster_type) == std::mem::discriminant(&cluster_type))
+            .filter(|c| {
+                std::mem::discriminant(&c.cluster_type) == std::mem::discriminant(&cluster_type)
+            })
             .cloned()
             .collect()
     }

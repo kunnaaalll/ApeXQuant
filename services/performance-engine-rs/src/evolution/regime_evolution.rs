@@ -42,7 +42,7 @@ impl RegimeEvolutionEngine {
 
         let regime_id = windows[0].regime_id.clone();
         let first = &windows[0];
-        let last = windows.last().unwrap();
+        let last = windows.last()?;
 
         let expectancy_drift = last.expectancy - first.expectancy;
         let win_rate_drift = last.win_rate - first.win_rate;
@@ -59,7 +59,11 @@ impl RegimeEvolutionEngine {
 
         let explanation = format!(
             "Regime {} evolved from expectancy {} to {} over {} periods. Trend: {:?}.",
-            regime_id, first.expectancy, last.expectancy, windows.len(), trend
+            regime_id,
+            first.expectancy,
+            last.expectancy,
+            windows.len(),
+            trend
         );
 
         Some(RegimeEvolutionReport {

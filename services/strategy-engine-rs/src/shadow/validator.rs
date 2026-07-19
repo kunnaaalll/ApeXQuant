@@ -31,7 +31,7 @@ impl GoLiveValidator {
     pub fn process(&mut self, comparison: ShadowComparisonState) {
         if comparison == ShadowComparisonState::ExactMatch {
             self.consecutive_exact_matches += 1;
-            
+
             self.state = match self.consecutive_exact_matches {
                 0..=99 => GoLiveState::NotReady,
                 100..=999 => GoLiveState::Monitoring,

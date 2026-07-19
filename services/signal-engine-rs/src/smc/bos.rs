@@ -170,7 +170,11 @@ pub fn has_recent_bos(
         .into_iter()
         .filter(|bos| candles.len().saturating_sub(bos.break_index) <= lookback)
         .filter(|bos| bos.direction == direction)
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
+        .max_by(|a, b| {
+            a.strength
+                .partial_cmp(&b.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
 }
 
 #[cfg(test)]

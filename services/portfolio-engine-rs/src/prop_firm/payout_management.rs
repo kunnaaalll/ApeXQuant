@@ -43,7 +43,10 @@ impl PayoutEngine {
                 amount: Decimal::ZERO,
                 trader_share: Decimal::ZERO,
                 firm_share: Decimal::ZERO,
-                reason: format!("Requested amount {} is less than minimum {}", request.requested_amount, min_payout_amount),
+                reason: format!(
+                    "Requested amount {} is less than minimum {}",
+                    request.requested_amount, min_payout_amount
+                ),
             };
         }
 
@@ -55,7 +58,10 @@ impl PayoutEngine {
                 amount: Decimal::ZERO,
                 trader_share: Decimal::ZERO,
                 firm_share: Decimal::ZERO,
-                reason: format!("Requested amount {} exceeds available profit after buffer {}", request.requested_amount, max_available),
+                reason: format!(
+                    "Requested amount {} exceeds available profit after buffer {}",
+                    request.requested_amount, max_available
+                ),
             };
         }
 

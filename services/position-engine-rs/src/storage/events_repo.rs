@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Row};
-use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventRecord {
@@ -21,12 +21,17 @@ impl EventsRepository {
         Self { pool }
     }
 
-    pub async fn append_event(&self, position_id: Uuid, event_type: &str, payload: &serde_json::Value) -> Result<(), sqlx::Error> {
+    pub async fn append_event(
+        &self,
+        position_id: Uuid,
+        event_type: &str,
+        payload: &serde_json::Value,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query(
             r#"
             INSERT INTO position_events (position_id, event_type, payload)
             VALUES ($1, $2, $3)
-            "#
+            "#,
         )
         .bind(position_id)
         .bind(event_type)
@@ -43,7 +48,7 @@ impl EventsRepository {
             FROM position_events
             WHERE position_id = $1
             ORDER BY sequence_id ASC
-            "#
+            "#,
         )
         .bind(position_id)
         .fetch_all(&self.pool)

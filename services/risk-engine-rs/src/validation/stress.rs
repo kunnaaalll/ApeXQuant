@@ -31,7 +31,7 @@ impl StressValidator {
         // - Liquidity crisis
         // - Database failures (network drops)
         // - Replay interruptions
-        
+
         Ok(StressResult {
             panics: 0,
             corruption_detected: false,

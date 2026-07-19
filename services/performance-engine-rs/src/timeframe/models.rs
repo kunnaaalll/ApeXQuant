@@ -1,8 +1,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-use super::types::{TimeframeType, TradeCount};
 use super::states::TimeframeState;
+use super::types::{TimeframeType, TradeCount};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TimeframeAssessment {

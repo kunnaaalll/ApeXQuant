@@ -17,17 +17,29 @@ impl StrategyCoordinator {
     }
 
     pub fn disable(&mut self, strategy_id: &str) {
-        if let Some(pos) = self.active_strategies.iter().position(|s| s.strategy_id == strategy_id) {
+        if let Some(pos) = self
+            .active_strategies
+            .iter()
+            .position(|s| s.strategy_id == strategy_id)
+        {
             let strategy = self.active_strategies.remove(pos);
             self.paused_strategies.push(strategy);
         }
     }
 
     pub fn retire(&mut self, strategy_id: &str) {
-        if let Some(pos) = self.active_strategies.iter().position(|s| s.strategy_id == strategy_id) {
+        if let Some(pos) = self
+            .active_strategies
+            .iter()
+            .position(|s| s.strategy_id == strategy_id)
+        {
             let strategy = self.active_strategies.remove(pos);
             self.retired_strategies.push(strategy);
-        } else if let Some(pos) = self.paused_strategies.iter().position(|s| s.strategy_id == strategy_id) {
+        } else if let Some(pos) = self
+            .paused_strategies
+            .iter()
+            .position(|s| s.strategy_id == strategy_id)
+        {
             let strategy = self.paused_strategies.remove(pos);
             self.retired_strategies.push(strategy);
         }

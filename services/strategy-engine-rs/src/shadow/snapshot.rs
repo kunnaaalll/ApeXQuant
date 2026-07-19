@@ -1,5 +1,5 @@
-use rust_decimal::Decimal;
 use crate::shadow::validator::GoLiveState;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShadowSnapshot {

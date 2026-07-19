@@ -29,7 +29,7 @@ impl ExpectancyAssessment {
         recent_expectancy: Decimal,
     ) -> Self {
         let expectancy_delta = recent_expectancy - historical_expectancy;
-        
+
         let margin = dec!(0.02);
         let positive_drift = expectancy_delta > margin;
         let negative_drift = expectancy_delta < -margin;

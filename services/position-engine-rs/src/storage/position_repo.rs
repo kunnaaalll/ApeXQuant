@@ -1,8 +1,8 @@
-use crate::positions::{PositionTracker, PositionState};
-use sqlx::{PgPool, Row};
-use uuid::Uuid;
-use time::OffsetDateTime;
+use crate::positions::{PositionState, PositionTracker};
 use rust_decimal::Decimal;
+use sqlx::{PgPool, Row};
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 pub struct PositionRepository {
     pool: PgPool,
@@ -90,7 +90,7 @@ impl PositionRepository {
                    opened_at, updated_at, closed_at
             FROM positions
             WHERE position_id = $1
-            "#
+            "#,
         )
         .bind(id)
         .fetch_optional(&self.pool)

@@ -36,6 +36,7 @@ impl EmbeddingVector {
 pub struct EmbeddingsEngine;
 
 impl EmbeddingsEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
@@ -50,7 +51,7 @@ impl EmbeddingsEngine {
             // Add a cross-term to spread variance
             values[(pos + 7) % 32] -= ((byte as f32) / 128.0).sin();
         }
-        
+
         // Normalize
         let mut norm = 0.0;
         for val in &values {

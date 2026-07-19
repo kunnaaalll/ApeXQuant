@@ -25,7 +25,7 @@ impl AiEngineConfig {
     pub fn load() -> Result<Self, config::ConfigError> {
         let builder = config::Config::builder()
             .add_source(config::Environment::with_prefix("AI_ENGINE").separator("__"));
-        
+
         // In a real scenario we might add config file support:
         // .add_source(config::File::with_name("config/ai_engine").required(false))
 

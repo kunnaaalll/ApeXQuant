@@ -26,15 +26,21 @@ pub struct RegimeClassification {
 pub struct RegimeClassifier;
 
 impl RegimeClassifier {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
 
-    pub fn classify(&self, price_change: Decimal, volatility: Decimal, volume: Decimal) -> RegimeClassification {
+    pub fn classify(
+        &self,
+        price_change: Decimal,
+        volatility: Decimal,
+        volume: Decimal,
+    ) -> RegimeClassification {
         // Deterministic logic based on simple thresholds
         let volatility_threshold = Decimal::new(2, 0); // 2.0
         let trend_threshold = Decimal::new(5, 1); // 0.5
-        
+
         let mut regime = MarketRegimeType::Ranging;
         let mut confidence = Decimal::new(50, 2); // 0.50
 

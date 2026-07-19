@@ -46,7 +46,7 @@ impl RecommendationEngine {
                 rationale: "High decay score indicating broken edge".to_string(),
             });
         }
-        
+
         if confidence_score > 80 && win_rate > Decimal::new(55, 2) {
             return Some(LearningRecommendation {
                 target_id: strategy_id,

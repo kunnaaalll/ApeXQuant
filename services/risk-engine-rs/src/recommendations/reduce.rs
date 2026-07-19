@@ -1,4 +1,6 @@
-use super::models::{DrawdownState, ExposureState, HiddenLeverage, ReduceDecision, RiskInputs, TailRiskScore};
+use super::models::{
+    DrawdownState, ExposureState, HiddenLeverage, ReduceDecision, RiskInputs, TailRiskScore,
+};
 
 pub fn evaluate_reduction(inputs: &RiskInputs) -> ReduceDecision {
     if inputs.drawdown_state == DrawdownState::Frozen {

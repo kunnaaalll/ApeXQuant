@@ -35,13 +35,17 @@ impl VolatilityLimitAssessment {
     }
 
     fn update_state(&mut self) {
-        self.state = if self.volatility_multiplier >= Decimal::new(50, 1) { // >= 5.0x
+        self.state = if self.volatility_multiplier >= Decimal::new(50, 1) {
+            // >= 5.0x
             VolatilityState::Frozen
-        } else if self.volatility_multiplier >= Decimal::new(40, 1) { // >= 4.0x
+        } else if self.volatility_multiplier >= Decimal::new(40, 1) {
+            // >= 4.0x
             VolatilityState::Extreme
-        } else if self.volatility_multiplier >= Decimal::new(30, 1) { // >= 3.0x
+        } else if self.volatility_multiplier >= Decimal::new(30, 1) {
+            // >= 3.0x
             VolatilityState::Danger
-        } else if self.volatility_multiplier >= Decimal::new(20, 1) { // >= 2.0x
+        } else if self.volatility_multiplier >= Decimal::new(20, 1) {
+            // >= 2.0x
             VolatilityState::Elevated
         } else {
             VolatilityState::Stable

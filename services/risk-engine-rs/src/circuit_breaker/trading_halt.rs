@@ -38,11 +38,21 @@ impl HaltTriggers {
     pub fn evaluate_state(&self) -> TradingHaltState {
         let mut severity = 0;
 
-        if self.drawdown_breach { severity += 2; }
-        if self.tail_risk_event { severity += 2; }
-        if self.liquidity_collapse { severity += 1; }
-        if self.volatility_explosion { severity += 1; }
-        if self.black_swan_detected { severity += 4; }
+        if self.drawdown_breach {
+            severity += 2;
+        }
+        if self.tail_risk_event {
+            severity += 2;
+        }
+        if self.liquidity_collapse {
+            severity += 1;
+        }
+        if self.volatility_explosion {
+            severity += 1;
+        }
+        if self.black_swan_detected {
+            severity += 4;
+        }
 
         match severity {
             0 => TradingHaltState::Open,

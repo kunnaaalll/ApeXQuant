@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 
 use super::models::RecommendationExplanation;
@@ -59,7 +58,9 @@ impl IncreaseExposureEngine {
                     "Portfolio entered a critical drawdown state.",
                     "Drawdown",
                 )
-                .with_prevented("Any increase in exposure is strictly prohibited during a critical drawdown."),
+                .with_prevented(
+                    "Any increase in exposure is strictly prohibited during a critical drawdown.",
+                ),
             };
         }
 
@@ -118,7 +119,11 @@ impl IncreaseExposureEngine {
             score,
             confidence: 90,
             reasons: vec!["Strong portfolio health and quality, low heat".to_string()],
-            contributing_factors: vec!["Health".to_string(), "Quality".to_string(), "Heat".to_string()],
+            contributing_factors: vec![
+                "Health".to_string(),
+                "Quality".to_string(),
+                "Heat".to_string(),
+            ],
             explanation: RecommendationExplanation::new(
                 "Conditions are favorable for increasing exposure.",
                 "Health, quality, and heat are all within optimal ranges.",

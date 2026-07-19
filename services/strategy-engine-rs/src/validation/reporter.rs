@@ -1,5 +1,5 @@
-use crate::validation::certification::CertificationEngine;
 use crate::validation::benchmark::BenchmarkEngine;
+use crate::validation::certification::CertificationEngine;
 
 #[derive(Debug, Clone)]
 pub struct ValidationReporter;
@@ -21,9 +21,7 @@ impl ValidationReporter {
             ## Benchmarks\n\
             - Average Latency: {} ms\n\
             - P99 Latency: {} ms\n",
-            certification.state,
-            benchmark.average_latency,
-            benchmark.p99_latency
+            certification.state, benchmark.average_latency, benchmark.p99_latency
         )
     }
 }

@@ -41,7 +41,10 @@ impl PropFirmConstraintEngine {
         if position_size > rules.max_position_size {
             violations.push(RuleViolation {
                 rule: "MAX_POSITION_SIZE".to_string(),
-                description: format!("Position size {} exceeds maximum allowed {}", position_size, rules.max_position_size),
+                description: format!(
+                    "Position size {} exceeds maximum allowed {}",
+                    position_size, rules.max_position_size
+                ),
             });
         }
 
@@ -73,14 +76,20 @@ impl PropFirmConstraintEngine {
         if daily_loss > rules.max_daily_loss {
             violations.push(RuleViolation {
                 rule: "MAX_DAILY_LOSS".to_string(),
-                description: format!("Daily loss {} exceeds maximum allowed {}", daily_loss, rules.max_daily_loss),
+                description: format!(
+                    "Daily loss {} exceeds maximum allowed {}",
+                    daily_loss, rules.max_daily_loss
+                ),
             });
         }
 
         if total_loss > rules.max_total_loss {
             violations.push(RuleViolation {
                 rule: "MAX_TOTAL_LOSS".to_string(),
-                description: format!("Total loss {} exceeds maximum allowed {}", total_loss, rules.max_total_loss),
+                description: format!(
+                    "Total loss {} exceeds maximum allowed {}",
+                    total_loss, rules.max_total_loss
+                ),
             });
         }
 

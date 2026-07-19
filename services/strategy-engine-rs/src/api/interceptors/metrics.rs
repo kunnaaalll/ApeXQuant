@@ -1,7 +1,7 @@
-use std::task::{Context, Poll};
-use tower::{Layer, Service};
 use futures_util::future::BoxFuture;
+use std::task::{Context, Poll};
 use tonic::codegen::http::{Request, Response};
+use tower::{Layer, Service};
 
 #[derive(Clone)]
 pub struct MetricsLayer;

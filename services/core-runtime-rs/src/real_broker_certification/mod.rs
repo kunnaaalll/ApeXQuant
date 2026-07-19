@@ -1,5 +1,5 @@
-use crate::certification_report::{CertificationReport, CertificationStatus};
 use crate::broker_recovery::BrokerRecoveryTester;
+use crate::certification_report::{CertificationReport, CertificationStatus};
 use std::fs;
 
 pub struct RealBrokerCertifier;
@@ -19,14 +19,15 @@ impl RealBrokerCertifier {
 
         let report = CertificationReport {
             session_id: session_id.to_string(),
-            replay_hash: "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+            replay_hash: "0000000000000000000000000000000000000000000000000000000000000000"
+                .to_string(),
             parity_score: 1.0,
             drift_score: 0.0,
             pnl: 0.0,
             max_drawdown: 0.0,
             certification_status: CertificationStatus::Passed,
         };
-        
+
         let report_content = format!(
             "# Broker Certification Report\n\n\
             ## Summary\n\
@@ -70,4 +71,3 @@ mod tests {
         assert!(result.is_ok());
     }
 }
-

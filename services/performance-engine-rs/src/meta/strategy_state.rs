@@ -1,20 +1,15 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum StrategyState {
     Elite,
     Strong,
+    #[default]
     Normal,
     Weak,
     Dying,
     Retired,
-}
-
-impl Default for StrategyState {
-    fn default() -> Self {
-        Self::Normal
-    }
 }
 
 impl fmt::Display for StrategyState {

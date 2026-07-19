@@ -5,7 +5,7 @@ use uuid::Uuid;
 use super::events::ExposureEvent;
 use super::state::ExposureState;
 
-// Note: Reusing the SnapshotFrequency enum from portfolio if possible, 
+// Note: Reusing the SnapshotFrequency enum from portfolio if possible,
 // or redefining it for exposure. For modularity, let's redefine it or import it.
 // We'll redefine it here to keep exposure decoupled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

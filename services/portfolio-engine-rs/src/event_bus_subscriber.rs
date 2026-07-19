@@ -1,20 +1,23 @@
-use apex_protos::events::{Event, SubscribeRequest, event_bus_service_client::EventBusServiceClient, AckRequest, AckResponse, event::Payload};
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
+use apex_protos::events::{
+    event::Payload, event_bus_service_client::EventBusServiceClient, AckRequest, AckResponse,
+    Event, SubscribeRequest,
+};
+use rust_decimal::Decimal;
+use sqlx::{PgPool, Row};
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tonic::transport::Channel;
-use tracing::{info, warn, error};
-use std::sync::Arc;
-use rust_decimal::Decimal;
+use tracing::{error, info, warn};
 use uuid::Uuid;
-use sqlx::{PgPool, Row};
 
-use crate::portfolio::registry::PortfolioRegistry;
-use crate::exposure::registry::ExposureRegistry;
-use crate::portfolio::events::PortfolioEvent;
-use crate::exposure::events::ExposureEvent;
-use crate::exposure::sector::Sector;
-use crate::exposure::currency::Currency;
 use crate::event_bus::EventBusPublisher;
+use crate::exposure::currency::Currency;
+use crate::exposure::events::ExposureEvent;
+use crate::exposure::registry::ExposureRegistry;
+use crate::exposure::sector::Sector;
+use crate::portfolio::events::PortfolioEvent;
+use crate::portfolio::registry::PortfolioRegistry;
 
 #[derive(Clone)]
 pub struct EventBusSubscriber {
@@ -25,17 +28,19 @@ pub struct EventBusSubscriber {
 
 impl EventBusSubscriber {
     pub async fn connect(url: String, consumer_group: String, consumer_id: String) -> Result<Self> {
-        let client = EventBusServiceClient::connect(url).await
+        let client = EventBusServiceClient::connect(url)
+            .await
             .context("Failed to connect to EventBusService")?;
-        Ok(Self { client, consumer_group, consumer_id })
+        Ok(Self {
+            client,
+            consumer_group,
+            consumer_id,
+        })
     }
 
-    pub async fn subscribe(
-        &self, 
-        topic: &str, 
-    ) -> Result<mpsc::Receiver<Event>> {
+    pub async fn subscribe(&self, topic: &str) -> Result<mpsc::Receiver<Event>> {
         let (tx, rx) = mpsc::channel(100);
-        
+
         let req = SubscribeRequest {
             topics: vec![topic.to_string()],
             consumer_id: self.consumer_id.clone(),
@@ -74,10 +79,12 @@ impl EventBusSubscriber {
             event_ids,
             failed: vec![],
         };
-        
-        let response = client.ack(tonic::Request::new(req)).await
+
+        let response = client
+            .ack(tonic::Request::new(req))
+            .await
             .context("Failed to ack events")?;
-            
+
         Ok(response.into_inner())
     }
 
@@ -92,33 +99,69 @@ impl EventBusSubscriber {
         let subscriber_self = self.clone();
         tokio::spawn(async move {
             while let Some(event) = rx.recv().await {
-                let event_id_str = event.event_id.as_ref().map(|id| uuid::Uuid::from_slice(&id.value).map(|u| u.to_string()).unwrap_or_default()).unwrap_or_default();
-                
+                let event_id_str = event
+                    .event_id
+                    .as_ref()
+                    .map(|id| {
+                        uuid::Uuid::from_slice(&id.value)
+                            .map(|u| u.to_string())
+                            .unwrap_or_default()
+                    })
+                    .unwrap_or_default();
+
                 if let Some(payload) = &event.payload {
                     match payload {
                         Payload::PositionOpened(po) => {
-                            info!("Processing PositionOpenedEvent for position: {}", po.position_id);
-                            if let Err(e) = handle_position_opened(po, &portfolio_registry, &exposure_registry, &pool).await {
+                            info!(
+                                "Processing PositionOpenedEvent for position: {}",
+                                po.position_id
+                            );
+                            if let Err(e) = handle_position_opened(
+                                po,
+                                &portfolio_registry,
+                                &exposure_registry,
+                                &pool,
+                            )
+                            .await
+                            {
                                 error!("Error handling position opened: {:?}", e);
                             }
                         }
                         Payload::PositionClosed(pc) => {
-                            info!("Processing PositionClosedEvent for position: {}", pc.position_id);
-                            if let Err(e) = handle_position_closed(pc, &portfolio_registry, &exposure_registry, &pool).await {
+                            info!(
+                                "Processing PositionClosedEvent for position: {}",
+                                pc.position_id
+                            );
+                            if let Err(e) = handle_position_closed(
+                                pc,
+                                &portfolio_registry,
+                                &exposure_registry,
+                                &pool,
+                            )
+                            .await
+                            {
                                 error!("Error handling position closed: {:?}", e);
                             }
                         }
                         Payload::TickReceived(tick) => {
-                            if let Err(e) = handle_tick_received(tick, &portfolio_registry, &exposure_registry, &pool).await {
+                            if let Err(e) = handle_tick_received(
+                                tick,
+                                &portfolio_registry,
+                                &exposure_registry,
+                                &pool,
+                            )
+                            .await
+                            {
                                 error!("Error handling tick received: {:?}", e);
                             }
                         }
                         Payload::DrawdownLimitReached(dd) => {
                             warn!("Drawdown limit reached event received: {:?}", dd);
-                            let _ = portfolio_registry.dispatch(PortfolioEvent::RecoveryTransition {
-                                new_state: crate::portfolio::state::RecoveryState::Warning,
-                                reason: "Drawdown limit reached".to_string(),
-                            });
+                            let _ =
+                                portfolio_registry.dispatch(PortfolioEvent::RecoveryTransition {
+                                    new_state: crate::portfolio::state::RecoveryState::Warning,
+                                    reason: "Drawdown limit reached".to_string(),
+                                });
                         }
                         _ => {
                             // Other events we don't consume for state calculation
@@ -143,7 +186,11 @@ fn parse_sector(symbol: &str) -> Sector {
         Sector::Crypto
     } else if sym_upper.contains("XAU") || sym_upper.contains("XAG") || sym_upper.contains("GOLD") {
         Sector::Metals
-    } else if sym_upper.contains("NAS") || sym_upper.contains("SPX") || sym_upper.contains("DJI") || sym_upper.contains("US30") {
+    } else if sym_upper.contains("NAS")
+        || sym_upper.contains("SPX")
+        || sym_upper.contains("DJI")
+        || sym_upper.contains("US30")
+    {
         Sector::Indices
     } else if sym_upper.contains("OIL") || sym_upper.contains("GAS") {
         Sector::Commodities
@@ -194,18 +241,23 @@ async fn handle_position_opened(
     pool: &PgPool,
 ) -> Result<()> {
     let position_uuid = Uuid::parse_str(&po.position_id).context("Invalid position UUID")?;
-    let entry_price = po.entry_price.as_ref()
+    let entry_price = po
+        .entry_price
+        .as_ref()
         .map(|p| p.value.parse::<Decimal>().unwrap_or(Decimal::ZERO))
         .unwrap_or(Decimal::ZERO);
-    let volume = po.initial_volume.as_ref()
+    let volume = po
+        .initial_volume
+        .as_ref()
         .map(|v| v.units.parse::<Decimal>().unwrap_or(Decimal::ZERO))
         .unwrap_or(Decimal::ZERO);
 
-    let contract_size = if po.symbol.contains("BTC") || po.symbol.contains("ETH") || po.symbol.contains("XAU") {
-        Decimal::ONE
-    } else {
-        Decimal::from(100_000)
-    };
+    let contract_size =
+        if po.symbol.contains("BTC") || po.symbol.contains("ETH") || po.symbol.contains("XAU") {
+            Decimal::ONE
+        } else {
+            Decimal::from(100_000)
+        };
 
     let calculated_exposure = volume * entry_price * contract_size;
     let margin_used = calculated_exposure / Decimal::from(100);
@@ -219,8 +271,16 @@ async fn handle_position_opened(
     let sector = parse_sector(&po.symbol);
     let (base_currency, quote_currency) = parse_currencies(&po.symbol);
     let is_buy = po.side == 1;
-    let base_size = if is_buy { calculated_exposure } else { -calculated_exposure };
-    let quote_size = if is_buy { -calculated_exposure } else { calculated_exposure };
+    let base_size = if is_buy {
+        calculated_exposure
+    } else {
+        -calculated_exposure
+    };
+    let quote_size = if is_buy {
+        -calculated_exposure
+    } else {
+        calculated_exposure
+    };
 
     exposure.dispatch(ExposureEvent::PositionOpened {
         position_id: position_uuid,
@@ -261,11 +321,13 @@ async fn handle_position_closed(
     pool: &PgPool,
 ) -> Result<()> {
     let position_uuid = Uuid::parse_str(&pc.position_id).context("Invalid position UUID")?;
-    
-    let row_opt = sqlx::query("SELECT symbol, side, current_volume, entry_price FROM positions WHERE position_id = $1")
-        .bind(&pc.position_id)
-        .fetch_optional(pool)
-        .await?;
+
+    let row_opt = sqlx::query(
+        "SELECT symbol, side, current_volume, entry_price FROM positions WHERE position_id = $1",
+    )
+    .bind(&pc.position_id)
+    .fetch_optional(pool)
+    .await?;
 
     let (symbol, side, volume, entry_price) = if let Some(r) = row_opt {
         let sym: String = r.get("symbol");
@@ -274,18 +336,23 @@ async fn handle_position_closed(
         let ep: Decimal = r.get("entry_price");
         (sym, sd, vol, ep)
     } else {
-        return Err(anyhow::anyhow!("Position not found in DB for release calculations"));
+        return Err(anyhow::anyhow!(
+            "Position not found in DB for release calculations"
+        ));
     };
 
-    let contract_size = if symbol.contains("BTC") || symbol.contains("ETH") || symbol.contains("XAU") {
-        Decimal::ONE
-    } else {
-        Decimal::from(100_000)
-    };
+    let contract_size =
+        if symbol.contains("BTC") || symbol.contains("ETH") || symbol.contains("XAU") {
+            Decimal::ONE
+        } else {
+            Decimal::from(100_000)
+        };
 
     let exposure_released = volume * entry_price * contract_size;
     let margin_released = exposure_released / Decimal::from(100);
-    let net_pnl = pc.net_pnl.as_ref()
+    let net_pnl = pc
+        .net_pnl
+        .as_ref()
         .map(|m| m.amount.parse::<Decimal>().unwrap_or(Decimal::ZERO))
         .unwrap_or(Decimal::ZERO);
 
@@ -299,8 +366,16 @@ async fn handle_position_closed(
     let sector = parse_sector(&symbol);
     let (base_currency, quote_currency) = parse_currencies(&symbol);
     let is_buy = side == "buy";
-    let base_size_released = if is_buy { exposure_released } else { -exposure_released };
-    let quote_size_released = if is_buy { -exposure_released } else { exposure_released };
+    let base_size_released = if is_buy {
+        exposure_released
+    } else {
+        -exposure_released
+    };
+    let quote_size_released = if is_buy {
+        -exposure_released
+    } else {
+        exposure_released
+    };
 
     exposure.dispatch(ExposureEvent::PositionClosed {
         position_id: position_uuid,
@@ -319,7 +394,7 @@ async fn handle_position_closed(
         UPDATE positions 
         SET state = 'closed', realized_pnl = $1, current_volume = 0, updated_at = NOW()
         WHERE position_id = $2
-        "#
+        "#,
     )
     .bind(net_pnl)
     .bind(&pc.position_id)
@@ -335,11 +410,19 @@ async fn handle_tick_received(
     exposure: &ExposureRegistry,
     pool: &PgPool,
 ) -> Result<()> {
-    let bid_str = tick.bid.as_ref().map(|d| d.value.clone()).unwrap_or_else(|| "0".to_string());
-    let ask_str = tick.ask.as_ref().map(|d| d.value.clone()).unwrap_or_else(|| "0".to_string());
+    let bid_str = tick
+        .bid
+        .as_ref()
+        .map(|d| d.value.clone())
+        .unwrap_or_else(|| "0".to_string());
+    let ask_str = tick
+        .ask
+        .as_ref()
+        .map(|d| d.value.clone())
+        .unwrap_or_else(|| "0".to_string());
     let bid = bid_str.parse::<Decimal>().unwrap_or(Decimal::ZERO);
     let ask = ask_str.parse::<Decimal>().unwrap_or(Decimal::ZERO);
-    
+
     if bid.is_zero() && ask.is_zero() {
         return Ok(());
     }
@@ -354,11 +437,12 @@ async fn handle_tick_received(
         .fetch_all(pool)
         .await?;
 
-    let contract_size = if symbol.contains("BTC") || symbol.contains("ETH") || symbol.contains("XAU") {
-        Decimal::ONE
-    } else {
-        Decimal::from(100_000)
-    };
+    let contract_size =
+        if symbol.contains("BTC") || symbol.contains("ETH") || symbol.contains("XAU") {
+            Decimal::ONE
+        } else {
+            Decimal::from(100_000)
+        };
 
     for r in rows {
         let position_id_str: String = r.get("position_id");
@@ -366,7 +450,7 @@ async fn handle_tick_received(
         let side: String = r.get("side");
         let volume: Decimal = r.get("current_volume");
         let entry_price: Decimal = r.get("entry_price");
-        
+
         let old_pnl_val: Option<Decimal> = r.get("unrealized_pnl");
         let old_pnl = old_pnl_val.unwrap_or(Decimal::ZERO);
 

@@ -43,15 +43,19 @@ impl RiskConfig {
         let eventbus_url = required_var("EVENT_BUS_URL")?;
 
         let db_max_connections = optional_var("DB_MAX_CONNECTIONS")
-            .map(|v| v.parse::<u32>().map_err(|e| ConfigError::InvalidValue("DB_MAX_CONNECTIONS".to_string(), e.to_string())))
+            .map(|v| {
+                v.parse::<u32>().map_err(|e| {
+                    ConfigError::InvalidValue("DB_MAX_CONNECTIONS".to_string(), e.to_string())
+                })
+            })
             .transpose()?
             .unwrap_or(10);
 
-        let grpc_bind_addr = optional_var("GRPC_BIND_ADDR")
-            .unwrap_or_else(|| "0.0.0.0:50051".to_string());
+        let grpc_bind_addr =
+            optional_var("GRPC_BIND_ADDR").unwrap_or_else(|| "0.0.0.0:50051".to_string());
 
-        let health_bind_addr = optional_var("HEALTH_BIND_ADDR")
-            .unwrap_or_else(|| "0.0.0.0:8080".to_string());
+        let health_bind_addr =
+            optional_var("HEALTH_BIND_ADDR").unwrap_or_else(|| "0.0.0.0:8080".to_string());
 
         Ok(Self {
             database_url,
@@ -78,15 +82,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_missing_database_url_returns_error() {
+    fn test_missing_database_url_returns_error() -> Result<(), ConfigError> {
         // Only run if DATABASE_URL is not set in this environment
         if std::env::var("DATABASE_URL").is_err() {
             let result = RiskConfig::from_env();
             assert!(result.is_err());
             match result {
-                Err(ConfigError::MissingEnvVar(name)) => assert_eq!(name, "DATABASE_URL"),
-                _ => panic!("Expected MissingEnvVar(DATABASE_URL)"),
+                Err(ConfigError::MissingEnvVar(name)) => {
+                    assert_eq!(name, "DATABASE_URL");
+                    Ok(())
+                }
+                _ => Err(ConfigError::MissingEnvVar("DATABASE_URL".to_string())),
             }
+        } else {
+            Ok(())
         }
     }
 }

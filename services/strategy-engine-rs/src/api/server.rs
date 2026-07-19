@@ -1,11 +1,13 @@
+use apex_protos::strategy::strategy_service_server::StrategyServiceServer;
 use axum::{routing::get, Router};
 use std::net::SocketAddr;
 use tonic::transport::Server as TonicServer;
-use apex_protos::strategy::strategy_service_server::StrategyServiceServer;
 
-use crate::api::service::{StrategyServiceImpl, StrategyState};
 use crate::api::health::{health::liveness_check, readiness::readiness_check};
-use crate::api::interceptors::{auth::auth_interceptor, metrics::MetricsLayer, logging::LoggingLayer};
+use crate::api::interceptors::{
+    auth::auth_interceptor, logging::LoggingLayer, metrics::MetricsLayer,
+};
+use crate::api::service::{StrategyServiceImpl, StrategyState};
 
 /// Starts the multiplexed server (gRPC + HTTP health checks).
 ///
@@ -14,13 +16,12 @@ use crate::api::interceptors::{auth::auth_interceptor, metrics::MetricsLayer, lo
 pub async fn start_server(
     grpc_addr: SocketAddr,
     http_addr: SocketAddr,
-    state:     StrategyState,
+    state: StrategyState,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-
     // ── HTTP Health Check Server ─────────────────────────────────────────────
     let app = Router::new()
         .route("/health", get(liveness_check))
-        .route("/ready",  get(readiness_check));
+        .route("/ready", get(readiness_check));
 
     let axum_server = tokio::spawn(async move {
         let listener_result = tokio::net::TcpListener::bind(http_addr).await;

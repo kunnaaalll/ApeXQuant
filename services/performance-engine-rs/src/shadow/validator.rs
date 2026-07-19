@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
 use crate::shadow::comparison::{ShadowComparisonResult, ShadowComparisonState};
 use crate::shadow::drift::DriftMeasurement;
 use crate::shadow::statistics::ShadowStatistics;
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 
 pub struct ShadowValidator {
@@ -30,17 +30,20 @@ impl ShadowValidator {
         let mut max_diff = Decimal::ZERO;
         let mut mismatch_count = 0;
         let mut total_metrics = 0;
-        
+
         let mut drifts = Vec::new();
 
         // Compare all metrics provided
         for (metric_name, legacy_val) in legacy_metrics.iter() {
             total_metrics += 1;
-            
-            let rust_val = rust_metrics.get(metric_name).copied().unwrap_or(Decimal::ZERO);
-            
+
+            let rust_val = rust_metrics
+                .get(metric_name)
+                .copied()
+                .unwrap_or(Decimal::ZERO);
+
             let drift = DriftMeasurement::new(metric_name.clone(), *legacy_val, rust_val);
-            
+
             if drift.absolute_drift > max_diff {
                 max_diff = drift.absolute_drift;
             }
@@ -65,13 +68,17 @@ impl ShadowValidator {
         let mut result = ShadowComparisonResult {
             agreement_percentage: agreement_percentage.round_dp(4),
             mismatch_count: mismatch_count as u64,
-            average_difference: if total_metrics > 0 { max_diff / Decimal::from(total_metrics) } else { Decimal::ZERO },
+            average_difference: if total_metrics > 0 {
+                max_diff / Decimal::from(total_metrics)
+            } else {
+                Decimal::ZERO
+            },
             maximum_difference: max_diff,
             state: ShadowComparisonState::ExactMatch,
         };
 
         result.determine_state(self.tolerance, self.critical_threshold);
-        
+
         // Record into global stats
         self.statistics.record_result(result.state, max_diff);
 

@@ -1,6 +1,6 @@
 use crate::shadow::statistics::ShadowStatistics;
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ValidationState {
@@ -44,12 +44,20 @@ impl PortfolioValidator {
     }
 
     /// Determine Go/No-Go based on shadow statistics.
-    pub fn validate(&self, stats: &ShadowStatistics, zero_panics: bool, zero_divergence: bool) -> PortfolioValidationResult {
+    pub fn validate(
+        &self,
+        stats: &ShadowStatistics,
+        zero_panics: bool,
+        zero_divergence: bool,
+    ) -> PortfolioValidationResult {
         let mut issues = Vec::new();
         let mut state = ValidationState::Pass;
 
         if stats.agreement_percentage <= Decimal::new(990, 1) {
-            issues.push(format!("State agreement is {}%, expected >99%", stats.agreement_percentage));
+            issues.push(format!(
+                "State agreement is {}%, expected >99%",
+                stats.agreement_percentage
+            ));
             state = ValidationState::Fail;
         }
 
@@ -57,7 +65,10 @@ impl PortfolioValidator {
         // State/recommendation agreement >99.0%
         // Average drift limit < 5.0%
         if stats.average_drift >= Decimal::new(5, 2) {
-            issues.push(format!("Average drift is {}%, expected <5%", stats.average_drift * Decimal::new(100, 0)));
+            issues.push(format!(
+                "Average drift is {}%, expected <5%",
+                stats.average_drift * Decimal::new(100, 0)
+            ));
             state = ValidationState::Fail;
         }
         if !zero_panics {
@@ -70,10 +81,7 @@ impl PortfolioValidator {
             state = ValidationState::Fail;
         }
 
-        PortfolioValidationResult {
-            state,
-            issues,
-        }
+        PortfolioValidationResult { state, issues }
     }
 
     pub fn generate_alerts(&self, stats: &ShadowStatistics) -> Vec<ShadowAlert> {

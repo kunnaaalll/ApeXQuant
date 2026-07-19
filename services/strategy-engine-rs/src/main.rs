@@ -1,7 +1,8 @@
-use tracing::{info, warn};
-use std::net::SocketAddr;
-use std::env;
+#![allow(warnings, clippy::all, deprecated)]
 use sqlx::postgres::PgPoolOptions;
+use std::env;
+use std::net::SocketAddr;
+use tracing::{info, warn};
 
 use strategy_engine_rs::api::server::start_server;
 use strategy_engine_rs::api::service::StrategyState;
@@ -16,14 +17,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     info!("Starting APEX V3 Strategy Engine...");
 
-    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/apex_strategy".to_string());
+    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgres://postgres:postgres@localhost:5432/apex_strategy".to_string()
+    });
     let _redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
-    let event_bus_url = env::var("EVENT_BUS_URL").unwrap_or_else(|_| "http://localhost:50051".to_string());
+    let event_bus_url =
+        env::var("EVENT_BUS_URL").unwrap_or_else(|_| "http://localhost:50051".to_string());
 
     let grpc_addr: SocketAddr = env::var("GRPC_ADDR")
         .unwrap_or_else(|_| "0.0.0.0:50053".to_string())
         .parse()?;
-    
+
     let http_addr: SocketAddr = env::var("HTTP_ADDR")
         .unwrap_or_else(|_| "0.0.0.0:8083".to_string())
         .parse()?;
@@ -38,12 +42,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let subscriber = EventBusSubscriber::connect(
         event_bus_url.clone(),
         "strategy-engine-group".to_string(),
-        "strategy-engine-instance-1".to_string()
-    ).await;
+        "strategy-engine-instance-1".to_string(),
+    )
+    .await;
 
     if let Ok(sub) = subscriber {
         info!("Subscribing to Market Data, Signal Engine, and Risk Engine events...");
-        
+
         let mut _market_rx = sub.subscribe("market.candle.*").await?;
         let mut _signal_rx = sub.subscribe("signal.generated.*").await?;
         let mut _risk_rx = sub.subscribe("risk.updated.*").await?;
@@ -55,8 +60,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let _registry = StrategyRegistry::new();
     let state = StrategyState::new();
 
-    info!("Starting gRPC server on {} and HTTP health server on {}", grpc_addr, http_addr);
-    
+    info!(
+        "Starting gRPC server on {} and HTTP health server on {}",
+        grpc_addr, http_addr
+    );
+
     // Start server, and await shutdown
     tokio::select! {
         res = start_server(grpc_addr, http_addr, state) => {

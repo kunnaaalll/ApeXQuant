@@ -1,7 +1,6 @@
-use anyhow::Result;
-use sqlx::PgPool;
 use crate::nats::NatsManager;
 use crate::redis::RedisManager;
+use sqlx::PgPool;
 
 #[derive(Clone)]
 pub struct HealthChecker {
@@ -12,7 +11,11 @@ pub struct HealthChecker {
 
 impl HealthChecker {
     pub fn new(db_pool: PgPool, nats: NatsManager, redis: RedisManager) -> Self {
-        Self { db_pool, nats, redis }
+        Self {
+            db_pool,
+            nats,
+            redis,
+        }
     }
 
     pub async fn check_postgres(&self) -> bool {
@@ -26,7 +29,7 @@ impl HealthChecker {
     pub async fn check_redis(&self) -> bool {
         self.redis.get_connection().await.is_ok()
     }
-    
+
     pub async fn is_healthy(&self) -> bool {
         self.check_postgres().await && self.check_nats().await && self.check_redis().await
     }

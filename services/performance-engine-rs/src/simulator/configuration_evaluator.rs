@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
 use crate::simulator::replay_engine::TradeRecord;
 use crate::simulator::variant_runner::{Variant, VariantResult, VariantRunner};
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 /// Evaluation of a full configuration sweep against historical data.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,8 +38,8 @@ impl ConfigurationEvaluator {
                 .then(a.variant_id.cmp(&b.variant_id))
         });
 
-        let best = sorted.first().unwrap();
-        let worst = sorted.last().unwrap();
+        let best = sorted.first()?;
+        let worst = sorted.last()?;
 
         let difference = best.result.expectancy - worst.result.expectancy;
 

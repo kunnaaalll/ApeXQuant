@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use super::models::ExpectancyMetrics;
 use super::states::ExpectancyState;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 pub struct ExpectancyCalculator;
 
@@ -14,7 +14,7 @@ impl ExpectancyCalculator {
         gross_loss: Decimal, // Expecting positive or absolute representation
     ) -> ExpectancyMetrics {
         let trade_count = wins + losses + breakevens;
-        
+
         if trade_count == 0 {
             return ExpectancyMetrics::default();
         }

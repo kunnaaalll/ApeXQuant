@@ -1,6 +1,7 @@
 pub struct DatasetEngine;
 
 impl DatasetEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }

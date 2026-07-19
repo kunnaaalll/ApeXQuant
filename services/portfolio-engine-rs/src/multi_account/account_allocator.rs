@@ -46,7 +46,7 @@ impl AccountAllocatorEngine {
             });
             allocated += amount;
         }
-        
+
         // Handle remainder if any (due to rounding), assign to the first account
         if allocated != total_capital {
             allocations[0].allocated_capital += total_capital - allocated;

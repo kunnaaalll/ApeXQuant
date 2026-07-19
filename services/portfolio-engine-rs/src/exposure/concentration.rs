@@ -17,7 +17,11 @@ pub struct DuplicateExposureResult {
 }
 
 impl DuplicateExposureResult {
-    pub fn new(description: String, assessment: ConcentrationAssessment, symbols_involved: Vec<String>) -> Self {
+    pub fn new(
+        description: String,
+        assessment: ConcentrationAssessment,
+        symbols_involved: Vec<String>,
+    ) -> Self {
         Self {
             description,
             assessment,

@@ -1,7 +1,7 @@
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
 use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 use rust_decimal::MathematicalOps;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeUnderWaterAssessment {
@@ -54,9 +54,9 @@ impl UlcerIndexAssessment {
 
         let duration_dec = Decimal::from_u64(duration).unwrap_or(Decimal::ONE);
         let mean_sq = sum_sq / duration_dec;
-        
+
         let ulcer_index = mean_sq.sqrt().unwrap_or(Decimal::ZERO);
-        
+
         let persistence = if duration > 0 {
             let nz_dec = Decimal::from_u64(nonzero_count).unwrap_or(Decimal::ZERO);
             nz_dec / duration_dec

@@ -7,11 +7,16 @@ use super::models::{
 };
 use super::reduce::evaluate_reduction;
 
-fn generate_explanation(inputs: &RiskInputs, recommendation: RiskRecommendation) -> RecommendationExplanation {
+fn generate_explanation(
+    inputs: &RiskInputs,
+    recommendation: RiskRecommendation,
+) -> RecommendationExplanation {
     let mut factors = Vec::new();
     let mut deterioration = Vec::new();
 
-    if inputs.drawdown_state == super::models::DrawdownState::Collapse || inputs.drawdown_state == super::models::DrawdownState::Frozen {
+    if inputs.drawdown_state == super::models::DrawdownState::Collapse
+        || inputs.drawdown_state == super::models::DrawdownState::Frozen
+    {
         factors.push("Drawdown at collapse/frozen levels");
         deterioration.push("Severe drawdown");
     } else if inputs.drawdown_state == super::models::DrawdownState::Warning {
@@ -24,7 +29,7 @@ fn generate_explanation(inputs: &RiskInputs, recommendation: RiskRecommendation)
     } else if inputs.exposure_state == super::models::ExposureState::Warning {
         deterioration.push("Exposure warning");
     }
-    
+
     if inputs.correlation_severity == super::models::CorrelationSeverity::Critical {
         factors.push("Critical correlation severity");
         deterioration.push("High correlated risk");
@@ -49,11 +54,21 @@ fn generate_explanation(inputs: &RiskInputs, recommendation: RiskRecommendation)
 
     let why = match recommendation {
         RiskRecommendation::FreezeTrading => format!("Trading frozen due to: {}", dominant),
-        RiskRecommendation::EmergencyReduction => format!("Emergency risk reduction mandated by: {}", dominant),
-        RiskRecommendation::ReduceAggressively => format!("Aggressive risk reduction triggered by: {}", dominant),
-        RiskRecommendation::ReduceRisk => format!("General risk reduction advised. Concerns: {}", det_str),
-        RiskRecommendation::MaintainRisk => "Maintaining current risk parameters. No critical warnings.".to_string(),
-        RiskRecommendation::IncreaseRisk => "Conditions permit risk increase. All metrics healthy.".to_string(),
+        RiskRecommendation::EmergencyReduction => {
+            format!("Emergency risk reduction mandated by: {}", dominant)
+        }
+        RiskRecommendation::ReduceAggressively => {
+            format!("Aggressive risk reduction triggered by: {}", dominant)
+        }
+        RiskRecommendation::ReduceRisk => {
+            format!("General risk reduction advised. Concerns: {}", det_str)
+        }
+        RiskRecommendation::MaintainRisk => {
+            "Maintaining current risk parameters. No critical warnings.".to_string()
+        }
+        RiskRecommendation::IncreaseRisk => {
+            "Conditions permit risk increase. All metrics healthy.".to_string()
+        }
     };
 
     let improved = if recommendation == RiskRecommendation::IncreaseRisk {
@@ -81,7 +96,10 @@ pub fn evaluate_committee(inputs: &RiskInputs, current_time: u64) -> RiskCommitt
     // Freeze > Emergency Reduction > Aggressive Reduction > Maintain > Increase
 
     let (recommendation, admission_policy) = if freeze.is_some() {
-        (RiskRecommendation::FreezeTrading, TradeAdmissionPolicy::Freeze)
+        (
+            RiskRecommendation::FreezeTrading,
+            TradeAdmissionPolicy::Freeze,
+        )
     } else if reduce == ReduceDecision::EmergencyReduction {
         // Emergency reduction always maps to severe block or delay
         let policy = if block == TradeAdmissionPolicy::Freeze {

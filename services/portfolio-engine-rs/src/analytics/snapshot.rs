@@ -1,14 +1,14 @@
 // src/analytics/snapshot.rs
 use serde::{Deserialize, Serialize};
 
-use super::portfolio_metrics::PortfolioMetrics;
+use super::efficiency::EfficiencyAssessment;
 use super::expectancy::ExpectancyAssessment;
 use super::performance::PerformanceAssessment;
-use super::efficiency::EfficiencyAssessment;
+use super::portfolio_metrics::PortfolioMetrics;
 use super::regime::RegimePerformanceProfile;
+use super::streak::StreakAnalytics;
 use super::symbol::SymbolPerformanceProfile;
 use super::timeframe::TimeframePerformanceProfile;
-use super::streak::StreakAnalytics;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SnapshotResolution {
@@ -20,7 +20,7 @@ pub enum SnapshotResolution {
     D1,
 }
 
-/// An immutable, versioned, timestamped snapshot of all analytics 
+/// An immutable, versioned, timestamped snapshot of all analytics
 /// to support deterministic replays and audits.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AnalyticsSnapshot {

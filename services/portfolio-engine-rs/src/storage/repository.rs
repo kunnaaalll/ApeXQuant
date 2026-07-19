@@ -50,7 +50,9 @@ impl PortfolioRepository {
         aggregate_id: &str,
         frequency: SnapshotFrequency,
     ) -> Result<Option<SnapshotRecord>> {
-        self.store.load_latest_snapshot(aggregate_id, frequency).await
+        self.store
+            .load_latest_snapshot(aggregate_id, frequency)
+            .await
     }
 
     /// Load a specific snapshot by its version number.
@@ -59,7 +61,9 @@ impl PortfolioRepository {
         aggregate_id: &str,
         version: i64,
     ) -> Result<Option<SnapshotRecord>> {
-        self.store.load_snapshot_by_version(aggregate_id, version).await
+        self.store
+            .load_snapshot_by_version(aggregate_id, version)
+            .await
     }
 
     /// Load the entire event history for an aggregate.
@@ -85,7 +89,9 @@ impl PortfolioRepository {
         aggregate_id: &str,
         since_time: time::OffsetDateTime,
     ) -> Result<Vec<EventRecord>> {
-        self.store.load_events_since_time(aggregate_id, since_time).await
+        self.store
+            .load_events_since_time(aggregate_id, since_time)
+            .await
     }
 }
 
@@ -183,7 +189,9 @@ impl HealthRepository {
         status: &str,
         breakdown: &serde_json::Value,
     ) -> Result<()> {
-        self.store.save_health(portfolio_id, health_score, status, breakdown).await
+        self.store
+            .save_health(portfolio_id, health_score, status, breakdown)
+            .await
     }
 }
 
@@ -203,7 +211,9 @@ impl QualityRepository {
         quality_score: Decimal,
         breakdown: &serde_json::Value,
     ) -> Result<()> {
-        self.store.save_quality(portfolio_id, quality_score, breakdown).await
+        self.store
+            .save_quality(portfolio_id, quality_score, breakdown)
+            .await
     }
 }
 

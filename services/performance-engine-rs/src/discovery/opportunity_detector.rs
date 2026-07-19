@@ -40,7 +40,7 @@ impl OpportunityDetector {
             OpportunityState::Neutral
         } else {
             OpportunityState::Weak
-        } ;
+        };
 
         Opportunity {
             state,

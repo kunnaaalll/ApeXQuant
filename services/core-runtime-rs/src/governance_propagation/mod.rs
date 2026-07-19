@@ -37,7 +37,7 @@ impl GovernancePropagator {
 
     pub fn propagate_policy(&mut self, policy: GovernancePolicy) -> Vec<PropagationEvent> {
         self.current_policy = policy;
-        
+
         // Define deterministic propagation order (reverse of dependency for some, or specific sequence)
         // For emergency freeze: Risk -> Execution -> Portfolio -> Strategy -> AI
         let target_order = match policy {

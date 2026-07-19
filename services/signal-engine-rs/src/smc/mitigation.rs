@@ -221,7 +221,11 @@ pub fn analyze_mitigations(
 
     let strongest = mitigations
         .iter()
-        .max_by(|a, b| a.strength.partial_cmp(&b.strength).unwrap())
+        .max_by(|a, b| {
+            a.strength
+                .partial_cmp(&b.strength)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
         .cloned();
 
     let bias = if bullish_count > bearish_count * 2 {

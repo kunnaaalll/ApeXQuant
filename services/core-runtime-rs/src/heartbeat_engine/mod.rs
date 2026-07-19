@@ -53,12 +53,15 @@ impl HeartbeatEngine {
     }
 
     pub fn record_heartbeat(&mut self, service_id: &str, timestamp_ms: u64) {
-        let status = self.health_statuses.entry(service_id.to_string()).or_insert(EngineHealthStatus {
-            last_heartbeat_ms: timestamp_ms,
-            missed_heartbeats: 0,
-            state: HeartbeatState::Healthy,
-        });
-        
+        let status = self
+            .health_statuses
+            .entry(service_id.to_string())
+            .or_insert(EngineHealthStatus {
+                last_heartbeat_ms: timestamp_ms,
+                missed_heartbeats: 0,
+                state: HeartbeatState::Healthy,
+            });
+
         status.last_heartbeat_ms = timestamp_ms;
         status.missed_heartbeats = 0;
         status.state = HeartbeatState::Healthy;
@@ -67,7 +70,7 @@ impl HeartbeatEngine {
     pub fn evaluate_health(&mut self, current_time_ms: u64) {
         for status in self.health_statuses.values_mut() {
             let elapsed = current_time_ms.saturating_sub(status.last_heartbeat_ms);
-            
+
             if elapsed >= self.config.offline_threshold_ms {
                 status.state = HeartbeatState::Offline;
             } else if elapsed >= self.config.critical_threshold_ms {

@@ -68,8 +68,12 @@ impl SignalGenerator {
         };
 
         // Extract Entry, Stop Loss, Take Profit
-        let base_candles = context.candles.get("M15").unwrap();
-        let current_price = base_candles.last().unwrap().close;
+        let base_candles = context
+            .candles
+            .get("M15")
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+        let current_price = base_candles.last().map(|c| c.close).unwrap_or_default();
 
         // Basic ATR or structure based stops (placeholder simple calc for now)
         let atr_approx = Decimal::from_str_exact("0.0050").unwrap_or_default(); // Example placeholder

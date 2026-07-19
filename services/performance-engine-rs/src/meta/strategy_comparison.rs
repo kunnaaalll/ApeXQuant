@@ -33,8 +33,16 @@ impl StrategyComparisonEngine {
         });
 
         let winner = strategies[0].clone();
-        let runner_up = if strategies.len() > 1 { Some(strategies[1].clone()) } else { None };
-        let loser = if strategies.len() > 2 { Some(strategies.last().unwrap().clone()) } else { None };
+        let runner_up = if strategies.len() > 1 {
+            Some(strategies[1].clone())
+        } else {
+            None
+        };
+        let loser = if strategies.len() > 2 {
+            Some(strategies.last().cloned().unwrap())
+        } else {
+            None
+        };
 
         let explanation = format!(
             "Winner {} chosen due to highest combined score (expectancy, stability, drawdown, confidence).",

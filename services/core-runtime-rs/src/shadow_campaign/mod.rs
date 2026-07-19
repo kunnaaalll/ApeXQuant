@@ -101,7 +101,10 @@ impl ShadowCampaignManager {
         self.days_run += 1;
         self.check_auto_fail();
 
-        if self.state != CampaignState::Failed && self.days_run >= self.total_days_target && self.trades_executed >= self.target_trades {
+        if self.state != CampaignState::Failed
+            && self.days_run >= self.total_days_target
+            && self.trades_executed >= self.target_trades
+        {
             self.state = CampaignState::Certified;
         }
         self.generate_daily_report();

@@ -1,5 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PatternState {
     #[default]
     Maturing,
@@ -7,4 +6,3 @@ pub enum PatternState {
     Fading,
     Obsolete,
 }
-

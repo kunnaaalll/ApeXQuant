@@ -45,15 +45,18 @@ impl RiskClient {
     ///
     /// Calls `RiskEngine::GetRiskState` and maps the proto response.
     /// Returns an error (never a fake "SAFE" value) if the call fails.
-    pub async fn fetch_risk_assessment(&mut self, account_id: &str) -> Result<RiskAssessment, String> {
+    pub async fn fetch_risk_assessment(
+        &mut self,
+        account_id: &str,
+    ) -> Result<RiskAssessment, String> {
         let request = tonic::Request::new(RiskStateQuery {
             account_id: account_id.to_string(),
         });
 
-        let response = self.client
-            .get_risk_state(request)
-            .await
-            .map_err(|e| format!("RiskEngine::GetRiskState failed for {}: {}", account_id, e))?;
+        let response =
+            self.client.get_risk_state(request).await.map_err(|e| {
+                format!("RiskEngine::GetRiskState failed for {}: {}", account_id, e)
+            })?;
 
         let state = response.into_inner();
 
@@ -61,7 +64,7 @@ impl RiskClient {
         // and doesn't contain the detailed metrics (risk_score, etc.). We map what we can.
         let can_trade = state.state != "BLOCKED";
         let status = state.state.clone();
-        
+
         let risk_score = Decimal::ZERO;
         let margin_utilization = Decimal::ZERO;
         let portfolio_heat = Decimal::ZERO;

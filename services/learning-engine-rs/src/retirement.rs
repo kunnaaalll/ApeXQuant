@@ -33,7 +33,7 @@ impl RetirementManager {
         Self {
             edge_threshold: Decimal::new(10, 0), // if edge score drops below 10
             confidence_threshold: Decimal::new(30, 0), // if confidence drops below 30
-            max_drawdown_duration: 50, 
+            max_drawdown_duration: 50,
         }
     }
 

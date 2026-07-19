@@ -14,7 +14,15 @@ impl ExplanationGenerator {
     pub fn new() -> Self {
         Self
     }
+}
 
+impl Default for ExplanationGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ExplanationGenerator {
     pub fn generate_allocation_change(
         target: &str,
         action: &str,
@@ -42,11 +50,7 @@ impl ExplanationGenerator {
         }
     }
 
-    pub fn generate_promotion(
-        strategy_id: &str,
-        level: &str,
-        metrics: Vec<String>,
-    ) -> Explanation {
+    pub fn generate_promotion(strategy_id: &str, level: &str, metrics: Vec<String>) -> Explanation {
         Explanation {
             subject: "Strategy Promotion".to_string(),
             summary: format!("Promote {} to {}", strategy_id, level),

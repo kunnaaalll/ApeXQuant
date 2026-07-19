@@ -1,6 +1,7 @@
 pub struct OnlineLearningEngine;
 
 impl OnlineLearningEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
@@ -10,7 +11,7 @@ impl OnlineLearningEngine {
         if active_model_id.is_empty() {
             return false;
         }
-        
+
         new_data_points > 1000
     }
 }

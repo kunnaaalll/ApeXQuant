@@ -52,6 +52,7 @@ pub struct MarketStructureFeatures {
 pub struct FeatureEngine;
 
 impl FeatureEngine {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
@@ -61,11 +62,15 @@ impl FeatureEngine {
         let close = raw_data.last().cloned().unwrap_or(Decimal::ZERO);
         let high = raw_data.iter().max().cloned().unwrap_or(close);
         let low = raw_data.iter().min().cloned().unwrap_or(close);
-        
+
         let sum: Decimal = raw_data.iter().sum();
         let count = Decimal::new(raw_data.len() as i64, 0);
-        let vwap = if count > Decimal::ZERO { sum / count } else { close };
-        
+        let vwap = if count > Decimal::ZERO {
+            sum / count
+        } else {
+            close
+        };
+
         MarketFeatureSet {
             timestamp: 0, // Should be passed in
             price_action: PriceActionFeatures {

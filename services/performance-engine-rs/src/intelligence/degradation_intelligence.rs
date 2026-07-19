@@ -26,10 +26,14 @@ impl DegradationIntelligence {
             state = DegradationState::Critical;
             warning_triggered = true;
             reason = String::from("Critical degradation detected in edge or expectancy");
-        } else if edge.edge_state == EdgeState::Weakening || expectancy.state == ExpectancyState::Weak {
+        } else if edge.edge_state == EdgeState::Weakening
+            || expectancy.state == ExpectancyState::Weak
+        {
             state = DegradationState::Degrading;
             warning_triggered = true;
-            reason = String::from("Performance is degrading. Recent metrics trailing long-term averages");
+            reason = String::from(
+                "Performance is degrading. Recent metrics trailing long-term averages",
+            );
         } else if edge.degrading || expectancy.negative_drift {
             state = DegradationState::Monitor;
             reason = String::from("Early signs of negative drift. Monitor closely");

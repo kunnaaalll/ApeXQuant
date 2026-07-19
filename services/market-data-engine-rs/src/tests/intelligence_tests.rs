@@ -44,16 +44,18 @@ mod tests {
             )?;
             
             let quality = quality_engine.evaluate(
-                Decimal::from(1),
-                Decimal::from(1),
-                Decimal::from(100),
-                Decimal::from(100),
-                true,
-                0,
-                Decimal::from(1),
-                Decimal::from(1),
-                Decimal::from(1),
-                Decimal::from(1),
+                crate::quality::QualityEvaluationParams {
+                    spread: Decimal::from(1),
+                    average_spread: Decimal::from(1),
+                    liquidity_depth: Decimal::from(100),
+                    average_liquidity: Decimal::from(100),
+                    is_feed_healthy: true,
+                    sequence_gaps: 0,
+                    current_volatility: Decimal::from(1),
+                    average_volatility: Decimal::from(1),
+                    current_participation: Decimal::from(1),
+                    average_participation: Decimal::from(1),
+                }
             )?;
 
             let profile = IntelligenceAggregator::build_profile(

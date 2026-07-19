@@ -58,22 +58,24 @@ impl RebalanceEngine {
         // Handle cases where a current holding is not in targets (should be sold)
         for (symbol, current_weight) in current_weights {
             let is_in_targets = targets.iter().any(|t| &t.symbol == symbol);
-            
-            if !is_in_targets && !current_weight.is_zero()
-                && current_weight.abs() > self.tolerance_threshold {
-                    actions.push(RebalanceAction {
-                        symbol: symbol.clone(),
-                        current_weight: *current_weight,
-                        target_weight: Decimal::ZERO,
-                        weight_delta: -*current_weight,
-                        is_buy: false,
-                    });
-                }
+
+            if !is_in_targets
+                && !current_weight.is_zero()
+                && current_weight.abs() > self.tolerance_threshold
+            {
+                actions.push(RebalanceAction {
+                    symbol: symbol.clone(),
+                    current_weight: *current_weight,
+                    target_weight: Decimal::ZERO,
+                    weight_delta: -*current_weight,
+                    is_buy: false,
+                });
+            }
         }
 
         actions
     }
-    
+
     pub fn spawn_reconciliation_loop(
         interval_secs: u64,
         exposure_registry: crate::exposure::registry::ExposureRegistry,
@@ -82,14 +84,20 @@ impl RebalanceEngine {
     ) {
         let engine = Self::new(Decimal::new(2, 2)); // 2% drift tolerance
         tokio::spawn(async move {
-            tracing::info!("PortfolioEngine: Reconciliation loop started ({}s)", interval_secs);
+            tracing::info!(
+                "PortfolioEngine: Reconciliation loop started ({}s)",
+                interval_secs
+            );
             loop {
                 tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
-                
+
                 let exp_state = match exposure_registry.get_state() {
                     Ok(s) => s,
                     Err(e) => {
-                        tracing::error!("Failed to fetch exposure state in reconciliation loop: {:?}", e);
+                        tracing::error!(
+                            "Failed to fetch exposure state in reconciliation loop: {:?}",
+                            e
+                        );
                         continue;
                     }
                 };
@@ -100,13 +108,18 @@ impl RebalanceEngine {
                 }
 
                 // Query target allocations from DB
-                let row_opt = match sqlx::query("SELECT allocations FROM portfolio_allocations ORDER BY timestamp DESC LIMIT 1")
-                    .fetch_optional(&pool)
-                    .await
+                let row_opt = match sqlx::query(
+                    "SELECT allocations FROM portfolio_allocations ORDER BY timestamp DESC LIMIT 1",
+                )
+                .fetch_optional(&pool)
+                .await
                 {
                     Ok(opt) => opt,
                     Err(e) => {
-                        tracing::error!("Failed to fetch target allocations in reconciliation loop: {:?}", e);
+                        tracing::error!(
+                            "Failed to fetch target allocations in reconciliation loop: {:?}",
+                            e
+                        );
                         None
                     }
                 };
@@ -114,7 +127,9 @@ impl RebalanceEngine {
                 let mut targets = Vec::new();
                 if let Some(row) = row_opt {
                     if let Ok(allocs_val) = row.try_get::<serde_json::Value, _>("allocations") {
-                        if let Ok(parsed_targets) = serde_json::from_value::<Vec<RebalanceTarget>>(allocs_val) {
+                        if let Ok(parsed_targets) =
+                            serde_json::from_value::<Vec<RebalanceTarget>>(allocs_val)
+                        {
                             targets = parsed_targets;
                         }
                     }

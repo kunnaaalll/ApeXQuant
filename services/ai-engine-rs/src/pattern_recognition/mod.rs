@@ -25,13 +25,19 @@ pub struct DetectedPattern {
 pub struct PatternRecognizer;
 
 impl PatternRecognizer {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self
     }
 
-    pub fn detect_fvg(&self, highs: &[Decimal], lows: &[Decimal], times: &[u64]) -> Vec<DetectedPattern> {
+    pub fn detect_fvg(
+        &self,
+        highs: &[Decimal],
+        lows: &[Decimal],
+        times: &[u64],
+    ) -> Vec<DetectedPattern> {
         let mut patterns = Vec::new();
-        
+
         // Deterministic FVG detection (requires at least 3 candles)
         if highs.len() < 3 || lows.len() < 3 || highs.len() != lows.len() {
             return patterns;
@@ -49,7 +55,7 @@ impl PatternRecognizer {
                     is_bullish: true,
                 });
             }
-            
+
             // Bearish FVG: High of candle 3 is lower than Low of candle 1
             if highs[i] < lows[i - 2] {
                 patterns.push(DetectedPattern {
@@ -62,22 +68,28 @@ impl PatternRecognizer {
                 });
             }
         }
-        
+
         patterns
     }
 
-    pub fn detect_all_patterns(&self, highs: &[Decimal], lows: &[Decimal], closes: &[Decimal], times: &[u64]) -> Vec<DetectedPattern> {
+    pub fn detect_all_patterns(
+        &self,
+        highs: &[Decimal],
+        lows: &[Decimal],
+        closes: &[Decimal],
+        times: &[u64],
+    ) -> Vec<DetectedPattern> {
         let mut all_patterns = Vec::new();
-        
+
         // Detect FVG
         all_patterns.extend(self.detect_fvg(highs, lows, times));
-        
+
         // For BOS, CHoCH, OrderBlocks, we would apply similar deterministic loops over historical data.
         // Deterministic logic for BOS, CHoCH, OrderBlocks based on historical execution.
         if !closes.is_empty() {
             let last_close = closes.last().copied().unwrap_or(Decimal::ZERO);
             if last_close > Decimal::new(1000, 0) {
-                 all_patterns.push(DetectedPattern {
+                all_patterns.push(DetectedPattern {
                     pattern_type: PatternType::BreakOfStructure,
                     start_time: *times.first().unwrap_or(&0),
                     end_time: *times.last().unwrap_or(&0),

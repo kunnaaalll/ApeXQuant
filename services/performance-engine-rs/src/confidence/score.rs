@@ -1,6 +1,6 @@
+use crate::confidence::penalties::ConfidencePenalty;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use crate::confidence::penalties::ConfidencePenalty;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConfidenceLevel {
@@ -13,11 +13,11 @@ pub enum ConfidenceLevel {
 
 #[derive(Debug, Clone)]
 pub struct ConfidenceScore {
-    pub raw_score: Decimal, // 0-100
+    pub raw_score: Decimal,   // 0-100
     pub final_score: Decimal, // 0-100
     pub level: ConfidenceLevel,
     pub penalties: Vec<ConfidencePenalty>,
-    
+
     pub edge_score: Decimal,
     pub expectancy_score: Decimal,
     pub sample_adequacy: Decimal,
@@ -30,6 +30,7 @@ pub struct ConfidenceScore {
 }
 
 impl ConfidenceScore {
+    #[allow(clippy::too_many_arguments)]
     pub fn calculate(
         edge_score: Decimal,
         expectancy_score: Decimal,
@@ -42,15 +43,15 @@ impl ConfidenceScore {
         confidence_memory: Decimal,
         penalties: Vec<ConfidencePenalty>,
     ) -> Self {
-        let raw_score = edge_score * dec!(0.2) +
-                        expectancy_score * dec!(0.2) +
-                        sample_adequacy * dec!(0.15) +
-                        stability_score * dec!(0.15) +
-                        regime_score * dec!(0.1) +
-                        session_score * dec!(0.05) +
-                        symbol_score * dec!(0.05) +
-                        timeframe_score * dec!(0.05) +
-                        confidence_memory * dec!(0.05);
+        let raw_score = edge_score * dec!(0.2)
+            + expectancy_score * dec!(0.2)
+            + sample_adequacy * dec!(0.15)
+            + stability_score * dec!(0.15)
+            + regime_score * dec!(0.1)
+            + session_score * dec!(0.05)
+            + symbol_score * dec!(0.05)
+            + timeframe_score * dec!(0.05)
+            + confidence_memory * dec!(0.05);
 
         let mut total_penalty_impact = Decimal::ZERO;
         for penalty in &penalties {

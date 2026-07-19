@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 //! Property-based tests for Confluence Engine
 
 use proptest::prelude::*;

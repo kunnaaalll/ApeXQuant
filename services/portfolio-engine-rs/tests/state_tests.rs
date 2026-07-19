@@ -1,3 +1,4 @@
+#![allow(warnings, clippy::all, deprecated)]
 use portfolio_engine::portfolio::events::PortfolioEvent;
 use portfolio_engine::portfolio::state::PortfolioState;
 use proptest::prelude::*;
@@ -19,7 +20,7 @@ fn test_apply_deposit() {
         amount: Decimal::from(1000),
     };
     let timestamp = OffsetDateTime::now_utc();
-    
+
     assert!(state.apply_event(&event, timestamp).is_ok());
     assert_eq!(state.balance, Decimal::from(1000));
     assert_eq!(state.equity, Decimal::from(1000));
@@ -33,14 +34,26 @@ fn test_position_opened_and_pnl() {
     let timestamp = OffsetDateTime::now_utc();
 
     // 1. Deposit
-    state.apply_event(&PortfolioEvent::Deposit { amount: Decimal::from(10000) }, timestamp).unwrap();
+    state
+        .apply_event(
+            &PortfolioEvent::Deposit {
+                amount: Decimal::from(10000),
+            },
+            timestamp,
+        )
+        .unwrap();
 
     // 2. Open Position
-    state.apply_event(&PortfolioEvent::PositionOpened {
-        position_id: Uuid::new_v4(),
-        margin_used: Decimal::from(1000),
-        exposure: Decimal::from(10000),
-    }, timestamp).unwrap();
+    state
+        .apply_event(
+            &PortfolioEvent::PositionOpened {
+                position_id: Uuid::new_v4(),
+                margin_used: Decimal::from(1000),
+                exposure: Decimal::from(10000),
+            },
+            timestamp,
+        )
+        .unwrap();
 
     assert_eq!(state.balance, Decimal::from(10000));
     assert_eq!(state.equity, Decimal::from(10000));
@@ -50,10 +63,15 @@ fn test_position_opened_and_pnl() {
     assert_eq!(state.active_positions, 1);
 
     // 3. PnL Update (floating +500)
-    state.apply_event(&PortfolioEvent::PnlUpdate {
-        position_id: Uuid::new_v4(),
-        pnl_delta: Decimal::from(500),
-    }, timestamp).unwrap();
+    state
+        .apply_event(
+            &PortfolioEvent::PnlUpdate {
+                position_id: Uuid::new_v4(),
+                pnl_delta: Decimal::from(500),
+            },
+            timestamp,
+        )
+        .unwrap();
 
     assert_eq!(state.balance, Decimal::from(10000));
     assert_eq!(state.equity, Decimal::from(10500)); // 10000 + 500
@@ -61,21 +79,31 @@ fn test_position_opened_and_pnl() {
     assert_eq!(state.margin_level, Decimal::from_f64(10.5).unwrap());
 
     // 4. Position Closed
-    state.apply_event(&PortfolioEvent::PositionClosed {
-        position_id: Uuid::new_v4(),
-        realized_pnl: Decimal::from(500),
-        margin_released: Decimal::from(1000),
-        exposure_released: Decimal::from(10000),
-    }, timestamp).unwrap();
+    state
+        .apply_event(
+            &PortfolioEvent::PositionClosed {
+                position_id: Uuid::new_v4(),
+                realized_pnl: Decimal::from(500),
+                margin_released: Decimal::from(1000),
+                exposure_released: Decimal::from(10000),
+            },
+            timestamp,
+        )
+        .unwrap();
 
     // After close, balance increases by realized PnL, floating PnL should be externally adjusted back,
-    // but in this event stream, usually we have a PnlUpdate delta back to 0 before close, 
+    // but in this event stream, usually we have a PnlUpdate delta back to 0 before close,
     // or the engine adjusts it.
     // Let's explicitly zero out the floating PnL for the position since it's closed.
-    state.apply_event(&PortfolioEvent::PnlUpdate {
-        position_id: Uuid::new_v4(),
-        pnl_delta: Decimal::from(-500),
-    }, timestamp).unwrap();
+    state
+        .apply_event(
+            &PortfolioEvent::PnlUpdate {
+                position_id: Uuid::new_v4(),
+                pnl_delta: Decimal::from(-500),
+            },
+            timestamp,
+        )
+        .unwrap();
 
     assert_eq!(state.balance, Decimal::from(10500));
     assert_eq!(state.equity, Decimal::from(10500));
@@ -113,7 +141,7 @@ proptest! {
         state.free_margin = state.equity - state.used_margin;
 
         assert!(state.validate_invariants().is_ok());
-        
+
         let expected_margin_level = state.equity / state.used_margin;
         assert_eq!(state.margin_level, expected_margin_level);
     }

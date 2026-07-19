@@ -1,7 +1,7 @@
+use super::{PositionAnalyticsEventPayload, PositionEventPayload, PositionHealthEventPayload};
 use async_nats::Client;
 use bytes::Bytes;
 use tracing::info;
-use super::{PositionEventPayload, PositionHealthEventPayload, PositionAnalyticsEventPayload};
 
 #[derive(Clone)]
 pub struct EventPublisher {
@@ -13,37 +13,62 @@ impl EventPublisher {
         Self { client }
     }
 
-    pub async fn publish_position_created(&self, payload: &PositionEventPayload) -> anyhow::Result<()> {
+    pub async fn publish_position_created(
+        &self,
+        payload: &PositionEventPayload,
+    ) -> anyhow::Result<()> {
         let data: Bytes = serde_json::to_vec(payload)?.into();
         self.client.publish("position.created", data).await?;
-        info!("Published position.created for position_id={}", payload.position_id);
+        info!(
+            "Published position.created for position_id={}",
+            payload.position_id
+        );
         Ok(())
     }
 
-    pub async fn publish_position_updated(&self, payload: &PositionEventPayload) -> anyhow::Result<()> {
+    pub async fn publish_position_updated(
+        &self,
+        payload: &PositionEventPayload,
+    ) -> anyhow::Result<()> {
         let data: Bytes = serde_json::to_vec(payload)?.into();
         self.client.publish("position.updated", data).await?;
-        info!("Published position.updated for position_id={}", payload.position_id);
+        info!(
+            "Published position.updated for position_id={}",
+            payload.position_id
+        );
         Ok(())
     }
 
-    pub async fn publish_position_closed(&self, payload: &PositionEventPayload) -> anyhow::Result<()> {
+    pub async fn publish_position_closed(
+        &self,
+        payload: &PositionEventPayload,
+    ) -> anyhow::Result<()> {
         let data: Bytes = serde_json::to_vec(payload)?.into();
         self.client.publish("position.closed", data).await?;
-        info!("Published position.closed for position_id={}", payload.position_id);
+        info!(
+            "Published position.closed for position_id={}",
+            payload.position_id
+        );
         Ok(())
     }
 
-    pub async fn publish_position_health_updated(&self, payload: &PositionHealthEventPayload) -> anyhow::Result<()> {
+    pub async fn publish_position_health_updated(
+        &self,
+        payload: &PositionHealthEventPayload,
+    ) -> anyhow::Result<()> {
         let data: Bytes = serde_json::to_vec(payload)?.into();
         self.client.publish("position.health.updated", data).await?;
         Ok(())
     }
 
-    pub async fn publish_position_analytics_updated(&self, payload: &PositionAnalyticsEventPayload) -> anyhow::Result<()> {
+    pub async fn publish_position_analytics_updated(
+        &self,
+        payload: &PositionAnalyticsEventPayload,
+    ) -> anyhow::Result<()> {
         let data: Bytes = serde_json::to_vec(payload)?.into();
-        self.client.publish("position.analytics.updated", data).await?;
+        self.client
+            .publish("position.analytics.updated", data)
+            .await?;
         Ok(())
     }
 }
-

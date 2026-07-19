@@ -49,8 +49,7 @@ pub fn generate_narrative(
         &format!("{:?}", inputs.circuit_breaker_state),
     );
 
-    let dominant_factor =
-        find_largest_contributor(&reasons).unwrap_or_else(|| "None".to_string());
+    let dominant_factor = find_largest_contributor(&reasons).unwrap_or_else(|| "None".to_string());
 
     // Compute improvements and deteriorations from real previous state
     let (improvements, deterioration) = match previous_inputs {
@@ -133,19 +132,28 @@ fn detect_improvements_from_states(prev: &RiskInputs, curr: &RiskInputs) -> Vec<
     let prev_dd = severity_rank(&format!("{:?}", prev.drawdown_state));
     let curr_dd = severity_rank(&format!("{:?}", curr.drawdown_state));
     if curr_dd < prev_dd {
-        improvements.push(format!("Drawdown improved: {:?} → {:?}", prev.drawdown_state, curr.drawdown_state));
+        improvements.push(format!(
+            "Drawdown improved: {:?} → {:?}",
+            prev.drawdown_state, curr.drawdown_state
+        ));
     }
 
     let prev_exp = severity_rank(&format!("{:?}", prev.exposure_state));
     let curr_exp = severity_rank(&format!("{:?}", curr.exposure_state));
     if curr_exp < prev_exp {
-        improvements.push(format!("Exposure improved: {:?} → {:?}", prev.exposure_state, curr.exposure_state));
+        improvements.push(format!(
+            "Exposure improved: {:?} → {:?}",
+            prev.exposure_state, curr.exposure_state
+        ));
     }
 
     let prev_corr = severity_rank(&format!("{:?}", prev.correlation_severity));
     let curr_corr = severity_rank(&format!("{:?}", curr.correlation_severity));
     if curr_corr < prev_corr {
-        improvements.push(format!("Correlation risk improved: {:?} → {:?}", prev.correlation_severity, curr.correlation_severity));
+        improvements.push(format!(
+            "Correlation risk improved: {:?} → {:?}",
+            prev.correlation_severity, curr.correlation_severity
+        ));
     }
 
     improvements
@@ -158,19 +166,28 @@ fn detect_deterioration_from_states(prev: &RiskInputs, curr: &RiskInputs) -> Vec
     let prev_dd = severity_rank(&format!("{:?}", prev.drawdown_state));
     let curr_dd = severity_rank(&format!("{:?}", curr.drawdown_state));
     if curr_dd > prev_dd {
-        deterioration.push(format!("Drawdown worsened: {:?} → {:?}", prev.drawdown_state, curr.drawdown_state));
+        deterioration.push(format!(
+            "Drawdown worsened: {:?} → {:?}",
+            prev.drawdown_state, curr.drawdown_state
+        ));
     }
 
     let prev_exp = severity_rank(&format!("{:?}", prev.exposure_state));
     let curr_exp = severity_rank(&format!("{:?}", curr.exposure_state));
     if curr_exp > prev_exp {
-        deterioration.push(format!("Exposure worsened: {:?} → {:?}", prev.exposure_state, curr.exposure_state));
+        deterioration.push(format!(
+            "Exposure worsened: {:?} → {:?}",
+            prev.exposure_state, curr.exposure_state
+        ));
     }
 
     let prev_corr = severity_rank(&format!("{:?}", prev.correlation_severity));
     let curr_corr = severity_rank(&format!("{:?}", curr.correlation_severity));
     if curr_corr > prev_corr {
-        deterioration.push(format!("Correlation risk worsened: {:?} → {:?}", prev.correlation_severity, curr.correlation_severity));
+        deterioration.push(format!(
+            "Correlation risk worsened: {:?} → {:?}",
+            prev.correlation_severity, curr.correlation_severity
+        ));
     }
 
     deterioration
@@ -199,8 +216,6 @@ fn build_recommendation(violations: &[RuleViolation], decision: &str) -> String 
     let primary = &blocking[0];
     format!(
         "Trade blocked by {} ({}). Recommended: wait for {} to normalise before retrying.",
-        primary.rule,
-        primary.observed,
-        primary.rule
+        primary.rule, primary.observed, primary.rule
     )
 }

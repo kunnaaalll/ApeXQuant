@@ -60,7 +60,7 @@ impl ReplayMetrics {
         }
 
         let mut sorted: Vec<f64> = self.latencies.iter().copied().collect();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
 
         let idx = ((sorted.len() as f64 * percentile).ceil() as usize)
             .saturating_sub(1)

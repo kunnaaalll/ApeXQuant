@@ -43,14 +43,14 @@ impl PatternTracker {
             win_rate: Decimal::new(0, 0),
             observation_count: 0,
         });
-        
+
         let mut wins = pattern.win_rate * Decimal::from(pattern.observation_count);
         if win {
             wins += Decimal::ONE;
         }
         pattern.observation_count += 1;
         pattern.win_rate = wins / Decimal::from(pattern.observation_count);
-        
+
         // Simple state machine logic
         if pattern.observation_count > 100 {
             if pattern.win_rate > Decimal::new(60, 2) {
@@ -61,8 +61,11 @@ impl PatternTracker {
                 pattern.state = PatternState::Maturing;
             }
         }
-        
-        if pattern.state == PatternState::Weakening && pattern.win_rate < Decimal::new(30, 2) && pattern.observation_count > 200 {
+
+        if pattern.state == PatternState::Weakening
+            && pattern.win_rate < Decimal::new(30, 2)
+            && pattern.observation_count > 200
+        {
             pattern.state = PatternState::Dead;
         }
     }

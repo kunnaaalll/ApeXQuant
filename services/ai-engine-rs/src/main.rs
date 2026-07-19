@@ -46,20 +46,53 @@ async fn main() -> Result<()> {
     // let mut redis_conn = redis_client.get_multiplexed_async_connection().await?;
 
     info!("Initializing Event Bus (Kafka) at {}", config.event_bus_url);
-    
+
     info!("Initializing Feature Store...");
     info!("Initializing Model Registry...");
     info!("Initializing Background Workers...");
-    
+
     info!("Starting gRPC server on {}", config.server_addr);
     // tokio::spawn(async move {
     //     // Start gRPC
     // });
 
-    info!("Starting Metrics server on port {}", config.metrics_port);
-    // tokio::spawn(async move {
-    //     // Start Metrics
-    // });
+    let metrics_registry = std::sync::Arc::new(crate::metrics::MetricsRegistry::new());
+    let health_status = std::sync::Arc::new(tokio::sync::RwLock::new(
+        crate::health::HealthStatus::default(),
+    ));
+
+    info!(
+        "Starting Metrics and Health server on port {}",
+        config.metrics_port
+    );
+    let metrics_registry_clone = metrics_registry.clone();
+    let health_status_clone = health_status.clone();
+    let app = axum::Router::new()
+        .route(
+            "/health",
+            axum::routing::get(move || {
+                let health = health_status_clone.clone();
+                async move {
+                    let status = health.read().await.clone();
+                    axum::Json(status)
+                }
+            }),
+        )
+        .route(
+            "/metrics",
+            axum::routing::get(move || {
+                let metrics = metrics_registry_clone.clone();
+                async move { metrics.gather() }
+            }),
+        );
+
+    let metrics_addr = format!("0.0.0.0:{}", config.metrics_port);
+    let listener = tokio::net::TcpListener::bind(&metrics_addr).await?;
+    tokio::spawn(async move {
+        if let Err(e) = axum::serve(listener, app).await {
+            tracing::error!("Metrics server error: {}", e);
+        }
+    });
 
     // Wait for graceful shutdown
     shutdown_signal().await;

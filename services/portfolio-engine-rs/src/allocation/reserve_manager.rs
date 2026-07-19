@@ -31,10 +31,14 @@ impl ReserveManager {
         emergency_reserve: Decimal,
     ) -> Result<Self, AllocationError> {
         if normal_reserve < Decimal::ZERO {
-            return Err(AllocationError::NegativeReserve("Normal reserve cannot be negative".into()));
+            return Err(AllocationError::NegativeReserve(
+                "Normal reserve cannot be negative".into(),
+            ));
         }
         if emergency_reserve < Decimal::ZERO {
-            return Err(AllocationError::NegativeReserve("Emergency reserve cannot be negative".into()));
+            return Err(AllocationError::NegativeReserve(
+                "Emergency reserve cannot be negative".into(),
+            ));
         }
 
         Ok(Self {
@@ -46,20 +50,30 @@ impl ReserveManager {
     }
 
     pub fn total_reserved(&self) -> Decimal {
-        self.normal_reserve + self.emergency_reserve + self.recovery_reserve + self.opportunity_reserve
+        self.normal_reserve
+            + self.emergency_reserve
+            + self.recovery_reserve
+            + self.opportunity_reserve
     }
 
     pub fn update_recovery_reserve(&mut self, amount: Decimal) -> Result<(), AllocationError> {
         if amount < Decimal::ZERO {
-            return Err(AllocationError::NegativeReserve("Recovery reserve cannot be negative".into()));
+            return Err(AllocationError::NegativeReserve(
+                "Recovery reserve cannot be negative".into(),
+            ));
         }
         self.recovery_reserve = amount;
         Ok(())
     }
 
-    pub fn update_opportunity_reserve(&mut self, assessment: OpportunityReserveAssessment) -> Result<(), AllocationError> {
+    pub fn update_opportunity_reserve(
+        &mut self,
+        assessment: OpportunityReserveAssessment,
+    ) -> Result<(), AllocationError> {
         if assessment.required_reserve < Decimal::ZERO {
-            return Err(AllocationError::NegativeReserve("Opportunity reserve cannot be negative".into()));
+            return Err(AllocationError::NegativeReserve(
+                "Opportunity reserve cannot be negative".into(),
+            ));
         }
         self.opportunity_reserve = assessment.required_reserve;
         Ok(())

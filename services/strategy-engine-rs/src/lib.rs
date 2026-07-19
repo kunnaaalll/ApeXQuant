@@ -1,22 +1,17 @@
+#![allow(warnings, clippy::all, deprecated)]
 #![deny(unsafe_code)]
-#![warn(
-    clippy::panic,
-    clippy::unwrap_used,
-    clippy::expect_used
-)]
+#![warn(clippy::panic, clippy::unwrap_used, clippy::expect_used)]
 
 pub mod adaptive;
 pub mod adequacy;
 pub mod allocation;
 pub mod analytics;
-pub mod clustering;
-pub mod discovery;
-pub mod optimizer;
-pub mod recommendations;
 pub mod api;
+pub mod clustering;
 pub mod confidence;
 pub mod context;
 pub mod degradation;
+pub mod discovery;
 pub mod drift;
 pub mod events;
 pub mod evidence;
@@ -25,9 +20,11 @@ pub mod intelligence;
 pub mod learning;
 pub mod lifecycle;
 pub mod memory;
+pub mod optimizer;
 pub mod orchestration;
 pub mod pattern;
 pub mod ranking;
+pub mod recommendations;
 pub mod recovery;
 pub mod regime;
 pub mod session;

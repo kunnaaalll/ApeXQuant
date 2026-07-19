@@ -1,6 +1,6 @@
-use rust_decimal::Decimal;
-use crate::circuit_breaker::CircuitBreakerState;
 use crate::circuit_breaker::events::CircuitBreakerEvent;
+use crate::circuit_breaker::CircuitBreakerState;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CircuitBreakerSnapshot {
@@ -24,17 +24,30 @@ impl CircuitBreakerSnapshot {
 
     pub fn apply_event(&mut self, event: &CircuitBreakerEvent) {
         match event {
-            CircuitBreakerEvent::StateChanged { to, timestamp_ms, version, .. } => {
+            CircuitBreakerEvent::StateChanged {
+                to,
+                timestamp_ms,
+                version,
+                ..
+            } => {
                 self.state = *to;
                 self.timestamp_ms = *timestamp_ms;
                 self.version = *version;
             }
-            CircuitBreakerEvent::SeverityScoreUpdated { new_score, timestamp_ms, version } => {
+            CircuitBreakerEvent::SeverityScoreUpdated {
+                new_score,
+                timestamp_ms,
+                version,
+            } => {
                 self.severity_score = *new_score;
                 self.timestamp_ms = *timestamp_ms;
                 self.version = *version;
             }
-            CircuitBreakerEvent::DrawdownCapacityUpdated { remaining_capacity, timestamp_ms, version } => {
+            CircuitBreakerEvent::DrawdownCapacityUpdated {
+                remaining_capacity,
+                timestamp_ms,
+                version,
+            } => {
                 self.remaining_drawdown_capacity = *remaining_capacity;
                 self.timestamp_ms = *timestamp_ms;
                 self.version = *version;

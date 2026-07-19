@@ -58,9 +58,21 @@ impl TradeStatistics {
         }
 
         let total = pnl_list.len() as u32;
-        let average_win = if winning > 0 { gross_win / Decimal::from(winning) } else { Decimal::ZERO };
-        let average_loss = if losing > 0 { gross_loss / Decimal::from(losing) } else { Decimal::ZERO };
-        let profit_factor = if gross_loss > Decimal::ZERO { gross_win / gross_loss } else { Decimal::ZERO };
+        let average_win = if winning > 0 {
+            gross_win / Decimal::from(winning)
+        } else {
+            Decimal::ZERO
+        };
+        let average_loss = if losing > 0 {
+            gross_loss / Decimal::from(losing)
+        } else {
+            Decimal::ZERO
+        };
+        let profit_factor = if gross_loss > Decimal::ZERO {
+            gross_win / gross_loss
+        } else {
+            Decimal::ZERO
+        };
         let win_rate = winning as f32 / total as f32;
 
         Self {

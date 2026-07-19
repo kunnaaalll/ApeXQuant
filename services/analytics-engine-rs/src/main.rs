@@ -2,8 +2,8 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::expect_used)]
 
-use analytics_engine::config::{AnalyticsConfig, ConfigError};
 use analytics_engine::aggregation::AggregationStore;
+use analytics_engine::config::{AnalyticsConfig, ConfigError};
 use analytics_engine::trades::parse_trade_event;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -27,7 +27,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     })?;
 
-    tracing::info!("Configuration loaded. Connecting to Redis at {}", config.redis_url);
+    tracing::info!(
+        "Configuration loaded. Connecting to Redis at {}",
+        config.redis_url
+    );
 
     // Connect to Redis for event subscription
     let redis_client = redis::Client::open(config.redis_url.as_str())
@@ -63,13 +66,10 @@ async fn consume_trade_events(
     client: &redis::Client,
     store: &Arc<Mutex<AggregationStore>>,
 ) -> Result<(), String> {
-    let mut conn = client
-        .get_tokio_connection()
+    let mut pubsub = client
+        .get_async_pubsub()
         .await
         .map_err(|e| format!("Redis connection failed: {}", e))?;
-
-    // Subscribe to completed trades topic
-    let mut pubsub = conn.into_pubsub();
     pubsub
         .subscribe("apex:events:trade_completed")
         .await
@@ -85,27 +85,23 @@ async fn consume_trade_events(
             .await
             .ok_or_else(|| "Redis subscription stream ended".to_string())?;
 
-        let payload: Vec<u8> = msg
-            .get_payload_bytes()
-            .to_vec();
+        let payload: Vec<u8> = msg.get_payload_bytes().to_vec();
 
         match parse_trade_event(&payload) {
-            Ok(trade) => {
-                match store.lock() {
-                    Ok(mut locked_store) => {
-                        locked_store.ingest(&trade);
-                        tracing::debug!(
-                            "Ingested trade {} | strategy={} | pnl={}",
-                            trade.trade_id,
-                            trade.strategy_id,
-                            trade.net_pnl
-                        );
-                    }
-                    Err(e) => {
-                        tracing::error!("Aggregation store lock poisoned: {}", e);
-                    }
+            Ok(trade) => match store.lock() {
+                Ok(mut locked_store) => {
+                    locked_store.ingest(&trade);
+                    tracing::debug!(
+                        "Ingested trade {} | strategy={} | pnl={}",
+                        trade.trade_id,
+                        trade.strategy_id,
+                        trade.net_pnl
+                    );
                 }
-            }
+                Err(e) => {
+                    tracing::error!("Aggregation store lock poisoned: {}", e);
+                }
+            },
             Err(e) => {
                 tracing::warn!("Failed to parse trade event: {}", e);
             }

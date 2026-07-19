@@ -1,6 +1,7 @@
+#![allow(warnings, clippy::all, deprecated)]
 use risk_engine::api::error::ApiError;
-use tonic::{Request, Status, Code};
 use tokio_stream::StreamExt;
+use tonic::{Code, Request, Status};
 
 use apex_protos::risk::risk_engine_server::RiskEngine;
 use apex_protos::risk::*;
@@ -28,7 +29,8 @@ fn test_error_mapping() {
 
 #[tokio::test]
 async fn test_streaming() {
-    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None, None);
+    let service =
+        RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None, None);
     let request = Request::new(EventQuery {
         account_id: "acc_123".to_string(),
         start_time: None,
@@ -37,7 +39,7 @@ async fn test_streaming() {
 
     let response = service.load_events(request).await.unwrap();
     let mut stream = response.into_inner();
-    
+
     // Stream should be valid (empty because it's a mock)
     let next = stream.next().await;
     assert!(next.is_none());
@@ -45,16 +47,17 @@ async fn test_streaming() {
 
 #[tokio::test]
 async fn test_determinism() {
-    let service = RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None, None);
-    
+    let service =
+        RiskServiceImpl::new(risk_engine::api::risk_service::RiskState::new(), None, None);
+
     // Simulate 100,000 requests
     for i in 0..100_000 {
         let request = Request::new(RiskStateQuery {
             account_id: format!("acc_{}", i % 10),
         });
-        
+
         let response = service.get_risk_state(request).await.unwrap().into_inner();
-        
+
         // Assert determinism
         assert_eq!(response.state, "Normal");
         assert_eq!(response.account_id, format!("acc_{}", i % 10));
@@ -67,16 +70,20 @@ fn test_no_panics_auth_interceptor() {
     let request = Request::new(());
     let res = auth_interceptor(request);
     assert_eq!(res.unwrap_err().code(), Code::Unauthenticated);
-    
+
     // Valid metadata
     let mut request = Request::new(());
-    request.metadata_mut().insert("authorization", "Bearer token".parse().unwrap());
+    request
+        .metadata_mut()
+        .insert("authorization", "Bearer token".parse().unwrap());
     let res = auth_interceptor(request);
     assert!(res.is_ok());
 
     // Empty metadata string
     let mut request = Request::new(());
-    request.metadata_mut().insert("authorization", "".parse().unwrap());
+    request
+        .metadata_mut()
+        .insert("authorization", "".parse().unwrap());
     let res = auth_interceptor(request);
     assert_eq!(res.unwrap_err().code(), Code::Unauthenticated);
 }

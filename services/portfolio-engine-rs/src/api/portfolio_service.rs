@@ -1,17 +1,17 @@
-use tonic::{Request, Response, Status, Streaming};
-use tokio_stream::wrappers::ReceiverStream;
-use tokio::sync::mpsc;
-use tracing::info;
 use sqlx::{PgPool, Row};
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
+use tonic::{Request, Response, Status, Streaming};
+use tracing::info;
 
 use apex_protos::portfolio::portfolio_engine_server::PortfolioEngine;
 use apex_protos::portfolio::*;
 
-use std::sync::Arc;
 use crate::event_bus::EventBusPublisher;
-use crate::portfolio::registry::PortfolioRegistry;
 use crate::exposure::registry::ExposureRegistry;
+use crate::portfolio::registry::PortfolioRegistry;
 use crate::storage::repository::PortfolioRepository;
+use std::sync::Arc;
 
 pub struct PortfolioServiceImpl {
     pub event_bus: Option<Arc<EventBusPublisher>>,
@@ -38,18 +38,20 @@ impl PortfolioServiceImpl {
         }
     }
 
-    async fn build_snapshot_from_db(&self, portfolio_id: &str) -> Result<PortfolioSnapshot, Status> {
-        let session_uuid = uuid::Uuid::parse_str(portfolio_id)
-            .map_err(|e| Status::invalid_argument(format!("Invalid portfolio_id/session_id UUID: {}", e)))?;
+    async fn build_snapshot_from_db(
+        &self,
+        portfolio_id: &str,
+    ) -> Result<PortfolioSnapshot, Status> {
+        let session_uuid = uuid::Uuid::parse_str(portfolio_id).map_err(|e| {
+            Status::invalid_argument(format!("Invalid portfolio_id/session_id UUID: {}", e))
+        })?;
 
         // 1. Fetch the session info to get the initial balance
-        let session_row = sqlx::query(
-            "SELECT initial_balance FROM sessions WHERE id = $1"
-        )
-        .bind(session_uuid)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| Status::internal(format!("Database error fetching session: {}", e)))?;
+        let session_row = sqlx::query("SELECT initial_balance FROM sessions WHERE id = $1")
+            .bind(session_uuid)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| Status::internal(format!("Database error fetching session: {}", e)))?;
 
         let initial_balance = if let Some(row) = session_row {
             let decimal_val: rust_decimal::Decimal = row.get("initial_balance");
@@ -82,24 +84,31 @@ impl PortfolioServiceImpl {
             let side: String = r.get("side");
             let current_volume_dec: rust_decimal::Decimal = r.get("current_volume");
             let entry_price_dec: rust_decimal::Decimal = r.get("entry_price");
-            
+
             let current_price_opt: Option<rust_decimal::Decimal> = r.get("current_price");
             let unrealized_pnl_opt: Option<rust_decimal::Decimal> = r.get("unrealized_pnl");
             let return_percent_opt: Option<rust_decimal::Decimal> = r.get("return_percent");
 
             let volume = current_volume_dec.to_string().parse::<f64>().unwrap_or(0.0);
             let entry_price = entry_price_dec.to_string().parse::<f64>().unwrap_or(0.0);
-            let current_price = current_price_opt.map(|v| v.to_string().parse::<f64>().unwrap_or(entry_price)).unwrap_or(entry_price);
-            let unrealized_pnl = unrealized_pnl_opt.map(|v| v.to_string().parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
-            let return_percent = return_percent_opt.map(|v| v.to_string().parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
+            let current_price = current_price_opt
+                .map(|v| v.to_string().parse::<f64>().unwrap_or(entry_price))
+                .unwrap_or(entry_price);
+            let unrealized_pnl = unrealized_pnl_opt
+                .map(|v| v.to_string().parse::<f64>().unwrap_or(0.0))
+                .unwrap_or(0.0);
+            let return_percent = return_percent_opt
+                .map(|v| v.to_string().parse::<f64>().unwrap_or(0.0))
+                .unwrap_or(0.0);
 
             floating_pnl += unrealized_pnl;
 
-            let contract_size = if symbol.contains("BTC") || symbol.contains("ETH") || symbol.contains("XAU") {
-                1.0
-            } else {
-                100000.0
-            };
+            let contract_size =
+                if symbol.contains("BTC") || symbol.contains("ETH") || symbol.contains("XAU") {
+                    1.0
+                } else {
+                    100000.0
+                };
             let exposure_val = volume * current_price * contract_size;
             if side.to_lowercase() == "buy" {
                 long_exposure += exposure_val;
@@ -163,7 +172,7 @@ impl PortfolioServiceImpl {
             SELECT COALESCE(SUM(realized_pnl), 0) as realized
             FROM positions
             WHERE state = 'closed'
-            "#
+            "#,
         )
         .fetch_one(&self.pool)
         .await
@@ -178,7 +187,11 @@ impl PortfolioServiceImpl {
 
         for p in &mut positions {
             if equity > 0.0 {
-                let mkt_val = p.market_value.as_ref().map(|mv| mv.amount.parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
+                let mkt_val = p
+                    .market_value
+                    .as_ref()
+                    .map(|mv| mv.amount.parse::<f64>().unwrap_or(0.0))
+                    .unwrap_or(0.0);
                 p.portfolio_weight = Some(apex_protos::common::Percentage {
                     value: ((mkt_val / equity) * 100.0).to_string(),
                     is_basis_points: false,
@@ -189,7 +202,9 @@ impl PortfolioServiceImpl {
         let total_notional = long_exposure + short_exposure;
         let net_exposure = long_exposure - short_exposure;
 
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
 
         Ok(PortfolioSnapshot {
             portfolio_id: portfolio_id.to_string(),
@@ -229,16 +244,42 @@ impl PortfolioServiceImpl {
                 exponent: 0,
             }),
             exposure: Some(ExposureBreakdown {
-                total_notional: Some(apex_protos::common::Money { amount: total_notional.to_string(), currency: "USD".to_string(), exponent: 0 }),
-                long_exposure: Some(apex_protos::common::Money { amount: long_exposure.to_string(), currency: "USD".to_string(), exponent: 0 }),
-                short_exposure: Some(apex_protos::common::Money { amount: short_exposure.to_string(), currency: "USD".to_string(), exponent: 0 }),
-                net_exposure: Some(apex_protos::common::Money { amount: net_exposure.to_string(), currency: "USD".to_string(), exponent: 0 }),
+                total_notional: Some(apex_protos::common::Money {
+                    amount: total_notional.to_string(),
+                    currency: "USD".to_string(),
+                    exponent: 0,
+                }),
+                long_exposure: Some(apex_protos::common::Money {
+                    amount: long_exposure.to_string(),
+                    currency: "USD".to_string(),
+                    exponent: 0,
+                }),
+                short_exposure: Some(apex_protos::common::Money {
+                    amount: short_exposure.to_string(),
+                    currency: "USD".to_string(),
+                    exponent: 0,
+                }),
+                net_exposure: Some(apex_protos::common::Money {
+                    amount: net_exposure.to_string(),
+                    currency: "USD".to_string(),
+                    exponent: 0,
+                }),
                 gross_exposure_percent: Some(apex_protos::common::Percentage {
-                    value: (if equity > 0.0 { (total_notional / equity) * 100.0 } else { 0.0 }).to_string(),
+                    value: (if equity > 0.0 {
+                        (total_notional / equity) * 100.0
+                    } else {
+                        0.0
+                    })
+                    .to_string(),
                     is_basis_points: false,
                 }),
                 net_exposure_percent: Some(apex_protos::common::Percentage {
-                    value: (if equity > 0.0 { (net_exposure / equity) * 100.0 } else { 0.0 }).to_string(),
+                    value: (if equity > 0.0 {
+                        (net_exposure / equity) * 100.0
+                    } else {
+                        0.0
+                    })
+                    .to_string(),
                     is_basis_points: false,
                 }),
                 by_asset_class: vec![],
@@ -246,30 +287,67 @@ impl PortfolioServiceImpl {
                 correlated_exposure: vec![],
             }),
             risk: Some(PortfolioRiskMetrics {
-                current_drawdown: Some(apex_protos::common::Percentage { value: "0.0".to_string(), is_basis_points: false }),
-                max_drawdown_reached: Some(apex_protos::common::Percentage { value: "0.0".to_string(), is_basis_points: false }),
+                current_drawdown: Some(apex_protos::common::Percentage {
+                    value: "0.0".to_string(),
+                    is_basis_points: false,
+                }),
+                max_drawdown_reached: Some(apex_protos::common::Percentage {
+                    value: "0.0".to_string(),
+                    is_basis_points: false,
+                }),
                 var_95: None,
                 var_99: None,
-                expected_shortfall: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                beta_to_benchmark: Some(apex_protos::common::Decimal { value: "1.0".to_string() }),
-                volatility: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                sharpe_ratio: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                sortino_ratio: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                calmar_ratio: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
+                expected_shortfall: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                beta_to_benchmark: Some(apex_protos::common::Decimal {
+                    value: "1.0".to_string(),
+                }),
+                volatility: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                sharpe_ratio: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                sortino_ratio: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                calmar_ratio: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
                 positions_at_risk_count: 0,
             }),
             positions,
             performance: Some(PerformanceMetrics {
                 return_today: Some(apex_protos::common::Percentage {
-                    value: (if initial_balance > 0.0 { (realized_pnl / initial_balance) * 100.0 } else { 0.0 }).to_string(),
+                    value: (if initial_balance > 0.0 {
+                        (realized_pnl / initial_balance) * 100.0
+                    } else {
+                        0.0
+                    })
+                    .to_string(),
                     is_basis_points: false,
                 }),
-                return_this_week: Some(apex_protos::common::Percentage { value: "0.0".to_string(), is_basis_points: false }),
-                return_this_month: Some(apex_protos::common::Percentage { value: "0.0".to_string(), is_basis_points: false }),
-                win_rate: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                profit_factor: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                average_winner: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
-                average_loser: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
+                return_this_week: Some(apex_protos::common::Percentage {
+                    value: "0.0".to_string(),
+                    is_basis_points: false,
+                }),
+                return_this_month: Some(apex_protos::common::Percentage {
+                    value: "0.0".to_string(),
+                    is_basis_points: false,
+                }),
+                win_rate: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                profit_factor: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                average_winner: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
+                average_loser: Some(apex_protos::common::Decimal {
+                    value: "0.0".to_string(),
+                }),
             }),
         })
     }
@@ -282,7 +360,10 @@ impl PortfolioEngine for PortfolioServiceImpl {
         request: Request<PortfolioStateQuery>,
     ) -> Result<Response<PortfolioStateResponse>, Status> {
         let req = request.into_inner();
-        info!("get_portfolio_state called for portfolio: {}", req.portfolio_id);
+        info!(
+            "get_portfolio_state called for portfolio: {}",
+            req.portfolio_id
+        );
         let state = self.build_snapshot_from_db(&req.portfolio_id).await?;
         Ok(Response::new(PortfolioStateResponse { state: Some(state) }))
     }
@@ -293,7 +374,9 @@ impl PortfolioEngine for PortfolioServiceImpl {
     ) -> Result<Response<ExposureResponse>, Status> {
         let req = request.into_inner();
         let snap = self.build_snapshot_from_db(&req.portfolio_id).await?;
-        Ok(Response::new(ExposureResponse { exposure: snap.exposure }))
+        Ok(Response::new(ExposureResponse {
+            exposure: snap.exposure,
+        }))
     }
 
     async fn get_heat(
@@ -302,11 +385,25 @@ impl PortfolioEngine for PortfolioServiceImpl {
     ) -> Result<Response<HeatResponse>, Status> {
         let req = request.into_inner();
         let snap = self.build_snapshot_from_db(&req.portfolio_id).await?;
-        let equity = snap.equity.as_ref().map(|m| m.amount.parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
-        let margin_used = snap.margin_used.as_ref().map(|m| m.amount.parse::<f64>().unwrap_or(0.0)).unwrap_or(0.0);
-        let margin_utilization = if equity > 0.0 { (margin_used / equity) * 100.0 } else { 0.0 };
+        let equity = snap
+            .equity
+            .as_ref()
+            .map(|m| m.amount.parse::<f64>().unwrap_or(0.0))
+            .unwrap_or(0.0);
+        let margin_used = snap
+            .margin_used
+            .as_ref()
+            .map(|m| m.amount.parse::<f64>().unwrap_or(0.0))
+            .unwrap_or(0.0);
+        let margin_utilization = if equity > 0.0 {
+            (margin_used / equity) * 100.0
+        } else {
+            0.0
+        };
         Ok(Response::new(HeatResponse {
-            heat_index: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
+            heat_index: Some(apex_protos::common::Decimal {
+                value: "0.0".to_string(),
+            }),
             margin_utilization: Some(apex_protos::common::Percentage {
                 value: margin_utilization.to_string(),
                 is_basis_points: false,
@@ -320,7 +417,7 @@ impl PortfolioEngine for PortfolioServiceImpl {
     ) -> Result<Response<AllocationResponse>, Status> {
         let req = request.into_inner();
         let snap = self.build_snapshot_from_db(&req.portfolio_id).await?;
-        
+
         let mut entries = Vec::new();
         for p in &snap.positions {
             let weight = p.portfolio_weight.clone().unwrap_or_default();
@@ -337,18 +434,24 @@ impl PortfolioEngine for PortfolioServiceImpl {
                 rebalance_required: false,
             });
         }
-        
+
         Ok(Response::new(AllocationResponse {
             allocation: Some(Allocation {
                 portfolio_id: req.portfolio_id,
                 as_of: snap.snapshot_time.clone(),
                 entries,
                 summary: Some(AllocationSummary {
-                    total_drift: Some(apex_protos::common::Decimal { value: "0.0".to_string() }),
+                    total_drift: Some(apex_protos::common::Decimal {
+                        value: "0.0".to_string(),
+                    }),
                     positions_needing_rebalance: 0,
-                    estimated_turnover: Some(apex_protos::common::Money { amount: "0.0".to_string(), currency: "USD".to_string(), exponent: 0 }),
+                    estimated_turnover: Some(apex_protos::common::Money {
+                        amount: "0.0".to_string(),
+                        currency: "USD".to_string(),
+                        exponent: 0,
+                    }),
                 }),
-            })
+            }),
         }))
     }
 
@@ -358,12 +461,10 @@ impl PortfolioEngine for PortfolioServiceImpl {
     ) -> Result<Response<QualityResponse>, Status> {
         let req = request.into_inner();
 
-        let rows = sqlx::query(
-            "SELECT realized_pnl FROM positions WHERE state = 'closed'"
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| Status::internal(e.to_string()))?;
+        let rows = sqlx::query("SELECT realized_pnl FROM positions WHERE state = 'closed'")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| Status::internal(e.to_string()))?;
 
         let mut wins = 0;
         let mut losses = 0;
@@ -390,17 +491,37 @@ impl PortfolioEngine for PortfolioServiceImpl {
         };
 
         let profit_factor = if gross_loss.is_zero() {
-            if gross_profit.is_zero() { rust_decimal::Decimal::ONE } else { rust_decimal::Decimal::from(10) }
+            if gross_profit.is_zero() {
+                rust_decimal::Decimal::ONE
+            } else {
+                rust_decimal::Decimal::from(10)
+            }
         } else {
             gross_profit / gross_loss
         };
 
-        let avg_win = if wins > 0 { gross_profit / rust_decimal::Decimal::from(wins) } else { rust_decimal::Decimal::ZERO };
-        let avg_loss = if losses > 0 { gross_loss / rust_decimal::Decimal::from(losses) } else { rust_decimal::Decimal::ZERO };
-        let expectancy = (win_rate * avg_win) - ((rust_decimal::Decimal::ONE - win_rate) * avg_loss);
-        let average_rr = if avg_loss.is_zero() { rust_decimal::Decimal::ONE } else { avg_win / avg_loss };
+        let avg_win = if wins > 0 {
+            gross_profit / rust_decimal::Decimal::from(wins)
+        } else {
+            rust_decimal::Decimal::ZERO
+        };
+        let avg_loss = if losses > 0 {
+            gross_loss / rust_decimal::Decimal::from(losses)
+        } else {
+            rust_decimal::Decimal::ZERO
+        };
+        let expectancy =
+            (win_rate * avg_win) - ((rust_decimal::Decimal::ONE - win_rate) * avg_loss);
+        let average_rr = if avg_loss.is_zero() {
+            rust_decimal::Decimal::ONE
+        } else {
+            avg_win / avg_loss
+        };
 
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
         let quality = crate::quality::quality_score::PortfolioQuality::calculate(
             win_rate,
             profit_factor,
@@ -409,10 +530,20 @@ impl PortfolioEngine for PortfolioServiceImpl {
             now,
         );
 
-        let _ = self.repository.store.save_quality(&req.portfolio_id, quality.current_score, &serde_json::to_value(&quality.breakdown).unwrap_or_default()).await;
+        let _ = self
+            .repository
+            .store
+            .save_quality(
+                &req.portfolio_id,
+                quality.current_score,
+                &serde_json::to_value(&quality.breakdown).unwrap_or_default(),
+            )
+            .await;
 
         Ok(Response::new(QualityResponse {
-            quality_score: Some(apex_protos::common::Decimal { value: quality.current_score.to_string() }),
+            quality_score: Some(apex_protos::common::Decimal {
+                value: quality.current_score.to_string(),
+            }),
         }))
     }
 
@@ -421,18 +552,37 @@ impl PortfolioEngine for PortfolioServiceImpl {
         request: Request<HealthQuery>,
     ) -> Result<Response<HealthResponse>, Status> {
         let req = request.into_inner();
-        let port_state = self.registry.get_state()
+        let port_state = self
+            .registry
+            .get_state()
             .map_err(|e| Status::internal(format!("Failed to get portfolio state: {:?}", e)))?;
-        let exp_state = self.exposure_registry.get_state()
+        let exp_state = self
+            .exposure_registry
+            .get_state()
             .map_err(|e| Status::internal(format!("Failed to get exposure state: {:?}", e)))?;
 
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
-        let health = crate::health::health_score::PortfolioHealth::calculate(&port_state, &exp_state, now);
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let health =
+            crate::health::health_score::PortfolioHealth::calculate(&port_state, &exp_state, now);
 
-        let _ = self.repository.store.save_health(&req.portfolio_id, health.current_score as i32, &format!("{:?}", health.state), &serde_json::to_value(&health.breakdown).unwrap_or_default()).await;
+        let _ = self
+            .repository
+            .store
+            .save_health(
+                &req.portfolio_id,
+                health.current_score as i32,
+                &format!("{:?}", health.state),
+                &serde_json::to_value(&health.breakdown).unwrap_or_default(),
+            )
+            .await;
 
         Ok(Response::new(HealthResponse {
-            health_score: Some(apex_protos::common::Decimal { value: health.current_score.to_string() }),
+            health_score: Some(apex_protos::common::Decimal {
+                value: health.current_score.to_string(),
+            }),
             status: format!("{:?}", health.state).to_uppercase(),
         }))
     }
@@ -444,7 +594,10 @@ impl PortfolioEngine for PortfolioServiceImpl {
         let req = request.into_inner();
         let snap = self.build_snapshot_from_db(&req.portfolio_id).await?;
         let current_drawdown = snap.risk.as_ref().and_then(|r| r.current_drawdown.clone());
-        let max_drawdown = snap.risk.as_ref().and_then(|r| r.max_drawdown_reached.clone());
+        let max_drawdown = snap
+            .risk
+            .as_ref()
+            .and_then(|r| r.max_drawdown_reached.clone());
         Ok(Response::new(DrawdownResponse {
             current_drawdown,
             max_drawdown,
@@ -456,7 +609,9 @@ impl PortfolioEngine for PortfolioServiceImpl {
         request: Request<CorrelationQuery>,
     ) -> Result<Response<CorrelationResponse>, Status> {
         let req = request.into_inner();
-        let exp_state = self.exposure_registry.get_state()
+        let exp_state = self
+            .exposure_registry
+            .get_state()
             .map_err(|e| Status::internal(format!("Failed to get exposure state: {:?}", e)))?;
 
         let symbols: Vec<String> = exp_state.symbols.keys().cloned().collect();
@@ -467,8 +622,12 @@ impl PortfolioEngine for PortfolioServiceImpl {
                 .fetch_all(&self.pool)
                 .await
                 .map_err(|e| Status::internal(e.to_string()))?;
-            let rets: Vec<rust_decimal::Decimal> = rows.iter()
-                .map(|r| r.get::<Option<rust_decimal::Decimal>, _>("return_percent").unwrap_or_default())
+            let rets: Vec<rust_decimal::Decimal> = rows
+                .iter()
+                .map(|r| {
+                    r.get::<Option<rust_decimal::Decimal>, _>("return_percent")
+                        .unwrap_or_default()
+                })
                 .collect();
             if rets.len() >= 2 {
                 returns_map.insert(sym.clone(), rets);
@@ -484,15 +643,29 @@ impl PortfolioEngine for PortfolioServiceImpl {
                 let mut sum = rust_decimal::Decimal::ZERO;
                 let mut count = 0;
                 for i in 0..matrix.rows {
-                    for j in (i+1)..matrix.cols {
+                    for j in (i + 1)..matrix.cols {
                         if let Some(c) = matrix.get_correlation(i, j) {
                             sum += c;
                             count += 1;
                         }
                     }
                 }
-                let avg = if count > 0 { sum / rust_decimal::Decimal::from(count) } else { rust_decimal::Decimal::new(15, 2) };
-                let _ = self.repository.store.save_correlation(&req.portfolio_id, "MediumTerm", "Symbol", &serde_json::to_value(&matrix.identifiers).unwrap_or_default(), &serde_json::to_value(&matrix.data).unwrap_or_default()).await;
+                let avg = if count > 0 {
+                    sum / rust_decimal::Decimal::from(count)
+                } else {
+                    rust_decimal::Decimal::new(15, 2)
+                };
+                let _ = self
+                    .repository
+                    .store
+                    .save_correlation(
+                        &req.portfolio_id,
+                        "MediumTerm",
+                        "Symbol",
+                        &serde_json::to_value(&matrix.identifiers).unwrap_or_default(),
+                        &serde_json::to_value(&matrix.data).unwrap_or_default(),
+                    )
+                    .await;
                 avg
             } else {
                 rust_decimal::Decimal::new(15, 2)
@@ -502,7 +675,9 @@ impl PortfolioEngine for PortfolioServiceImpl {
         };
 
         Ok(Response::new(CorrelationResponse {
-            avg_correlation: Some(apex_protos::common::Decimal { value: avg_corr_val.to_string() }),
+            avg_correlation: Some(apex_protos::common::Decimal {
+                value: avg_corr_val.to_string(),
+            }),
         }))
     }
 
@@ -511,7 +686,9 @@ impl PortfolioEngine for PortfolioServiceImpl {
         request: Request<RecommendationsQuery>,
     ) -> Result<Response<RecommendationsResponse>, Status> {
         let req = request.into_inner();
-        let exp_state = self.exposure_registry.get_state()
+        let exp_state = self
+            .exposure_registry
+            .get_state()
             .map_err(|e| Status::internal(format!("Failed to get exposure state: {:?}", e)))?;
 
         let mut current_weights = Vec::new();
@@ -528,7 +705,9 @@ impl PortfolioEngine for PortfolioServiceImpl {
         let mut targets = Vec::new();
         if let Some(row) = row_opt {
             if let Ok(allocs_val) = row.try_get::<serde_json::Value, _>("allocations") {
-                if let Ok(parsed_targets) = serde_json::from_value::<Vec<crate::rebalancing::RebalanceTarget>>(allocs_val) {
+                if let Ok(parsed_targets) =
+                    serde_json::from_value::<Vec<crate::rebalancing::RebalanceTarget>>(allocs_val)
+                {
                     targets = parsed_targets;
                 }
             }
@@ -537,7 +716,8 @@ impl PortfolioEngine for PortfolioServiceImpl {
         if targets.is_empty() {
             let active_symbols = current_weights.len();
             if active_symbols > 0 {
-                let eq_weight = rust_decimal::Decimal::ONE / rust_decimal::Decimal::from(active_symbols);
+                let eq_weight =
+                    rust_decimal::Decimal::ONE / rust_decimal::Decimal::from(active_symbols);
                 for (sym, _) in &current_weights {
                     targets.push(crate::rebalancing::RebalanceTarget {
                         symbol: sym.clone(),
@@ -573,9 +753,7 @@ impl PortfolioEngine for PortfolioServiceImpl {
             });
         }
 
-        Ok(Response::new(RecommendationsResponse {
-            recommendations,
-        }))
+        Ok(Response::new(RecommendationsResponse { recommendations }))
     }
 
     async fn get_analytics(
@@ -607,9 +785,7 @@ impl PortfolioEngine for PortfolioServiceImpl {
     ) -> Result<Response<LoadSnapshotResponse>, Status> {
         let req = request.into_inner();
         let snap = self.build_snapshot_from_db(&req.portfolio_id).await?;
-        Ok(Response::new(LoadSnapshotResponse {
-            state: Some(snap),
-        }))
+        Ok(Response::new(LoadSnapshotResponse { state: Some(snap) }))
     }
 
     type LoadEventsStream = ReceiverStream<Result<PortfolioEvent, Status>>;
@@ -620,14 +796,18 @@ impl PortfolioEngine for PortfolioServiceImpl {
     ) -> Result<Response<Self::LoadEventsStream>, Status> {
         let req = request.into_inner();
         let events = if let Some(ts) = req.from {
-            let offset_time = time::OffsetDateTime::from_unix_timestamp(ts.seconds)
-                .map_err(|e| Status::invalid_argument(format!("Invalid timestamp seconds: {}", e)))?;
+            let offset_time =
+                time::OffsetDateTime::from_unix_timestamp(ts.seconds).map_err(|e| {
+                    Status::invalid_argument(format!("Invalid timestamp seconds: {}", e))
+                })?;
             let offset_time = offset_time + time::Duration::nanoseconds(ts.nanos as i64);
-            self.repository.load_events_since_time(&req.portfolio_id, offset_time)
+            self.repository
+                .load_events_since_time(&req.portfolio_id, offset_time)
                 .await
                 .map_err(|e| Status::internal(e.to_string()))?
         } else {
-            self.repository.load_events_since(&req.portfolio_id, 0)
+            self.repository
+                .load_events_since(&req.portfolio_id, 0)
                 .await
                 .map_err(|e| Status::internal(e.to_string()))?
         };
@@ -635,7 +815,9 @@ impl PortfolioEngine for PortfolioServiceImpl {
         let (tx, rx) = mpsc::channel(100);
         tokio::spawn(async move {
             for e in events {
-                if let Ok(proto_event) = serde_json::from_value::<PortfolioEvent>(serde_json::to_value(e.payload).unwrap_or_default()) {
+                if let Ok(proto_event) = serde_json::from_value::<PortfolioEvent>(
+                    serde_json::to_value(e.payload).unwrap_or_default(),
+                ) {
                     if tx.send(Ok(proto_event)).await.is_err() {
                         break;
                     }
@@ -656,18 +838,41 @@ impl PortfolioEngine for PortfolioServiceImpl {
             .fetch_all(&self.pool)
             .await
             .map_err(|e| Status::internal(e.to_string()))?;
-        
+
         let mut points = Vec::new();
         for r in rows {
             let ts: time::OffsetDateTime = r.get("timestamp");
             let payload: serde_json::Value = r.get("payload");
-            let equity = payload.get("equity").and_then(|v| v.as_str()).unwrap_or("0").to_string();
-            let balance = payload.get("balance").and_then(|v| v.as_str()).unwrap_or("0").to_string();
-            let drawdown = payload.get("drawdown").and_then(|v| v.as_str()).unwrap_or("0").to_string();
+            let equity = payload
+                .get("equity")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .to_string();
+            let balance = payload
+                .get("balance")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .to_string();
+            let drawdown = payload
+                .get("drawdown")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .to_string();
             points.push(PortfolioDataPoint {
-                timestamp: Some(apex_protos::common::Timestamp { seconds: ts.unix_timestamp(), nanos: 0 }),
-                equity: Some(apex_protos::common::Money { amount: equity, currency: "USD".to_string(), exponent: 0 }),
-                balance: Some(apex_protos::common::Money { amount: balance, currency: "USD".to_string(), exponent: 0 }),
+                timestamp: Some(apex_protos::common::Timestamp {
+                    seconds: ts.unix_timestamp(),
+                    nanos: 0,
+                }),
+                equity: Some(apex_protos::common::Money {
+                    amount: equity,
+                    currency: "USD".to_string(),
+                    exponent: 0,
+                }),
+                balance: Some(apex_protos::common::Money {
+                    amount: balance,
+                    currency: "USD".to_string(),
+                    exponent: 0,
+                }),
                 margin_used: None,
                 unrealized_pnl: None,
                 position_count: 0,
@@ -703,8 +908,15 @@ impl PortfolioEngine for PortfolioServiceImpl {
         };
 
         Ok(Response::new(SymbolPerformanceResponse {
-            return_pct: Some(apex_protos::common::Percentage { value: return_pct_val, is_basis_points: false }),
-            pnl: Some(apex_protos::common::Money { amount: realized.to_string(), currency: "USD".to_string(), exponent: 0 }),
+            return_pct: Some(apex_protos::common::Percentage {
+                value: return_pct_val,
+                is_basis_points: false,
+            }),
+            pnl: Some(apex_protos::common::Money {
+                amount: realized.to_string(),
+                currency: "USD".to_string(),
+                exponent: 0,
+            }),
         }))
     }
 

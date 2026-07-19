@@ -30,7 +30,15 @@ impl Optimizer {
     pub fn new() -> Self {
         Self
     }
+}
 
+impl Default for Optimizer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Optimizer {
     pub fn optimize_allocation(
         &self,
         target: OptimizationTarget,
@@ -42,13 +50,14 @@ impl Optimizer {
         let fifty = Decimal::new(50, 0);
         let eighty = Decimal::new(80, 0);
 
-        let action = if current_win_rate >= seventy && confidence >= eighty && regime_match >= eighty {
-            AllocationRecommendation::Increase
-        } else if current_win_rate < fifty || confidence < fifty || regime_match < fifty {
-            AllocationRecommendation::Reduce
-        } else {
-            AllocationRecommendation::Maintain
-        };
+        let action =
+            if current_win_rate >= seventy && confidence >= eighty && regime_match >= eighty {
+                AllocationRecommendation::Increase
+            } else if current_win_rate < fifty || confidence < fifty || regime_match < fifty {
+                AllocationRecommendation::Reduce
+            } else {
+                AllocationRecommendation::Maintain
+            };
 
         let magnitude = match action {
             AllocationRecommendation::Increase => Decimal::new(15, 0),

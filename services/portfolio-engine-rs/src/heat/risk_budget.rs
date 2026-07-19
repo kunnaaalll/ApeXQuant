@@ -38,12 +38,13 @@ impl RiskBudget {
         emergency_reserve: Decimal,
     ) -> Self {
         let total_risk_capacity = max_portfolio_risk;
-        
-        let remaining_risk = if utilized_risk + reserved_risk + emergency_reserve >= total_risk_capacity {
-            Decimal::ZERO
-        } else {
-            total_risk_capacity - utilized_risk - reserved_risk - emergency_reserve
-        };
+
+        let remaining_risk =
+            if utilized_risk + reserved_risk + emergency_reserve >= total_risk_capacity {
+                Decimal::ZERO
+            } else {
+                total_risk_capacity - utilized_risk - reserved_risk - emergency_reserve
+            };
 
         Self {
             max_portfolio_risk,

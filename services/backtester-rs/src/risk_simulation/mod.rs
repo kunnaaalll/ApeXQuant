@@ -703,7 +703,7 @@ mod tests {
 
     #[test]
     fn test_risk_of_ruin_negative_edge() {
-        let trades = sample_trades(&[-100, -80, -50, -120, -40]);
+        let _trades = sample_trades(&[-100, -80, -50, -120, -40]);
         let ror = RiskOfRuinResult {
             ruin_probability: Decimal::ONE,
             ruin_threshold_fraction: Decimal::new(5, 1),

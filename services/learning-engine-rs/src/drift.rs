@@ -29,7 +29,15 @@ impl DriftMonitor {
     pub fn new() -> Self {
         Self
     }
+}
 
+impl Default for DriftMonitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DriftMonitor {
     fn evaluate_metric(metric: &DriftMetrics) -> DriftStatus {
         if metric.current_deviation >= metric.critical_threshold {
             DriftStatus::Critical

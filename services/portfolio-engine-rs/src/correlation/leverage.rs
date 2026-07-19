@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HiddenLeverageAssessment {
@@ -41,8 +41,9 @@ impl HiddenLeverageAssessment {
 
     pub fn assess(&mut self) {
         // Evaluate flags
-        self.has_hidden_leverage = !self.synthetic_duplicates.is_empty() || !self.theme_concentration.is_empty();
-        
+        self.has_hidden_leverage =
+            !self.synthetic_duplicates.is_empty() || !self.theme_concentration.is_empty();
+
         let mut total_ratio = Decimal::ZERO;
         for dup in &self.synthetic_duplicates {
             total_ratio += dup.combined_exposure_pct * dup.correlation_score;

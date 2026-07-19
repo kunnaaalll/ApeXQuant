@@ -1,7 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum StrategyState {
     Elite,
     Strong,
@@ -11,7 +10,6 @@ pub enum StrategyState {
     Dying,
     Retired,
 }
-
 
 impl fmt::Display for StrategyState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

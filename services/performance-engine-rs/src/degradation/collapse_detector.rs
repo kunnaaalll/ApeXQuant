@@ -45,7 +45,10 @@ impl CollapseDetector {
         let mut severity = dec!(0);
 
         if input.recent_expectancy < dec!(-0.10) {
-            reasons.push(format!("Expectancy collapsed to {}", input.recent_expectancy));
+            reasons.push(format!(
+                "Expectancy collapsed to {}",
+                input.recent_expectancy
+            ));
             severity += dec!(35);
         } else if input.recent_expectancy < dec!(0) {
             reasons.push(format!("Expectancy negative: {}", input.recent_expectancy));
@@ -53,15 +56,24 @@ impl CollapseDetector {
         }
 
         if input.recent_profit_factor < dec!(0.80) {
-            reasons.push(format!("Profit factor critical: {}", input.recent_profit_factor));
+            reasons.push(format!(
+                "Profit factor critical: {}",
+                input.recent_profit_factor
+            ));
             severity += dec!(30);
         } else if input.recent_profit_factor < dec!(1.0) {
-            reasons.push(format!("Profit factor sub-1: {}", input.recent_profit_factor));
+            reasons.push(format!(
+                "Profit factor sub-1: {}",
+                input.recent_profit_factor
+            ));
             severity += dec!(15);
         }
 
         if input.recent_win_rate < dec!(0.25) {
-            reasons.push(format!("Win rate critically low: {}", input.recent_win_rate));
+            reasons.push(format!(
+                "Win rate critically low: {}",
+                input.recent_win_rate
+            ));
             severity += dec!(20);
         }
 
@@ -74,7 +86,10 @@ impl CollapseDetector {
         }
 
         if input.current_drawdown_pct >= dec!(0.20) {
-            reasons.push(format!("Drawdown at {}%", input.current_drawdown_pct * dec!(100)));
+            reasons.push(format!(
+                "Drawdown at {}%",
+                input.current_drawdown_pct * dec!(100)
+            ));
             severity += dec!(20);
         }
 

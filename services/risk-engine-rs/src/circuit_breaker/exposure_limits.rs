@@ -40,14 +40,15 @@ impl ExposureLimitAssessment {
     }
 
     fn update_state(&mut self) {
-        // Assume thresholds: 
+        // Assume thresholds:
         // Concentration > 50% = Frozen
         // Concentration > 40% = Critical
         // Concentration > 30% = Danger
         // Concentration > 20% = Elevated
         // Else = Normal
-        
-        let max_conc = self.max_symbol_concentration
+
+        let max_conc = self
+            .max_symbol_concentration
             .max(self.max_currency_concentration)
             .max(self.max_theme_concentration);
 

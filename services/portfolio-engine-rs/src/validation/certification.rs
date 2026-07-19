@@ -1,8 +1,8 @@
-use super::parity::PortfolioParityResult;
 use super::benchmark::BenchmarkReport;
-use super::stress::StressReport;
 use super::determinism::{DeterminismReport, DeterminismState};
 use super::monte_carlo::MonteCarloReport;
+use super::parity::PortfolioParityResult;
+use super::stress::StressReport;
 use super::validator::ReplayResult;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -64,30 +64,35 @@ impl PortfolioCertificationEngine {
         let threshold_98 = rust_decimal::Decimal::new(98, 0);
         let threshold_95 = rust_decimal::Decimal::new(95, 0);
 
-        let meets_parity = parity.state_agreement_pct > threshold_99 &&
-                           parity.recommendation_agreement_pct > threshold_95 &&
-                           parity.analytics_agreement_pct > threshold_95 &&
-                           parity.health_agreement_pct > threshold_95 &&
-                           parity.quality_agreement_pct > threshold_95 &&
-                           parity.drawdown_agreement_pct > threshold_98 &&
-                           parity.heat_agreement_pct > threshold_98;
+        let meets_parity = parity.state_agreement_pct > threshold_99
+            && parity.recommendation_agreement_pct > threshold_95
+            && parity.analytics_agreement_pct > threshold_95
+            && parity.health_agreement_pct > threshold_95
+            && parity.quality_agreement_pct > threshold_95
+            && parity.drawdown_agreement_pct > threshold_98
+            && parity.heat_agreement_pct > threshold_98;
 
-        let meets_benchmark = benchmark.p99_latency.as_millis() < 20 &&
-                              benchmark.memory_leaks_detected == 0;
+        let meets_benchmark =
+            benchmark.p99_latency.as_millis() < 20 && benchmark.memory_leaks_detected == 0;
 
-        let meets_stress = stress.panics_detected == 0 &&
-                           stress.data_corruption_detected == 0 &&
-                           stress.race_conditions_detected == 0;
+        let meets_stress = stress.panics_detected == 0
+            && stress.data_corruption_detected == 0
+            && stress.race_conditions_detected == 0;
 
-        let meets_determinism = determinism.overall_state == DeterminismState::Pass &&
-                                determinism.divergence_count == 0;
+        let meets_determinism = determinism.overall_state == DeterminismState::Pass
+            && determinism.divergence_count == 0;
 
         let meets_replay = !replay.drift_detected && replay.exact_match;
 
         let meets_monte_carlo = monte_carlo.survival_rate_pct > threshold_99;
 
-        let level = if meets_parity && meets_benchmark && meets_stress && 
-                       meets_determinism && meets_replay && meets_monte_carlo {
+        let level = if meets_parity
+            && meets_benchmark
+            && meets_stress
+            && meets_determinism
+            && meets_replay
+            && meets_monte_carlo
+        {
             CertificationLevel::Certified
         } else if meets_parity && meets_stress && meets_replay {
             CertificationLevel::Pass

@@ -16,11 +16,20 @@ pub struct ContextRank {
 }
 
 impl ContextRank {
-    pub fn calculate(expectancy: Decimal, confidence: Decimal, stability: Decimal, drawdown: Decimal) -> Self {
+    pub fn calculate(
+        expectancy: Decimal,
+        confidence: Decimal,
+        stability: Decimal,
+        drawdown: Decimal,
+    ) -> Self {
         // expectancy × confidence × stability ÷ drawdown
-        let denominator = if drawdown == Decimal::from(0) { Decimal::from(1) } else { drawdown };
+        let denominator = if drawdown == Decimal::from(0) {
+            Decimal::from(1)
+        } else {
+            drawdown
+        };
         let mut score = (expectancy * confidence * stability) / denominator;
-        
+
         if score < Decimal::from(0) {
             score = Decimal::from(0);
         }

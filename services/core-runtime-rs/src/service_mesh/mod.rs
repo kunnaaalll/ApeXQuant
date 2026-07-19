@@ -40,7 +40,12 @@ impl<'a> ServiceMesh<'a> {
     pub fn lookup_capability(&self, capability: &str) -> Vec<RoutingDecision> {
         let mut decisions = Vec::new();
         // this is O(n), ideally we'd index this, but for now it's fine
-        for engine in self.registrar.capability_registry.capabilities_by_service.keys() {
+        for engine in self
+            .registrar
+            .capability_registry
+            .capabilities_by_service
+            .keys()
+        {
             if let Some(caps) = self.registrar.capability_registry.get_capabilities(engine) {
                 if caps.contains(&capability.to_string()) {
                     if let Some(decision) = self.discover_service(engine) {
@@ -52,7 +57,11 @@ impl<'a> ServiceMesh<'a> {
         decisions
     }
 
-    pub fn check_version_compatibility(&self, service_a: &str, service_b: &str) -> CompatibilityReport {
+    pub fn check_version_compatibility(
+        &self,
+        service_a: &str,
+        service_b: &str,
+    ) -> CompatibilityReport {
         let mut issues = Vec::new();
         let engine_a = self.registrar.get_engine(service_a);
         let engine_b = self.registrar.get_engine(service_b);

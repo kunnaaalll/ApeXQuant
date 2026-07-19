@@ -1,10 +1,10 @@
-use time::OffsetDateTime;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 
+use super::block::TradeAdmissionPolicy;
+use super::close::CloseAssessment;
 use super::increase::IncreaseExposureRecommendation;
 use super::reduce::ReductionAssessment;
-use super::close::CloseAssessment;
-use super::block::TradeAdmissionPolicy;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecommendationSnapshot {

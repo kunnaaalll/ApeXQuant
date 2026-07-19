@@ -1,8 +1,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-use super::types::{RegimeType, TradeCount};
 use super::states::RegimeState;
+use super::types::{RegimeType, TradeCount};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RegimeAssessment {

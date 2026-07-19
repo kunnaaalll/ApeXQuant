@@ -44,46 +44,71 @@ impl ExposureState {
                 net: self.global.net_exposure,
             });
         }
-        
+
         // No negative gross
         if self.global.gross_exposure.is_sign_negative() {
             return Err(ExposureError::NegativeGrossExposure);
         }
 
-        // Total weight across symbols shouldn't exceed 1.0 (100%) theoretically, 
-        // but if leverage is used it might. 
+        // Total weight across symbols shouldn't exceed 1.0 (100%) theoretically,
+        // but if leverage is used it might.
         // The requirements explicitly state "Total weight <= 100%".
         let total_weight: Decimal = self.symbols.values().map(|s| s.weight).sum();
         if total_weight > Decimal::ONE {
             return Err(ExposureError::WeightExceedsMax { total_weight });
         }
 
-        // synthetic balances check could be complex, we assume the inputs ensure it 
+        // synthetic balances check could be complex, we assume the inputs ensure it
         // because we add base_size and quote_size precisely.
-        
+
         Ok(())
     }
 
-    pub fn apply_event(&mut self, event: &ExposureEvent, timestamp: OffsetDateTime) -> Result<(), ExposureError> {
+    pub fn apply_event(
+        &mut self,
+        event: &ExposureEvent,
+        timestamp: OffsetDateTime,
+    ) -> Result<(), ExposureError> {
         self.timestamp = timestamp;
-        
+
         match event {
-            ExposureEvent::PositionOpened { 
-                symbol_id, sector, base_currency, quote_currency, 
-                base_size, quote_size, margin_used, risk_amount, .. 
+            ExposureEvent::PositionOpened {
+                symbol_id,
+                sector,
+                base_currency,
+                quote_currency,
+                base_size,
+                quote_size,
+                margin_used,
+                risk_amount,
+                ..
             } => {
                 self.global.position_count += 1;
                 self.global.margin_utilization += margin_used;
                 self.global.open_risk += risk_amount;
 
-                self.update_symbol(symbol_id, *base_size, Decimal::ZERO, Decimal::ZERO, 1, *risk_amount);
+                self.update_symbol(
+                    symbol_id,
+                    *base_size,
+                    Decimal::ZERO,
+                    Decimal::ZERO,
+                    1,
+                    *risk_amount,
+                );
                 self.update_sector(sector, *base_size, Decimal::ZERO, *risk_amount, 1);
                 self.update_currency(base_currency, *base_size);
                 self.update_currency(quote_currency, *quote_size);
             }
-            ExposureEvent::PositionClosed { 
-                symbol_id, sector, base_currency, quote_currency, 
-                base_size_released, quote_size_released, margin_released, risk_released, .. 
+            ExposureEvent::PositionClosed {
+                symbol_id,
+                sector,
+                base_currency,
+                quote_currency,
+                base_size_released,
+                quote_size_released,
+                margin_released,
+                risk_released,
+                ..
             } => {
                 if self.global.position_count == 0 {
                     return Err(ExposureError::NegativePositionCount);
@@ -92,8 +117,21 @@ impl ExposureState {
                 self.global.margin_utilization -= margin_released;
                 self.global.open_risk -= risk_released;
 
-                self.update_symbol(symbol_id, -*base_size_released, Decimal::ZERO, Decimal::ZERO, -1, -*risk_released);
-                self.update_sector(sector, -*base_size_released, Decimal::ZERO, -*risk_released, -1);
+                self.update_symbol(
+                    symbol_id,
+                    -*base_size_released,
+                    Decimal::ZERO,
+                    Decimal::ZERO,
+                    -1,
+                    -*risk_released,
+                );
+                self.update_sector(
+                    sector,
+                    -*base_size_released,
+                    Decimal::ZERO,
+                    -*risk_released,
+                    -1,
+                );
                 self.update_currency(base_currency, -*base_size_released);
                 self.update_currency(quote_currency, -*quote_size_released);
             }
@@ -104,13 +142,26 @@ impl ExposureState {
                 // Implementation similar
             }
             ExposureEvent::SymbolAdded { symbol_id, .. } => {
-                self.symbols.entry(symbol_id.clone()).or_insert_with(|| SymbolExposure::new(symbol_id.clone()));
+                self.symbols
+                    .entry(symbol_id.clone())
+                    .or_insert_with(|| SymbolExposure::new(symbol_id.clone()));
             }
             ExposureEvent::SymbolRemoved { symbol_id } => {
                 self.symbols.remove(symbol_id);
             }
-            ExposureEvent::PnlChanged { symbol_id, pnl_delta, .. } => {
-                self.update_symbol(symbol_id, Decimal::ZERO, *pnl_delta, Decimal::ZERO, 0, Decimal::ZERO);
+            ExposureEvent::PnlChanged {
+                symbol_id,
+                pnl_delta,
+                ..
+            } => {
+                self.update_symbol(
+                    symbol_id,
+                    Decimal::ZERO,
+                    *pnl_delta,
+                    Decimal::ZERO,
+                    0,
+                    Decimal::ZERO,
+                );
             }
         }
 
@@ -118,8 +169,19 @@ impl ExposureState {
         self.validate_invariants()
     }
 
-    fn update_symbol(&mut self, symbol_id: &str, size_delta: Decimal, pnl_delta: Decimal, _entry_delta: Decimal, count_delta: i32, risk_delta: Decimal) {
-        let sym = self.symbols.entry(symbol_id.to_string()).or_insert_with(|| SymbolExposure::new(symbol_id.to_string()));
+    fn update_symbol(
+        &mut self,
+        symbol_id: &str,
+        size_delta: Decimal,
+        pnl_delta: Decimal,
+        _entry_delta: Decimal,
+        count_delta: i32,
+        risk_delta: Decimal,
+    ) {
+        let sym = self
+            .symbols
+            .entry(symbol_id.to_string())
+            .or_insert_with(|| SymbolExposure::new(symbol_id.to_string()));
         sym.total_size += size_delta;
         sym.current_pnl += pnl_delta;
         sym.risk_contribution += risk_delta;
@@ -130,8 +192,18 @@ impl ExposureState {
         }
     }
 
-    fn update_sector(&mut self, sector: &Sector, size_delta: Decimal, pnl_delta: Decimal, risk_delta: Decimal, count_delta: i32) {
-        let sec = self.sectors.entry(*sector).or_insert_with(|| SectorExposure::new(*sector));
+    fn update_sector(
+        &mut self,
+        sector: &Sector,
+        size_delta: Decimal,
+        pnl_delta: Decimal,
+        risk_delta: Decimal,
+        count_delta: i32,
+    ) {
+        let sec = self
+            .sectors
+            .entry(*sector)
+            .or_insert_with(|| SectorExposure::new(*sector));
         sec.capital_allocated += size_delta.abs();
         sec.pnl_contribution += pnl_delta;
         sec.risk_contribution += risk_delta;
@@ -143,7 +215,10 @@ impl ExposureState {
     }
 
     fn update_currency(&mut self, currency: &Currency, size_delta: Decimal) {
-        let cur = self.currencies.entry(*currency).or_insert_with(|| CurrencyExposure::new(*currency));
+        let cur = self
+            .currencies
+            .entry(*currency)
+            .or_insert_with(|| CurrencyExposure::new(*currency));
         cur.net_exposure += size_delta;
         if size_delta.is_sign_positive() {
             cur.long_exposure += size_delta;
@@ -156,19 +231,23 @@ impl ExposureState {
     fn recalculate_globals(&mut self) {
         self.global.long_exposure = Decimal::ZERO;
         self.global.short_exposure = Decimal::ZERO;
-        
+
         for cur in self.currencies.values() {
             self.global.long_exposure += cur.long_exposure;
             self.global.short_exposure += cur.short_exposure;
         }
-        
+
         self.global.gross_exposure = self.global.long_exposure + self.global.short_exposure;
         self.global.net_exposure = self.global.long_exposure - self.global.short_exposure;
         self.global.total_exposure = self.global.gross_exposure; // Typically total = gross
-        
+
         // Weights calculation
-        let denom = if self.global.gross_exposure.is_zero() { Decimal::ONE } else { self.global.gross_exposure };
-        
+        let denom = if self.global.gross_exposure.is_zero() {
+            Decimal::ONE
+        } else {
+            self.global.gross_exposure
+        };
+
         for cur in self.currencies.values_mut() {
             cur.percentage_contribution = cur.gross_exposure / denom;
         }
@@ -186,11 +265,16 @@ impl ExposureState {
 
         // 1. Check for USD Short concentration
         if let Some(usd) = self.currencies.get(&Currency::USD) {
-            if usd.short_exposure > Decimal::from(100_000) { // Arbitrary threshold for example
+            if usd.short_exposure > Decimal::from(100_000) {
+                // Arbitrary threshold for example
                 results.push(DuplicateExposureResult::new(
                     "Excessive USD short exposure detected across multiple pairs".to_string(),
                     ConcentrationAssessment::Elevated,
-                    self.symbols.keys().filter(|s| s.contains("USD")).cloned().collect(),
+                    self.symbols
+                        .keys()
+                        .filter(|s| s.contains("USD"))
+                        .cloned()
+                        .collect(),
                 ));
             }
         }
@@ -198,15 +282,20 @@ impl ExposureState {
         // 2. Check for Risk-on concentration (XAU + BTC + Indices)
         let mut risk_on_symbols = Vec::new();
         let mut risk_on_weight = Decimal::ZERO;
-        
+
         for (symbol, exposure) in &self.symbols {
-            if symbol.contains("BTC") || symbol.contains("XAU") || symbol.contains("NAS") || symbol.contains("SPX") {
+            if symbol.contains("BTC")
+                || symbol.contains("XAU")
+                || symbol.contains("NAS")
+                || symbol.contains("SPX")
+            {
                 risk_on_symbols.push(symbol.clone());
                 risk_on_weight += exposure.weight;
             }
         }
 
-        if risk_on_weight > Decimal::new(4, 1) { // 0.4
+        if risk_on_weight > Decimal::new(4, 1) {
+            // 0.4
             results.push(DuplicateExposureResult::new(
                 "High Risk-on concentration (Crypto + Metals + Indices)".to_string(),
                 ConcentrationAssessment::High,

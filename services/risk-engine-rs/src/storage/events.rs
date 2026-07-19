@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 use crate::circuit_breaker::events::CircuitBreakerEvent;
 use crate::correlation::events::CorrelationRiskEvent;

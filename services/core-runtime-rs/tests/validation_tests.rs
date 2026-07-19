@@ -1,6 +1,8 @@
-use core_runtime_rs::service_registry::{Endpoint, ServiceIdentity, ServiceRegistration, ServiceRegistry, ServiceState};
 use core_runtime_rs::health::HealthMonitor;
 use core_runtime_rs::orchestration::StartupCoordinator;
+use core_runtime_rs::service_registry::{
+    Endpoint, ServiceIdentity, ServiceRegistration, ServiceRegistry, ServiceState,
+};
 use std::time::Duration;
 
 #[test]

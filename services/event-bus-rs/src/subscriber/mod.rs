@@ -1,10 +1,8 @@
 pub use apex_protos::events::*;
-use apex_protos::events::{
-    EventBatch, SubscribeRequest, AckRequest, AckResponse
-};
+
+use anyhow::{Context, Result};
 use apex_protos::events::event_bus_service_client::EventBusServiceClient;
 use tonic::transport::Channel;
-use anyhow::{Result, Context};
 
 pub struct EventBusSubscriber {
     client: EventBusServiceClient<Channel>,
@@ -13,10 +11,15 @@ pub struct EventBusSubscriber {
 }
 
 impl EventBusSubscriber {
-    pub async fn connect(endpoint: String, consumer_group: String, consumer_id: String) -> Result<Self> {
-        let client = EventBusServiceClient::connect(endpoint).await
+    pub async fn connect(
+        endpoint: String,
+        consumer_group: String,
+        consumer_id: String,
+    ) -> Result<Self> {
+        let client = EventBusServiceClient::connect(endpoint)
+            .await
             .context("Failed to connect subscriber to GRPC endpoint")?;
-        
+
         Ok(Self {
             client,
             consumer_group,
@@ -25,10 +28,10 @@ impl EventBusSubscriber {
     }
 
     pub async fn subscribe(
-        &mut self, 
-        topics: Vec<String>, 
+        &mut self,
+        topics: Vec<String>,
         start_from: Option<StreamPosition>,
-        filter: Option<FilterExpression>
+        filter: Option<FilterExpression>,
     ) -> Result<tonic::Streaming<EventBatch>> {
         let request = SubscribeRequest {
             consumer_group: self.consumer_group.clone(),
@@ -40,9 +43,12 @@ impl EventBusSubscriber {
             filter,
         };
 
-        let response = self.client.subscribe(request).await
+        let response = self
+            .client
+            .subscribe(request)
+            .await
             .context("Failed to subscribe via GRPC")?;
-            
+
         Ok(response.into_inner())
     }
 
@@ -54,9 +60,12 @@ impl EventBusSubscriber {
             failed: vec![],
         };
 
-        let response = self.client.ack(request).await
+        let response = self
+            .client
+            .ack(request)
+            .await
             .context("Failed to send ack via GRPC")?;
-            
+
         Ok(response.into_inner())
     }
 }

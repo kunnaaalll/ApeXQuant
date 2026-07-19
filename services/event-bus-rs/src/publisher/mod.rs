@@ -1,7 +1,7 @@
-use apex_protos::events::{Event, PublishResponse};
-use anyhow::{Result, Context};
 use crate::nats::NatsManager;
 use crate::router::Router;
+use anyhow::{Context, Result};
+use apex_protos::events::{Event, PublishResponse};
 
 #[derive(Clone)]
 pub struct EventBusPublisher {
@@ -17,11 +17,16 @@ impl EventBusPublisher {
     pub async fn publish(&self, event: Event) -> Result<PublishResponse> {
         let topic = self.router.route_event(&event).await?;
         let payload = prost::Message::encode_to_vec(&event);
-        
-        self.nats.client.publish(topic, payload.into()).await
+
+        self.nats
+            .client
+            .publish(topic, payload.into())
+            .await
             .context("Failed to publish event to NATS")?;
-            
-        let event_id = event.event_id.as_ref()
+
+        let event_id = event
+            .event_id
+            .as_ref()
             .map(|id| String::from_utf8_lossy(&id.value).into_owned())
             .ok_or_else(|| anyhow::anyhow!("Missing event ID"))?;
 

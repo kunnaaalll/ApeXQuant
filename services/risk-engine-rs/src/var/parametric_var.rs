@@ -1,6 +1,6 @@
+use super::confidence_levels::ConfidenceLevel;
 use rust_decimal::Decimal;
 use rust_decimal::MathematicalOps;
-use super::confidence_levels::ConfidenceLevel;
 
 #[derive(Debug, Clone)]
 pub struct ParametricVaR {
@@ -62,12 +62,12 @@ impl ParametricVaR {
     pub fn compute_var(&self, level: ConfidenceLevel) -> Decimal {
         let std_dev = self.standard_deviation();
         let z = level.z_score();
-        
+
         // Parametric VaR assumes returns are normally distributed.
         // The return at the percentile is: mean - z * std_dev
         // The VaR is the negative of that return (representing loss).
         let worst_expected_return = self.mean - (z * std_dev);
-        
+
         if worst_expected_return < Decimal::ZERO {
             -worst_expected_return
         } else {

@@ -31,3 +31,9 @@ impl StressSuite {
         }
     }
 }
+
+impl Default for StressSuite {
+    fn default() -> Self {
+        Self::new()
+    }
+}

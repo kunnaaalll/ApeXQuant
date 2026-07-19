@@ -37,7 +37,7 @@ impl LongRunValidator {
 
     pub fn simulate_tick(&mut self) -> Result<(), &'static str> {
         self.ticks += 1;
-        
+
         // Track synthetic memory growth and queue depths logic for long run test
         if self.ticks.is_multiple_of(1000) {
             // Memory bound enforcement - simulate bounded allocation

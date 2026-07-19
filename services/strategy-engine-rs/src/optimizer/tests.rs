@@ -24,11 +24,11 @@ fn test_score_bounds() {
 #[test]
 fn test_zero_division_protection() {
     let mut optimizer = RegimeOptimizer::new();
-    
+
     // Drawdown is 0.0, should use epsilon to avoid panic
     optimizer.optimize(dec!(1.0), dec!(1.0), dec!(1.0), dec!(0.0), dec!(1.0));
     assert_eq!(optimizer.score(), dec!(100.0)); // Will hit the cap
-    
+
     // Negative drawdown just in case (should be absolute)
     optimizer.optimize(dec!(0.5), dec!(0.5), dec!(0.5), dec!(-0.2), dec!(0.5));
     assert_eq!(optimizer.score(), dec!(31.25));

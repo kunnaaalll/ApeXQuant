@@ -1,7 +1,7 @@
 use super::{
-    benchmark::BenchmarkResult, certification::CertificationResult,
-    determinism::DeterminismResult, monte_carlo::MonteCarloResult, parity::RiskParityResult,
-    replay::ReplayResult, stress::StressResult,
+    benchmark::BenchmarkResult, certification::CertificationResult, determinism::DeterminismResult,
+    monte_carlo::MonteCarloResult, parity::RiskParityResult, replay::ReplayResult,
+    stress::StressResult,
 };
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,10 @@ impl Reporter {
     }
 
     /// Generates the markdown version of the validation report
-    pub fn generate_markdown(&self, report: &ValidationReport) -> Result<String, crate::error::RiskError> {
+    pub fn generate_markdown(
+        &self,
+        report: &ValidationReport,
+    ) -> Result<String, crate::error::RiskError> {
         let md = format!(
             "# Risk Engine Validation Report\n\n\
             ## Certification Status\n\
@@ -69,8 +72,12 @@ impl Reporter {
     }
 
     /// Generates the JSON version of the validation report
-    pub fn generate_json(&self, report: &ValidationReport) -> Result<String, crate::error::RiskError> {
+    pub fn generate_json(
+        &self,
+        report: &ValidationReport,
+    ) -> Result<String, crate::error::RiskError> {
         // Since we forbid panic/unwrap, we map serialization errors
-        serde_json::to_string_pretty(report).map_err(|e| crate::error::RiskError::InternalError(e.to_string()))
+        serde_json::to_string_pretty(report)
+            .map_err(|e| crate::error::RiskError::InternalError(e.to_string()))
     }
 }
