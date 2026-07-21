@@ -76,7 +76,7 @@ hyper-util = { version = "0.1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "gzip", "brotli"] }
 
 # WebSocket
-tokio-tungstenite = "0.23"
+tokio-tungstenite = { version = "0.23", features = ["rustls-tls-native-roots"] }
 
 # Observability
 tracing = { version = "0.1", features = ["attributes", "valuable"] }
