@@ -54,8 +54,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Box::new(BinanceTickStream::new_spot(symbol.clone()))
                 } else {
                     let config = Mt5Config {
-                        endpoint: env::var("MT5_BRIDGE_ENDPOINT")
-                            .unwrap_or_else(|_| "127.0.0.1:5555".to_string()),
+                        endpoint: env::var("MT5_BRIDGE_URL")
+                            .unwrap_or_else(|_| "http://mt5-bridge:8000".to_string()),
                         ..Default::default()
                     };
                     Box::new(Mt5TickStream::new(symbol.clone(), config))
@@ -66,7 +66,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return;
             }
 
-            let processor = TickProcessor::new();
+            let mut processor = TickProcessor::new();
+            processor.max_future_ms = 24 * 60 * 60 * 1000; // 24 hours
             let mut aggregator = MultiTimeframeAggregator::new(vec![
                 Timeframe::M1,
                 Timeframe::M5,

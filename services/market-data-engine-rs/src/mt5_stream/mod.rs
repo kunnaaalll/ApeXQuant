@@ -1,49 +1,43 @@
-// CPB-008: MT5 Stream — configurable endpoint, auth, heartbeat, reconnect supervisor
+// CPB-008: MT5 Stream — HTTP polling against mt5-bridge REST API
 //
 // Invariants:
 //   - No unwrap / expect / panic
-//   - Endpoint and credentials driven entirely from Mt5Config
-//   - Exponential backoff capped at max_reconnect_attempts
-//   - FeedHealth reported through shared Arc<RwLock<FeedHealth>>
+//   - Endpoint driven from Mt5Config (base URL, e.g. "http://mt5-bridge:8000")
+//   - Polls /symbols/{symbol}/tick at configurable interval
+//   - Exponential backoff on consecutive errors
 
 use crate::streaming::TickStream;
 use crate::tick::Tick;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use ring::hmac;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::TcpStream;
 use tokio::sync::{mpsc, RwLock};
 use tokio::time;
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-/// All MT5 connectivity parameters — no values hardcoded in logic.
+/// All MT5 connectivity parameters.
 #[derive(Debug, Clone)]
 pub struct Mt5Config {
-    /// TCP endpoint, e.g. "127.0.0.1:5555" or "bridge.prod.apex:5555"
+    /// Base HTTP URL of the mt5-bridge, e.g. "http://mt5-bridge:8000"
     pub endpoint: String,
-    /// HMAC-SHA256 auth token (raw bytes); empty slice = no auth
-    pub auth_token: Vec<u8>,
-    /// How often to send a heartbeat ping (milliseconds)
-    pub heartbeat_interval_ms: u64,
-    /// Maximum reconnect attempts before giving up (0 = unlimited)
+    /// How often to poll for a new tick (milliseconds)
+    pub poll_interval_ms: u64,
+    /// Maximum consecutive errors before giving up (0 = unlimited)
     pub max_reconnect_attempts: u32,
-    /// Base backoff delay in milliseconds (doubles each attempt, capped at 30 s)
+    /// Base backoff delay in milliseconds (doubles each error, capped at 30 s)
     pub backoff_base_ms: u64,
 }
 
 impl Default for Mt5Config {
     fn default() -> Self {
         Self {
-            endpoint: "127.0.0.1:5555".to_owned(),
-            auth_token: Vec::new(),
-            heartbeat_interval_ms: 5_000,
-            max_reconnect_attempts: 10,
+            endpoint: "http://mt5-bridge:8000".to_owned(),
+            poll_interval_ms: 500,
+            max_reconnect_attempts: 0, // unlimited — keep retrying forever
             backoff_base_ms: 250,
         }
     }
@@ -86,7 +80,6 @@ impl Mt5TickStream {
         }
     }
 
-    /// Expose the health handle so external supervisors can poll it.
     pub fn health_handle(&self) -> Arc<RwLock<FeedHealth>> {
         self.health.clone()
     }
@@ -103,7 +96,7 @@ impl TickStream for Mt5TickStream {
         let health = self.health.clone();
 
         let task = tokio::spawn(async move {
-            run_reconnect_supervisor(symbol, config, tx, health).await;
+            run_http_poll_supervisor(symbol, config, tx, health).await;
         });
 
         self._task = Some(task);
@@ -136,190 +129,140 @@ impl TickStream for Mt5TickStream {
         // Assign monotonically-increasing sequence number
         self.last_sequence += 1;
         tick.sequence = self.last_sequence;
-
-        // Record last timestamp for ordering diagnostics
         self.last_timestamp = Some(tick.timestamp);
 
         Some(tick)
     }
 }
 
-// ─── Reconnect Supervisor ─────────────────────────────────────────────────────
+// ─── HTTP Poll Supervisor ─────────────────────────────────────────────────────
 
-/// Manages the connection lifecycle with exponential backoff.
-/// Runs indefinitely (or until max_reconnect_attempts is exceeded).
-async fn run_reconnect_supervisor(
+async fn run_http_poll_supervisor(
     symbol: String,
     config: Mt5Config,
     tx: mpsc::UnboundedSender<Tick>,
     health: Arc<RwLock<FeedHealth>>,
 ) {
+    let client = match reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!(symbol = %symbol, error = %e, "MT5 HTTP: failed to build client");
+            return;
+        }
+    };
+
+    let url = format!("{}/symbols/{}/tick", config.endpoint, symbol);
     let max_attempts = config.max_reconnect_attempts;
-    let mut attempt = 0u32;
+    let mut consecutive_errors: u32 = 0;
+    let mut last_timestamp: i64 = 0;
+
+    tracing::info!(symbol = %symbol, url = %url, "MT5 HTTP: starting poll loop");
+
+    {
+        let mut h = health.write().await;
+        *h = FeedHealth::Healthy;
+    }
 
     loop {
-        if max_attempts > 0 && attempt >= max_attempts {
+        match client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => {
+                match resp.json::<serde_json::Value>().await {
+                    Ok(json) => {
+                        // Reset error counter on success
+                        if consecutive_errors > 0 {
+                            tracing::info!(symbol = %symbol, "MT5 HTTP: feed recovered");
+                            let mut h = health.write().await;
+                            *h = FeedHealth::Healthy;
+                            consecutive_errors = 0;
+                        }
+
+                        // Parse fields — bridge returns: {symbol, bid, ask, last, time}
+                        let ts = json["time"].as_i64().unwrap_or(0);
+                        let bid_f = json["bid"].as_f64();
+                        let ask_f = json["ask"].as_f64();
+
+                        if let (Some(bid_f), Some(ask_f)) = (bid_f, ask_f) {
+                            // Only emit if this is a new tick (timestamp changed)
+                            if ts > last_timestamp && bid_f > 0.0 && ask_f > 0.0 {
+                                last_timestamp = ts;
+
+                                let bid_str = format!("{:.8}", bid_f);
+                                let ask_str = format!("{:.8}", ask_f);
+
+                                if let (Ok(bid), Ok(ask)) =
+                                    (Decimal::from_str(&bid_str), Decimal::from_str(&ask_str))
+                                {
+                                    let timestamp = chrono::DateTime::from_timestamp(ts, 0)
+                                        .unwrap_or_else(Utc::now);
+
+                                    let tick = Tick {
+                                        symbol: symbol.clone(),
+                                        bid,
+                                        ask,
+                                        spread: ask - bid,
+                                        timestamp,
+                                        sequence: 0, // assigned by TickStream::next_tick
+                                    };
+
+                                    if tx.send(tick).is_err() {
+                                        tracing::warn!(symbol = %symbol, "MT5 HTTP: receiver dropped, stopping poll");
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!(symbol = %symbol, error = %e, "MT5 HTTP: failed to parse JSON");
+                        consecutive_errors += 1;
+                    }
+                }
+            }
+            Ok(resp) => {
+                tracing::warn!(
+                    symbol = %symbol,
+                    status = %resp.status(),
+                    "MT5 HTTP: non-200 response"
+                );
+                consecutive_errors += 1;
+            }
+            Err(e) => {
+                tracing::warn!(symbol = %symbol, error = %e, attempt = consecutive_errors, "MT5 HTTP: request failed");
+                consecutive_errors += 1;
+            }
+        }
+
+        // Check if we've exceeded max attempts
+        if max_attempts > 0 && consecutive_errors >= max_attempts {
             tracing::error!(
                 symbol = %symbol,
-                attempts = attempt,
-                "MT5: max reconnect attempts reached — feed permanently disconnected"
+                attempts = consecutive_errors,
+                "MT5 HTTP: max errors reached — feed permanently disconnected"
             );
             let mut h = health.write().await;
             *h = FeedHealth::Disconnected;
             return;
         }
 
-        {
+        // If errors are accumulating, mark degraded and back off
+        if consecutive_errors > 0 {
             let mut h = health.write().await;
-            *h = if attempt == 0 {
-                FeedHealth::Healthy
-            } else {
-                FeedHealth::Reconnecting
-            };
-        }
-
-        tracing::info!(symbol = %symbol, attempt, endpoint = %config.endpoint, "MT5: connecting");
-
-        match try_connect_and_stream(&symbol, &config, &tx, &health).await {
-            Ok(()) => {
-                // Clean disconnect (stream ended); reset backoff
-                tracing::info!(symbol = %symbol, "MT5: stream ended cleanly — reconnecting");
-                attempt = 0;
-            }
-            Err(e) => {
-                tracing::warn!(symbol = %symbol, attempt, error = %e, "MT5: connection error");
-                attempt += 1;
-            }
-        }
-
-        let delay_ms = exponential_backoff_ms(attempt, config.backoff_base_ms);
-        {
-            let mut h = health.write().await;
-            *h = FeedHealth::Reconnecting;
-        }
-        tracing::debug!(symbol = %symbol, delay_ms, "MT5: backing off before reconnect");
-        time::sleep(Duration::from_millis(delay_ms)).await;
-    }
-}
-
-/// Attempt a single TCP connection, authenticate, then stream ticks until error.
-async fn try_connect_and_stream(
-    symbol: &str,
-    config: &Mt5Config,
-    tx: &mpsc::UnboundedSender<Tick>,
-    health: &Arc<RwLock<FeedHealth>>,
-) -> Result<(), String> {
-    // ── Connect ──────────────────────────────────────────────────────────────
-    let mut stream = TcpStream::connect(&config.endpoint)
-        .await
-        .map_err(|e| format!("TCP connect to {} failed: {e}", config.endpoint))?;
-
-    // ── Authenticate ─────────────────────────────────────────────────────────
-    if !config.auth_token.is_empty() {
-        let challenge = format!("AUTH:{symbol}:{}", Utc::now().timestamp_millis());
-        let key = hmac::Key::new(hmac::HMAC_SHA256, &config.auth_token);
-        let sig = hmac::sign(&key, challenge.as_bytes());
-        let hex_sig = hex_encode(sig.as_ref());
-        let auth_line = format!("{challenge}:{hex_sig}\n");
-
-        stream
-            .write_all(auth_line.as_bytes())
-            .await
-            .map_err(|e| format!("auth write failed: {e}"))?;
-    }
-
-    // Mark healthy after successful auth
-    {
-        let mut h = health.write().await;
-        *h = FeedHealth::Healthy;
-    }
-
-    let heartbeat_ms = config.heartbeat_interval_ms;
-    let (read_half, mut write_half) = stream.into_split();
-    let mut reader = BufReader::new(read_half);
-
-    // ── Heartbeat task ───────────────────────────────────────────────────────
-    let hb_health = health.clone();
-    let hb_symbol = symbol.to_owned();
-    let heartbeat_task = tokio::spawn(async move {
-        let interval = Duration::from_millis(heartbeat_ms);
-        loop {
-            time::sleep(interval).await;
-            let ping = format!("PING:{hb_symbol}\n");
-            if write_half.write_all(ping.as_bytes()).await.is_err() {
-                tracing::warn!(symbol = %hb_symbol, "MT5: heartbeat write failed");
-                let mut h = hb_health.write().await;
-                *h = FeedHealth::Degraded;
-                break;
-            }
-        }
-    });
-
-    // ── Tick reader loop ─────────────────────────────────────────────────────
-    let mut line = String::new();
-    loop {
-        line.clear();
-        match reader.read_line(&mut line).await {
-            Ok(0) => break, // EOF / clean close
-            Err(e) => {
-                heartbeat_task.abort();
-                return Err(format!("read error: {e}"));
-            }
-            Ok(_) => {}
-        }
-
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with("PONG") {
-            continue;
-        }
-
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(trimmed) {
-            if json["symbol"].as_str() != Some(symbol) {
-                continue;
-            }
-
-            if let (Some(b), Some(a), Some(t)) = (
-                json["bid"].as_str(),
-                json["ask"].as_str(),
-                json["timestamp"].as_i64(),
-            ) {
-                if let (Ok(bid), Ok(ask)) = (Decimal::from_str(b), Decimal::from_str(a)) {
-                    let timestamp =
-                        chrono::DateTime::from_timestamp_millis(t).unwrap_or_else(Utc::now);
-                    let tick = Tick {
-                        symbol: symbol.to_owned(),
-                        bid,
-                        ask,
-                        spread: ask - bid,
-                        timestamp,
-                        sequence: 0, // assigned by TickStream::next_tick
-                    };
-                    if tx.send(tick).is_err() {
-                        // Receiver dropped — supervisor will restart
-                        heartbeat_task.abort();
-                        return Err("tick receiver dropped".to_owned());
-                    }
-                }
-            }
+            *h = FeedHealth::Degraded;
+            let delay = exponential_backoff_ms(consecutive_errors, config.backoff_base_ms);
+            time::sleep(Duration::from_millis(delay)).await;
+        } else {
+            // Normal poll interval
+            time::sleep(Duration::from_millis(config.poll_interval_ms)).await;
         }
     }
-
-    heartbeat_task.abort();
-    Ok(())
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/// Exponential backoff capped at 30 000 ms.
 fn exponential_backoff_ms(attempt: u32, base_ms: u64) -> u64 {
     let exp = (2u64).saturating_pow(attempt.saturating_sub(1));
     base_ms.saturating_mul(exp).min(30_000)
-}
-
-fn hex_encode(bytes: &[u8]) -> String {
-    bytes.iter().fold(String::with_capacity(64), |mut s, b| {
-        use std::fmt::Write as _;
-        let _ = write!(s, "{b:02x}");
-        s
-    })
 }

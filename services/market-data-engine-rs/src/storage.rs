@@ -44,17 +44,16 @@ impl TickRepository {
         if let Some(pool) = &self.pool {
             sqlx::query(
                 r#"
-                INSERT INTO ticks (symbol, sequence, bid, ask, spread, timestamp)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                ON CONFLICT (symbol, sequence) DO NOTHING
+                INSERT INTO ticks (symbol, bid, ask, spread, timestamp_ms)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (symbol, timestamp_ms) DO NOTHING
                 "#,
             )
             .bind(&record.symbol)
-            .bind(record.sequence)
             .bind(record.bid)
             .bind(record.ask)
             .bind(record.spread)
-            .bind(record.timestamp)
+            .bind(record.timestamp.timestamp_millis())
             .execute(pool)
             .await?;
         }
@@ -119,10 +118,10 @@ impl TickRepository {
         if let Some(pool) = &self.pool {
             let rows = sqlx::query(
                 r#"
-                SELECT symbol, sequence, bid, ask, spread, timestamp 
+                SELECT symbol, bid, ask, spread, timestamp_ms 
                 FROM ticks 
-                WHERE symbol = $1 AND sequence >= $2 
-                ORDER BY sequence ASC 
+                WHERE symbol = $1 AND timestamp_ms >= $2 
+                ORDER BY timestamp_ms ASC 
                 LIMIT $3
                 "#,
             )
@@ -135,13 +134,16 @@ impl TickRepository {
             use sqlx::Row;
             let records = rows
                 .into_iter()
-                .map(|row| TickRecord {
-                    symbol: row.get("symbol"),
-                    sequence: row.get("sequence"),
-                    bid: row.get("bid"),
-                    ask: row.get("ask"),
-                    spread: row.get("spread"),
-                    timestamp: row.get("timestamp"),
+                .map(|row| {
+                    let ts_ms: i64 = row.get("timestamp_ms");
+                    TickRecord {
+                        symbol: row.get("symbol"),
+                        sequence: 0,
+                        bid: row.get("bid"),
+                        ask: row.get("ask"),
+                        spread: row.get("spread"),
+                        timestamp: chrono::DateTime::from_timestamp_millis(ts_ms).unwrap_or_default(),
+                    }
                 })
                 .collect();
             Ok(records)
@@ -166,20 +168,21 @@ impl TickRepository {
 
 pub struct CandleRepository {
     pool: Option<Pool<Postgres>>,
+    event_bus: Option<Arc<EventBusPublisher>>,
 }
 
 impl CandleRepository {
-    pub fn new(pool: Option<Pool<Postgres>>) -> Self {
-        Self { pool }
+    pub fn new(pool: Option<Pool<Postgres>>, event_bus: Option<Arc<EventBusPublisher>>) -> Self {
+        Self { pool, event_bus }
     }
 
     pub async fn save_candle(&self, record: &CandleRecord) -> Result<(), sqlx::Error> {
         if let Some(pool) = &self.pool {
             sqlx::query(
                 r#"
-                INSERT INTO candles (symbol, timeframe, open, high, low, close, volume, start_time, end_time)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                ON CONFLICT (symbol, timeframe, start_time) DO NOTHING
+                INSERT INTO candles (symbol, timeframe, open_price, high_price, low_price, close_price, volume, open_time, close_time, is_closed, tick_count)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, 0)
+                ON CONFLICT (symbol, timeframe, open_time) DO NOTHING
                 "#
             )
             .bind(&record.symbol)
@@ -194,6 +197,93 @@ impl CandleRepository {
             .execute(pool)
             .await?;
         }
+
+        if let Some(bus) = &self.event_bus {
+            use apex_protos::events::CandleClosedEvent;
+            use apex_protos::common::{Timeframe, TimeUnit, Volume};
+
+            // Parse timeframe (e.g. "M1", "H4")
+            let (unit, value) = if record.timeframe.starts_with('M') {
+                (TimeUnit::Minute, record.timeframe[1..].parse().unwrap_or(1))
+            } else if record.timeframe.starts_with('H') {
+                (TimeUnit::Hour, record.timeframe[1..].parse().unwrap_or(1))
+            } else if record.timeframe.starts_with('D') {
+                (TimeUnit::Day, record.timeframe[1..].parse().unwrap_or(1))
+            } else {
+                (TimeUnit::Minute, 1)
+            };
+
+            let tf = Timeframe {
+                unit: unit.into(),
+                value,
+            };
+
+            let candle_event = CandleClosedEvent {
+                symbol: record.symbol.clone(),
+                timeframe: Some(tf),
+                close_time: Some(Timestamp {
+                    seconds: record.end_time.timestamp(),
+                    nanos: record.end_time.timestamp_subsec_nanos() as i32,
+                }),
+                open: Some(Price {
+                    value: record.open.to_string(),
+                    digits: 0,
+                    currency: "USD".to_string(),
+                }),
+                high: Some(Price {
+                    value: record.high.to_string(),
+                    digits: 0,
+                    currency: "USD".to_string(),
+                }),
+                low: Some(Price {
+                    value: record.low.to_string(),
+                    digits: 0,
+                    currency: "USD".to_string(),
+                }),
+                close: Some(Price {
+                    value: record.close.to_string(),
+                    digits: 0,
+                    currency: "USD".to_string(),
+                }),
+                volume: Some(Volume {
+                    units: record.volume.to_string(),
+                    lot_size: "1.0".to_string(),
+                    fractional: true,
+                }),
+                tick_count: 0,
+            };
+
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default();
+            let event = Event {
+                event_id: Some(Uuid {
+                    value: uuid::Uuid::new_v4().as_bytes().to_vec(),
+                }),
+                spec_version: None,
+                occurred_at: Some(Timestamp {
+                    seconds: now.as_secs() as i64,
+                    nanos: now.subsec_nanos() as i32,
+                }),
+                published_at: Some(Timestamp {
+                    seconds: now.as_secs() as i64,
+                    nanos: now.subsec_nanos() as i32,
+                }),
+                event_type: "CandleClosedEvent".to_string(),
+                source_service: "market-data-engine".to_string(),
+                topic: "market_data.candles".to_string(),
+                correlation: None,
+                causation_id: "".to_string(),
+                deduplication_key: "".to_string(),
+                payload: Some(Payload::CandleClosed(candle_event)),
+                payload_hash: vec![],
+            };
+
+            if let Err(e) = bus.publish(event).await {
+                tracing::warn!("Failed to publish CandleClosedEvent: {}", e);
+            }
+        }
+
         Ok(())
     }
 
@@ -207,10 +297,10 @@ impl CandleRepository {
         if let Some(pool) = &self.pool {
             let rows = sqlx::query(
                 r#"
-                SELECT symbol, timeframe, open, high, low, close, volume, start_time, end_time 
+                SELECT symbol, timeframe, open_price as open, high_price as high, low_price as low, close_price as close, volume, open_time as start_time, close_time as end_time 
                 FROM candles 
-                WHERE symbol = $1 AND timeframe = $2 AND start_time >= $3 AND start_time <= $4 
-                ORDER BY start_time ASC
+                WHERE symbol = $1 AND timeframe = $2 AND open_time >= $3 AND open_time <= $4 
+                ORDER BY open_time ASC
                 "#,
             )
             .bind(symbol)
@@ -254,44 +344,10 @@ impl MarketDataStore {
         let store = Self {
             pool: Some(pool.clone()),
             ticks: TickRepository::new(Some(pool.clone()), event_bus.clone()),
-            candles: CandleRepository::new(Some(pool)),
+            candles: CandleRepository::new(Some(pool), event_bus.clone()),
             event_bus,
         };
-        let p = store.pool.clone();
-        if let Some(pool_ref) = p {
-            tokio::spawn(async move {
-                let _ = sqlx::query(
-                    "CREATE TABLE IF NOT EXISTS ticks (
-                        symbol VARCHAR(32) NOT NULL,
-                        sequence BIGINT NOT NULL,
-                        bid NUMERIC NOT NULL,
-                        ask NUMERIC NOT NULL,
-                        spread NUMERIC NOT NULL,
-                        timestamp TIMESTAMPTZ NOT NULL,
-                        PRIMARY KEY (symbol, sequence)
-                    );",
-                )
-                .execute(&pool_ref)
-                .await;
-
-                let _ = sqlx::query(
-                    "CREATE TABLE IF NOT EXISTS candles (
-                        symbol VARCHAR(32) NOT NULL,
-                        timeframe VARCHAR(16) NOT NULL,
-                        open NUMERIC NOT NULL,
-                        high NUMERIC NOT NULL,
-                        low NUMERIC NOT NULL,
-                        close NUMERIC NOT NULL,
-                        volume NUMERIC NOT NULL,
-                        start_time TIMESTAMPTZ NOT NULL,
-                        end_time TIMESTAMPTZ NOT NULL,
-                        PRIMARY KEY (symbol, timeframe, start_time)
-                    );",
-                )
-                .execute(&pool_ref)
-                .await;
-            });
-        }
+        // Database tables managed via Prisma / Alembic elsewhere
         store
     }
 }
