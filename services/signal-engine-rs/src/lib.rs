@@ -78,8 +78,8 @@ impl SignalEngine {
         timeframe: &str,
         candles: Vec<market_data::Candle>,
     ) -> Result<Vec<SignalResult>> {
-        debug!(
-            "Processing {} candles for {} {}",
+        info!(
+            "Processing {} candle(s) for {} {}",
             candles.len(),
             symbol,
             timeframe

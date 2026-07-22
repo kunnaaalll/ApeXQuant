@@ -65,7 +65,10 @@ impl SignalGenerator {
             | crate::mtf::types::MarketBias::StrongBullish => SignalDirection::Long,
             crate::mtf::types::MarketBias::Bearish
             | crate::mtf::types::MarketBias::StrongBearish => SignalDirection::Short,
-            _ => return Ok(None), // No clear direction despite score
+            _ => {
+                tracing::info!("[SignalEval] {} MTF bias is {:?} (no directional bias)", context.symbol, mtf.bias);
+                return Ok(None);
+            }
         };
 
         // Extract Entry, Stop Loss, Take Profit
@@ -109,6 +112,10 @@ impl SignalGenerator {
         );
 
         if confluence.total < self.config.min_confluence_score {
+            tracing::info!(
+                "[SignalEval] {} Direction: {:?}, Confluence score: {} < min threshold {}",
+                context.symbol, direction, confluence.total, self.config.min_confluence_score
+            );
             return Ok(None);
         }
 
@@ -123,6 +130,10 @@ impl SignalGenerator {
         );
 
         if confidence.overall < self.config.min_confidence_threshold {
+            tracing::info!(
+                "[SignalEval] {} Direction: {:?}, Confidence: {:.2} < min threshold {:.2}",
+                context.symbol, direction, confidence.overall, self.config.min_confidence_threshold
+            );
             return Ok(None);
         }
 
