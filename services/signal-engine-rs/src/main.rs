@@ -124,23 +124,26 @@ async fn main() -> Result<()> {
 
                                     let timeframe_str = if let Some(tf) = candle_event.timeframe {
                                         let unit_str = match tf.unit {
-                                            1 => "m",
-                                            2 => "h",
-                                            3 => "d",
-                                            _ => "m",
+                                            1 => "M",
+                                            2 => "H",
+                                            3 => "D",
+                                            _ => "M",
                                         };
-                                        format!("{}{}", tf.value, unit_str)
+                                        format!("{}{}", unit_str, tf.value)
                                     } else {
-                                        "15m".to_string() // Fallback
+                                        "M15".to_string() // Fallback
                                     };
 
-                                    let _ = engine_clone
+                                    if let Err(e) = engine_clone
                                         .process_market_data(
                                             &candle_event.symbol,
                                             &timeframe_str,
                                             vec![candle],
                                         )
-                                        .await;
+                                        .await
+                                    {
+                                        tracing::warn!("Error processing market data for {} {}: {}", candle_event.symbol, timeframe_str, e);
+                                    }
                                 }
                                 apex_protos::events::event::Payload::TickReceived(_tick) => {
                                     // Handle ticks if needed for faster reaction

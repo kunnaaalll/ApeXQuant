@@ -89,11 +89,7 @@ impl SignalEngine {
         let context = {
             let mut buffers = self.candle_buffers.write().await;
             buffers.add_candles(symbol, timeframe, candles)?;
-            let mut candles_map = std::collections::HashMap::new();
-            candles_map.insert(
-                timeframe.to_string(),
-                buffers.get_candles(symbol, timeframe).unwrap_or_default(),
-            );
+            let candles_map = buffers.get_all_timeframes(symbol).unwrap_or_default();
             crate::signals::MarketContext {
                 symbol: symbol.to_string(),
                 candles: candles_map,

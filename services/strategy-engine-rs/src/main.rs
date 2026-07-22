@@ -49,10 +49,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if let Ok(sub) = subscriber {
         info!("Subscribing to Market Data, Signal Engine, and Risk Engine events...");
 
-        let mut _market_rx = sub.subscribe("market.candle.*").await?;
-        let mut _signal_rx = sub.subscribe("signal.generated.*").await?;
-        let mut _risk_rx = sub.subscribe("risk.updated.*").await?;
-        let mut _portfolio_rx = sub.subscribe("portfolio.updated.*").await?;
+        let mut signal_rx = sub.subscribe("signals.detected").await?;
+        tokio::spawn(async move {
+            while let Some(event) = signal_rx.recv().await {
+                info!("Received signal event: {:?}", event.event_type);
+            }
+        });
     } else {
         warn!("Failed to connect to EventBus. Proceeding without event subscriptions for now.");
     }

@@ -48,9 +48,10 @@ impl SignalGenerator {
 
         // 2. SMC Context
         let smc_analysis = self.smc_engine.analyze(&context.candles, &swings);
-        let tf_smc = smc_analysis
-            .get("M15")
-            .ok_or_else(|| crate::error::SignalEngineError::internal("Missing M15 SMC"))?;
+        let tf_smc = match smc_analysis.get("M15") {
+            Some(s) => s,
+            None => return Ok(None),
+        };
 
         // 3. Market Regime
         let regime = self.regime_detector.detect(&context.candles)?;
