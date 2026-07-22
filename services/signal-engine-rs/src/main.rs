@@ -72,8 +72,8 @@ async fn main() -> Result<()> {
         {
             info!("Successfully connected EventBusSubscriber");
             let topics = vec![
-                "market_data.candle_closed".to_string(),
-                "market_data.tick_received".to_string(),
+                "market_data.candles".to_string(),
+                "market_data.ticks".to_string(),
             ];
             if let Ok(mut stream) = subscriber
                 .subscribe(
