@@ -317,10 +317,21 @@ def submit_order(req: OrderSubmitRequest):
         "type_filling": filling,
     }
     
-    if req.stop_loss:
+    digits = symbol_info.digits
+    point = getattr(symbol_info, "point", 10 ** (-digits))
+    pip_size = 10 * point if (digits == 3 or digits == 5) else point
+
+    if req.stop_loss and req.stop_loss > 0:
         trade_req["sl"] = float(req.stop_loss)
-    if req.take_profit:
+    else:
+        sl_dist = 20 * pip_size
+        trade_req["sl"] = round(price - sl_dist if req.side == "Buy" else price + sl_dist, digits)
+
+    if req.take_profit and req.take_profit > 0:
         trade_req["tp"] = float(req.take_profit)
+    else:
+        tp_dist = 40 * pip_size
+        trade_req["tp"] = round(price + tp_dist if req.side == "Buy" else price - tp_dist, digits)
         
     result = mt5.order_send(trade_req)
     if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:

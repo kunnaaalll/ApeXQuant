@@ -17,8 +17,25 @@ sleep 2
 MT5_PATH="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe"
 
 if [ -f "$MT5_PATH" ]; then
+    echo "Creating MT5 startup configuration with AutoTrading enabled..."
+    mkdir -p /root/.mt5/drive_c/app
+    cat <<EOF > /root/.mt5/drive_c/app/mt5_config.ini
+[Common]
+Login=${MT5_LOGIN}
+Password=${MT5_PASSWORD}
+Server=${MT5_SERVER}
+AutoConfiguration=1
+
+[Experts]
+AllowLiveTrading=1
+Enabled=1
+Account=1
+Profile=1
+DLLImport=1
+EOF
+
     echo "Starting MetaTrader 5..."
-    WINEPREFIX="$WINEPREFIX" wine "$MT5_PATH" /portable &
+    WINEPREFIX="$WINEPREFIX" wine "$MT5_PATH" /portable /config:"C:\\app\\mt5_config.ini" &
     MT5_PID=$!
     echo "Waiting for MT5 to initialize (60s)..."
     # MT5 downloads updates and opens a socket on first boot — give it time
