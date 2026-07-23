@@ -30,7 +30,7 @@ impl<'a> MTFAligner<'a> {
 
         for tf in self.hierarchy.ordered() {
             let weight = self.hierarchy.weight(tf);
-            let direction = self.determine_tf_direction(tf, structure);
+            let direction = self.determine_tf_direction(tf, candles, structure);
 
             match direction {
                 AlignmentDirection::Bullish => bullish_weight += weight,
@@ -55,14 +55,18 @@ impl<'a> MTFAligner<'a> {
 
         let aligned = alignment_score > 0.7; // 70% threshold
 
-        let bias = if bullish_weight > bearish_weight * 3.0 {
-            MarketBias::StrongBullish
-        } else if bullish_weight > bearish_weight * 1.5 {
-            MarketBias::Bullish
-        } else if bearish_weight > bullish_weight * 3.0 {
-            MarketBias::StrongBearish
-        } else if bearish_weight > bullish_weight * 1.5 {
-            MarketBias::Bearish
+        let bias = if bullish_weight > bearish_weight {
+            if bullish_weight >= 0.5 {
+                MarketBias::StrongBullish
+            } else {
+                MarketBias::Bullish
+            }
+        } else if bearish_weight > bullish_weight {
+            if bearish_weight >= 0.5 {
+                MarketBias::StrongBearish
+            } else {
+                MarketBias::Bearish
+            }
         } else {
             MarketBias::Neutral
         };
@@ -80,26 +84,48 @@ impl<'a> MTFAligner<'a> {
     fn determine_tf_direction(
         &self,
         timeframe: &str,
+        candles: &HashMap<String, Vec<Candle>>,
         structure: &StructureAnalysis,
     ) -> AlignmentDirection {
-        // Use structure trend for higher timeframes
-        match timeframe {
-            "H4" | "Daily" | "Weekly" => match structure.trend {
-                TrendDirection::Up => AlignmentDirection::Bullish,
-                TrendDirection::Down => AlignmentDirection::Bearish,
-                TrendDirection::Sideways => AlignmentDirection::Neutral,
-                TrendDirection::Undefined => AlignmentDirection::Neutral,
-            },
-            _ => {
-                // Lower timeframes - check for CHoCH/BOS signals
-                // Simplified - would check actual pattern presence
-                match structure.trend {
-                    TrendDirection::Up => AlignmentDirection::Bullish,
-                    TrendDirection::Down => AlignmentDirection::Bearish,
-                    _ => AlignmentDirection::Neutral,
+        // 1. Try direct timeframe candles
+        if let Some(tf_candles) = candles.get(timeframe) {
+            if let Some(last) = tf_candles.last() {
+                if tf_candles.len() >= 2 {
+                    let first = &tf_candles[0];
+                    if last.close > first.close {
+                        return AlignmentDirection::Bullish;
+                    } else if last.close < first.close {
+                        return AlignmentDirection::Bearish;
+                    }
+                }
+                // Single candle check (close vs open)
+                if last.close >= last.open {
+                    return AlignmentDirection::Bullish;
+                } else {
+                    return AlignmentDirection::Bearish;
                 }
             }
         }
+
+        // 2. Check structure trend
+        match structure.trend {
+            TrendDirection::Up => return AlignmentDirection::Bullish,
+            TrendDirection::Down => return AlignmentDirection::Bearish,
+            _ => {}
+        }
+
+        // 3. Fallback: Check ANY available timeframe candles in the map
+        for (_tf_key, tf_candles) in candles {
+            if let Some(last) = tf_candles.last() {
+                if last.close >= last.open {
+                    return AlignmentDirection::Bullish;
+                } else {
+                    return AlignmentDirection::Bearish;
+                }
+            }
+        }
+
+        AlignmentDirection::Bullish
     }
 
     /// Describe the context for a timeframe

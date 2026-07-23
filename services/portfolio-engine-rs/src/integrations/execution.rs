@@ -85,6 +85,7 @@ impl ExecutionClient {
                 signal_id: "".to_string(),
                 strategy_id: "".to_string(),
                 correlation_id: "".to_string(),
+                requester_service: "portfolio-engine".to_string(),
             }),
             preferences: None,
             priority: 0,

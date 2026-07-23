@@ -12,6 +12,7 @@ pub struct Config {
     pub min_signal_quality: SignalQuality,
     pub min_risk_reward: f64,
     pub min_confidence_threshold: f64,
+    pub atr_period: usize,
 
     /// Timeframes to analyze
     pub timeframes: Vec<String>,
@@ -42,15 +43,18 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            min_confluence_score: 70,
+            min_confluence_score: 50,
             min_signal_quality: SignalQuality::A,
             min_risk_reward: 2.0,
-            min_confidence_threshold: 0.65,
+            min_confidence_threshold: 0.35, // Achievable with M1/M5/M15 data only (no H1/H4 stream)
+            atr_period: 14,
             timeframes: vec![
                 "H4".to_string(),
                 "H1".to_string(),
                 "M30".to_string(),
                 "M15".to_string(),
+                "M5".to_string(),
+                "M1".to_string(),
             ],
             execution_timeframe: "M15".to_string(),
             volatility_lookback: 50,

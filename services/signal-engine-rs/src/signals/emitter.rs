@@ -31,9 +31,9 @@ impl SignalEmitter {
                 signal_id: signal.signal_id.clone(),
                 symbol: signal.symbol.clone(),
                 timeframe: Some(apex_protos::common::Timeframe {
-                    value: 15,
-                    unit: apex_protos::common::TimeUnit::Minute as i32,
-                }), // Assuming M15 for now based on generator
+                    value: parse_timeframe(&signal.timeframe).0,
+                    unit: parse_timeframe(&signal.timeframe).1,
+                }),
                 strategy_id: "core_smc_mtf".to_string(),
                 pattern_type: if signal.patterns.is_empty() {
                     "unknown".to_string()
@@ -64,7 +64,13 @@ impl SignalEmitter {
                 confluence_score: signal.confluence_score,
                 confluence_factors: vec![signal.regime.clone()], // Can map detailed factors here
                 valid_until: None,
-                raw_detections: std::collections::HashMap::new(),
+                raw_detections: [
+                    ("entry".to_string(), signal.entry_price.to_string()),
+                    ("stop_loss".to_string(), signal.stop_loss.map(|v| v.to_string()).unwrap_or_default()),
+                    ("take_profit".to_string(), signal.take_profit.map(|v| v.to_string()).unwrap_or_default()),
+                    ("confidence".to_string(), signal.confidence.to_string()),
+                    ("timeframe".to_string(), signal.timeframe.clone()),
+                ].into_iter().collect(),
             };
 
             let now = std::time::SystemTime::now()
@@ -99,4 +105,13 @@ impl SignalEmitter {
         }
         Ok(())
     }
+}
+
+fn parse_timeframe(value: &str) -> (u32, i32) {
+    let normalized = value.trim().to_ascii_uppercase();
+    let unit = if normalized.ends_with('H') { apex_protos::common::TimeUnit::Hour as i32 }
+        else if normalized.ends_with('D') { apex_protos::common::TimeUnit::Day as i32 }
+        else { apex_protos::common::TimeUnit::Minute as i32 };
+    let digits = normalized.trim_end_matches(['M', 'H', 'D']).parse::<u32>().unwrap_or(0);
+    (digits, unit)
 }

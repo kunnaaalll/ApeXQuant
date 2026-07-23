@@ -55,6 +55,8 @@ pub struct NewOrder {
     pub strategy_id: ::prost::alloc::string::String,
     #[prost(string, tag = "14")]
     pub correlation_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "15")]
+    pub requester_service: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]

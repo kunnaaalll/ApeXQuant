@@ -42,24 +42,31 @@ impl StructureAnalyzer {
         &self,
         candles: &HashMap<String, Vec<Candle>>,
     ) -> crate::Result<StructureAnalysis> {
-        // Analyze each timeframe
         let mut swing_highs = Vec::new();
         let mut swing_lows = Vec::new();
+        let mut tf_swings: HashMap<String, (Vec<swings::SwingPoint>, Vec<swings::SwingPoint>)> = HashMap::new();
 
         for (timeframe, tf_candles) in candles {
             let sw = swings::detect_swings(tf_candles, self.config.swing_pivot_bars);
+            tf_swings.insert(timeframe.clone(), (sw.highs.clone(), sw.lows.clone()));
             swing_highs.extend(sw.highs);
             swing_lows.extend(sw.lows);
         }
 
-        // Determine trend from H4 or H1
-        let trend = if let Some(h4_candles) = candles.get("H4") {
-            trend::classify_trend(h4_candles, &swing_highs, &swing_lows)
-        } else if let Some(h1_candles) = candles.get("H1") {
-            trend::classify_trend(h1_candles, &swing_highs, &swing_lows)
-        } else {
-            trend::TrendDirection::Undefined
-        };
+        // Determine trend from available timeframes: H4 -> H1 -> M15 -> M5 -> M1
+        let timeframes_to_try = ["H4", "H1", "M15", "M5", "M1"];
+        let mut trend = trend::TrendDirection::Undefined;
+
+        for tf in timeframes_to_try {
+            if let Some(tf_candles) = candles.get(tf) {
+                let (sh, sl) = tf_swings.get(tf).cloned().unwrap_or_default();
+                let detected = trend::classify_trend(tf_candles, &sh, &sl);
+                if detected != trend::TrendDirection::Undefined {
+                    trend = detected;
+                    break;
+                }
+            }
+        }
 
         // Detect range structure
         let range = ranges::detect_range(&swing_highs, &swing_lows);

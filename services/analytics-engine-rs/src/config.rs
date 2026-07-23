@@ -27,7 +27,9 @@ impl AnalyticsConfig {
         Ok(Self {
             database_url: required_var("DATABASE_URL")?,
             redis_url: required_var("REDIS_URL")?,
-            eventbus_url: required_var("EVENTBUS_URL")?,
+            eventbus_url: optional_var("EVENTBUS_URL")
+                .or_else(|| optional_var("EVENT_BUS_URL"))
+                .ok_or_else(|| ConfigError::MissingEnvVar("EVENTBUS_URL".to_string()))?,
             grpc_bind_addr: optional_var("GRPC_BIND_ADDR")
                 .unwrap_or_else(|| "0.0.0.0:50055".to_string()),
             health_bind_addr: optional_var("HEALTH_BIND_ADDR")

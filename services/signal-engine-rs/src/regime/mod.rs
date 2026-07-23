@@ -23,22 +23,29 @@ impl RegimeDetector {
 
     /// Detect current market regime
     pub fn detect(&self, candles: &HashMap<String, Vec<Candle>>) -> crate::Result<MarketRegime> {
-        // Use execution timeframe for regime detection
-        let tf = "M15"; // Default execution timeframe
+        let tf_candles = ["M15", "M5", "M1"]
+            .iter()
+            .find_map(|tf| candles.get(*tf))
+            .or_else(|| candles.values().next());
 
-        let candles =
-            candles
-                .get(tf)
-                .ok_or_else(|| crate::SignalEngineError::MissingTimeframe {
-                    timeframe: tf.to_string(),
-                })?;
+        let candles = match tf_candles {
+            Some(c) => c,
+            None => {
+                return Ok(MarketRegime {
+                    regime_type: RegimeType::Undefined,
+                    confidence: 0.0,
+                    volatility_percentile: 0.0,
+                    trend_strength: 0.0,
+                })
+            }
+        };
 
         if candles.len() < self.volatility_lookback {
             return Ok(MarketRegime {
-                regime_type: RegimeType::Undefined,
-                confidence: 0.0,
-                volatility_percentile: 0.0,
-                trend_strength: 0.0,
+                regime_type: RegimeType::Ranging,
+                confidence: 0.5,
+                volatility_percentile: 0.5,
+                trend_strength: 0.5,
             });
         }
 

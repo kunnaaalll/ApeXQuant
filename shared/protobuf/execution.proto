@@ -65,6 +65,7 @@ message NewOrder {
   string signal_id = 12;
   string strategy_id = 13;
   string correlation_id = 14;
+  string requester_service = 15;
 }
 
 enum TimeInForce {

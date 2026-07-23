@@ -47,7 +47,8 @@ impl TimeframeBuffer {
 
     /// Get the most recent N candles
     pub fn recent(&self, n: usize) -> Vec<Candle> {
-        self.candles.iter().rev().take(n).cloned().collect()
+        let skip = self.candles.len().saturating_sub(n);
+        self.candles.iter().skip(skip).cloned().collect()
     }
 
     /// Get the last candle

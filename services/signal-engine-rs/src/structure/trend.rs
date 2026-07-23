@@ -37,40 +37,45 @@ pub fn classify_trend(
     swing_highs: &[SwingPoint],
     swing_lows: &[SwingPoint],
 ) -> TrendDirection {
-    if candles.len() < 10 {
+    if candles.len() < 2 {
         return TrendDirection::Undefined;
     }
 
-    // Need at least 2 swing highs and 2 swing lows
-    if swing_highs.len() < 2 || swing_lows.len() < 2 {
-        return TrendDirection::Undefined;
+    if swing_highs.len() >= 2 && swing_lows.len() >= 2 {
+        let recent_highs: Vec<_> = swing_highs.iter().rev().take(3).collect();
+        let recent_lows: Vec<_> = swing_lows.iter().rev().take(3).collect();
+
+        let higher_highs =
+            recent_highs.len() >= 2 && recent_highs.windows(2).all(|w| w[0].price > w[1].price);
+        let higher_lows =
+            recent_lows.len() >= 2 && recent_lows.windows(2).all(|w| w[0].price > w[1].price);
+
+        if higher_highs && higher_lows {
+            return TrendDirection::Up;
+        }
+
+        let lower_highs =
+            recent_highs.len() >= 2 && recent_highs.windows(2).all(|w| w[0].price < w[1].price);
+        let lower_lows =
+            recent_lows.len() >= 2 && recent_lows.windows(2).all(|w| w[0].price < w[1].price);
+
+        if lower_highs && lower_lows {
+            return TrendDirection::Down;
+        }
     }
 
-    let recent_highs: Vec<_> = swing_highs.iter().rev().take(3).collect();
-    let recent_lows: Vec<_> = swing_lows.iter().rev().take(3).collect();
+    // Fallback: Price momentum direction (chronological: candles[0] is oldest, candles[len - 1] is newest)
+    let len = candles.len();
+    let oldest = candles[0].close;
+    let newest = candles[len - 1].close;
 
-    // Check for uptrend: HH, HL pattern
-    let higher_highs =
-        recent_highs.len() >= 2 && recent_highs.windows(2).all(|w| w[0].price > w[1].price);
-    let higher_lows =
-        recent_lows.len() >= 2 && recent_lows.windows(2).all(|w| w[0].price > w[1].price);
-
-    if higher_highs && higher_lows {
-        return TrendDirection::Up;
+    if newest > oldest {
+        TrendDirection::Up
+    } else if newest < oldest {
+        TrendDirection::Down
+    } else {
+        TrendDirection::Sideways
     }
-
-    // Check for downtrend: LH, LL pattern
-    let lower_highs =
-        recent_highs.len() >= 2 && recent_highs.windows(2).all(|w| w[0].price < w[1].price);
-    let lower_lows =
-        recent_lows.len() >= 2 && recent_lows.windows(2).all(|w| w[0].price < w[1].price);
-
-    if lower_highs && lower_lows {
-        return TrendDirection::Down;
-    }
-
-    // Mixed signals - sideways or transitioning
-    TrendDirection::Sideways
 }
 
 /// Calculate trend strength using ADX-like calculation

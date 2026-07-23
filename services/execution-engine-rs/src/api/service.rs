@@ -219,7 +219,11 @@ impl ExecutionService for ExecutionServiceImpl {
                 side: new_order.side,
                 price: new_order.limit_price.clone(),
                 volume: new_order.volume.clone(),
-                requester_service: "risk-engine".to_string(),
+                requester_service: if new_order.requester_service.is_empty() {
+                    "unknown".to_string()
+                } else {
+                    new_order.requester_service.clone()
+                },
             };
 
             let now = std::time::SystemTime::now()

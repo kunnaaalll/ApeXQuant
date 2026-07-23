@@ -276,6 +276,7 @@ impl ReplayEngine {
 
         if let Some(expected) = scenario.expected_signals.first() {
             Ok(SignalResult {
+                timeframe: scenario.timeframe.clone(),
                 direction: match expected.direction.as_str() {
                     "LONG" => crate::signals::SignalDirection::Long,
                     "SHORT" => crate::signals::SignalDirection::Short,

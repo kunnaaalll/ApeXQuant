@@ -1,5 +1,4 @@
 #![allow(warnings, clippy::all, deprecated)]
-use async_nats;
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -8,7 +7,7 @@ use tracing::info;
 
 use apex_protos::position::position_engine_server::PositionEngineServer;
 use position_engine::api::PositionEngineService;
-use position_engine::event_bus::{EventPublisher, EventSubscriber};
+use position_engine::event_bus::EventSubscriber;
 use position_engine::positions::{PositionManager, PositionRegistry};
 use position_engine::storage::PostgresStore;
 
@@ -28,8 +27,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mt5_bridge_url =
         std::env::var("MT5_BRIDGE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
     let grpc_port = std::env::var("GRPC_PORT").unwrap_or_else(|_| "50054".to_string());
-    let nats_url =
-        std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
+    let event_bus_url = std::env::var("EVENT_BUS_URL")
+        .unwrap_or_else(|_| "http://localhost:50051".to_string());
 
     // 3. Connect to Database and run migrations
     info!("Connecting to database...");
@@ -45,12 +44,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let store = Arc::new(PostgresStore::new(pool));
     let registry = PositionRegistry::new();
 
-    // 4. Connect to NATS Event Bus
-    info!("Connecting to NATS event bus at {}", nats_url);
-    let nats_client = async_nats::connect(&nats_url).await?;
-    let _publisher = EventPublisher::new(nats_client.clone());
-    // EventSubscriber takes Arc<PositionRegistry> for shared ownership across tasks
-    let subscriber = EventSubscriber::new(nats_client, Arc::new(registry.clone()));
+    // 4. Connect to the apex event bus; no standalone NATS dependency is required.
+    info!("Connecting to apex event bus at {}", event_bus_url);
+    let subscriber = EventSubscriber::connect(event_bus_url, Arc::new(registry.clone())).await?;
     subscriber.start().await?;
 
     // 5. Start Position Manager Background Thread

@@ -12,6 +12,7 @@ pub enum SignalDirection {
 pub struct SignalResult {
     pub signal_id: String,
     pub symbol: String,
+    pub timeframe: String,
     pub direction: SignalDirection,
     pub confidence: f64,
     pub confluence_score: f64,
