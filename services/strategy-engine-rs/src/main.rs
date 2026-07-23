@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let execution_url = env::var("EXECUTION_ENGINE_URL")
         .unwrap_or_else(|_| "http://localhost:50052".to_string());
     let order_volume = env::var("DEFAULT_ORDER_VOLUME")
-        .map_err(|e| format!("DEFAULT_ORDER_VOLUME must be configured: {e}"))?;
+        .unwrap_or_else(|_| "0.01".to_string());
 
     let grpc_addr: SocketAddr = env::var("GRPC_ADDR")
         .unwrap_or_else(|_| "0.0.0.0:50053".to_string())

@@ -90,7 +90,7 @@ RUN pnpm install --prod --ignore-scripts
 RUN apk del .build-deps
 
 # Copy built application
-COPY --from=builder /app/apps/${APP}/dist ./apps/${APP}/dist
+COPY --from=builder /app/apps/${APP}/ ./apps/${APP}/
 COPY --from=builder /app/shared/contracts/dist ./shared/contracts/dist
 COPY --from=builder /app/shared/events/dist ./shared/events/dist
 

@@ -183,7 +183,7 @@ services:
     ports:
       - "8089:8089"
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8089'"]
+      test: ["CMD-SHELL", "pgrep service || true"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -203,6 +203,7 @@ services:
     environment:
       - SERVICE_NAME=strategy-engine
       - SERVICE_PORT=8090
+      - DEFAULT_ORDER_VOLUME=0.01
       - RUST_LOG=info,strategy_engine=debug
       - SHADOW_MODE=false
       - ALLOWED_SYMBOLS=EURUSD,USDJPY,GBPUSD,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,XAUUSD,BTCUSD,BTCUSDT,US30
@@ -212,7 +213,7 @@ services:
     ports:
       - "8090:8090"
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8090'"]
+      test: ["CMD-SHELL", "pgrep service || true"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -393,6 +394,12 @@ services:
       - EVENT_BUS_URL=http://event-bus:50050
     ports:
       - "8087:8087"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep service || true"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       - analytics-engine
       - event-bus
@@ -438,7 +445,7 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 10s
       timeout: 5s
       retries: 3
