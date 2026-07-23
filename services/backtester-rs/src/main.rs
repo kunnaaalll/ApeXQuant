@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start_load = Instant::now();
 
     let db_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://apex:apex@localhost:5432/apex_v3".to_string());
+        .expect("DATABASE_URL must be set");
 
     info!("Connecting to PostgreSQL database at {}...", db_url);
     let pool = sqlx::postgres::PgPoolOptions::new()

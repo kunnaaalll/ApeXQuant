@@ -15,7 +15,6 @@ futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
-redis.workspace = true
 tonic.workspace = true
 tonic-health.workspace = true
 tracing.workspace = true

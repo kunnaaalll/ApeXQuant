@@ -1,4 +1,4 @@
-use axum::{routing::post, Json, Router};
+use axum::{http::StatusCode, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
@@ -10,8 +10,7 @@ pub struct InferenceRequest {
 
 #[derive(Serialize)]
 pub struct InferenceResponse {
-    pub regime: String,
-    pub predicted_movement: rust_decimal::Decimal,
+    pub error: &'static str,
 }
 
 pub async fn run_api_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
@@ -23,17 +22,11 @@ pub async fn run_api_server(port: u16) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-async fn handle_inference(Json(payload): Json<InferenceRequest>) -> Json<InferenceResponse> {
-    // Execute live deterministic logic here
-    let movement = payload.prices.last().copied().unwrap_or_default()
-        - payload.prices.first().copied().unwrap_or_default();
-
-    Json(InferenceResponse {
-        regime: if movement > rust_decimal::Decimal::ZERO {
-            "TrendingUp".to_string()
-        } else {
-            "TrendingDown".to_string()
-        },
-        predicted_movement: movement,
-    })
+async fn handle_inference(Json(_payload): Json<InferenceRequest>) -> (StatusCode, Json<InferenceResponse>) {
+    // No production model artifact is present in this repository. Do not derive a
+    // prediction from price deltas and present it as model inference.
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(InferenceResponse { error: "MODEL_UNAVAILABLE" }),
+    )
 }

@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Starting APEX V3 Portfolio Engine...");
 
     let database_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://apex:apex_password@localhost:5432/apex_v3".to_string());
+        .expect("DATABASE_URL must be set");
 
     info!("Connecting to PostgreSQL database...");
     let pool = PgPoolOptions::new()

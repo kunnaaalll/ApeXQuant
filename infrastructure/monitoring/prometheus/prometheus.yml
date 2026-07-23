@@ -28,13 +28,13 @@ scrape_configs:
 
   - job_name: 'apex-orchestrator'
     static_configs:
-      - targets: ['orchestrator:3001']
+      - targets: ['orchestrator:3000']
     metrics_path: /metrics
     scrape_interval: 10s
 
   - job_name: 'apex-ai-council'
     static_configs:
-      - targets: ['ai-council:3002']
+      - targets: ['ai-council:3000']
     metrics_path: /metrics
     scrape_interval: 10s
 
@@ -47,7 +47,7 @@ scrape_configs:
 
   - job_name: 'apex-signal-engine'
     static_configs:
-      - targets: ['signal-engine:8081']
+      - targets: ['signal-engine:50051']
     metrics_path: /metrics
     scrape_interval: 5s
 
@@ -72,6 +72,30 @@ scrape_configs:
   - job_name: 'apex-portfolio-engine'
     static_configs:
       - targets: ['portfolio-engine:8085']
+    metrics_path: /metrics
+    scrape_interval: 5s
+
+  - job_name: 'apex-analytics-engine'
+    static_configs:
+      - targets: ['analytics-engine:8086']
+    metrics_path: /metrics
+    scrape_interval: 5s
+
+  - job_name: 'apex-learning-engine'
+    static_configs:
+      - targets: ['learning-engine:8087']
+    metrics_path: /metrics
+    scrape_interval: 5s
+
+  - job_name: 'apex-market-data-engine'
+    static_configs:
+      - targets: ['market-data-engine:8089']
+    metrics_path: /metrics
+    scrape_interval: 5s
+
+  - job_name: 'apex-strategy-engine'
+    static_configs:
+      - targets: ['strategy-engine:8090']
     metrics_path: /metrics
     scrape_interval: 5s
 

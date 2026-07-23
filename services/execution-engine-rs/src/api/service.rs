@@ -554,53 +554,61 @@ impl ExecutionService for ExecutionServiceImpl {
         }
 
         if order_state.is_none() {
-            if let Ok(orders) = self.mt5_adapter.get_orders().await {
-                if let Some(o) = orders.iter().find(|o| o.ticket == order_id) {
-                    order_state = Some(Order {
-                        order_id: order_id.clone(),
-                        client_order_id: "".to_string(),
-                        symbol: Some(apex_protos::common::Symbol {
-                            code: o.symbol.clone(),
-                            exchange: "".to_string(),
-                            asset_class: 0,
-                            description: "".to_string(),
-                        }),
-                        order_type: 1,
-                        side: if o.side.to_lowercase() == "buy" { 1 } else { 2 },
-                        requested_volume: Some(apex_protos::common::Volume {
-                            units: o.volume.to_string(),
-                            lot_size: "100000".to_string(),
-                            fractional: true,
-                        }),
-                        filled_volume: None,
-                        remaining_volume: Some(apex_protos::common::Volume {
-                            units: o.volume.to_string(),
-                            lot_size: "100000".to_string(),
-                            fractional: true,
-                        }),
-                        limit_price: Some(apex_protos::common::Price {
-                            value: o.price.to_string(),
-                            digits: 5,
-                            currency: "USD".to_string(),
-                        }),
-                        stop_price: None,
-                        stop_loss: None,
-                        take_profit: None,
-                        average_fill_price: None,
-                        state: 2,
-                        time_in_force: 0,
-                        created_at: None,
-                        submitted_at: None,
-                        last_updated_at: None,
-                        expires_at: None,
-                        broker_order_id: o.ticket.clone(),
-                        execution_venue: "".to_string(),
-                        broker: "".to_string(),
-                        strategy_id: "".to_string(),
-                        signal_id: "".to_string(),
-                        correlation_id: "".to_string(),
-                    });
+            let mut found_order = None;
+            if let Ok(orders) = self.binance_adapter.get_orders().await {
+                found_order = orders.into_iter().find(|o| o.ticket == order_id);
+            }
+            if found_order.is_none() {
+                if let Ok(orders) = self.mt5_adapter.get_orders().await {
+                    found_order = orders.into_iter().find(|o| o.ticket == order_id);
                 }
+            }
+
+            if let Some(o) = found_order {
+                order_state = Some(Order {
+                    order_id: order_id.clone(),
+                    client_order_id: "".to_string(),
+                    symbol: Some(apex_protos::common::Symbol {
+                        code: o.symbol.clone(),
+                        exchange: "".to_string(),
+                        asset_class: 0,
+                        description: "".to_string(),
+                    }),
+                    order_type: 1,
+                    side: if o.side.to_lowercase() == "buy" { 1 } else { 2 },
+                    requested_volume: Some(apex_protos::common::Volume {
+                        units: o.volume.to_string(),
+                        lot_size: "100000".to_string(),
+                        fractional: true,
+                    }),
+                    filled_volume: None,
+                    remaining_volume: Some(apex_protos::common::Volume {
+                        units: o.volume.to_string(),
+                        lot_size: "100000".to_string(),
+                        fractional: true,
+                    }),
+                    limit_price: Some(apex_protos::common::Price {
+                        value: o.price.to_string(),
+                        digits: 5,
+                        currency: "USD".to_string(),
+                    }),
+                    stop_price: None,
+                    stop_loss: None,
+                    take_profit: None,
+                    average_fill_price: None,
+                    state: 2,
+                    time_in_force: 0,
+                    created_at: None,
+                    submitted_at: None,
+                    last_updated_at: None,
+                    expires_at: None,
+                    broker_order_id: o.ticket.clone(),
+                    execution_venue: "".to_string(),
+                    broker: "".to_string(),
+                    strategy_id: "".to_string(),
+                    signal_id: "".to_string(),
+                    correlation_id: "".to_string(),
+                });
             }
         }
 
@@ -676,11 +684,19 @@ impl ExecutionService for ExecutionServiceImpl {
         }
 
         if current_volume == "0.0" {
-            if let Ok(positions) = self.mt5_adapter.get_positions().await {
-                if let Some(p) = positions.iter().find(|p| p.ticket == position_id) {
-                    current_volume = p.volume.to_string();
-                    unrealized_pnl = p.floating_pnl.to_string();
+            let mut found_position = None;
+            if let Ok(positions) = self.binance_adapter.get_positions().await {
+                found_position = positions.into_iter().find(|p| p.ticket == position_id);
+            }
+            if found_position.is_none() {
+                if let Ok(positions) = self.mt5_adapter.get_positions().await {
+                    found_position = positions.into_iter().find(|p| p.ticket == position_id);
                 }
+            }
+
+            if let Some(p) = found_position {
+                current_volume = p.volume.to_string();
+                unrealized_pnl = p.floating_pnl.to_string();
             }
         }
 

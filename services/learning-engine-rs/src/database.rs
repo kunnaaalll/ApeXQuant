@@ -28,6 +28,42 @@ impl LearningRepository {
         Self { pool }
     }
 
+    /// Persist a learning event record to the feature store.
+    /// Called for every event consumed from the event bus, regardless of type.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn record_event(
+        &self,
+        event_type: &str,
+        topic: &str,
+        strategy_id: &str,
+        symbol: &str,
+        net_pnl: Decimal,
+        gross_pnl: Decimal,
+        label_is_winner: Option<bool>,
+        features: serde_json::Value,
+    ) -> Result<(), sqlx::Error> {
+        let raw_payload = features.clone();
+        sqlx::query(
+            r#"
+            INSERT INTO learning_event_records
+                (event_type, topic, strategy_id, symbol, net_pnl, gross_pnl, label_is_winner, features, raw_payload)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            "#,
+        )
+        .bind(event_type)
+        .bind(topic)
+        .bind(strategy_id)
+        .bind(symbol)
+        .bind(net_pnl)
+        .bind(gross_pnl)
+        .bind(label_is_winner)
+        .bind(&features)
+        .bind(&raw_payload)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
     pub async fn record_lesson(&self, params: RecordLessonParams<'_>) -> Result<(), sqlx::Error> {
         sqlx::query(
             r#"

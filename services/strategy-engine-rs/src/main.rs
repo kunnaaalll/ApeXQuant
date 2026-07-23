@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info!("Starting APEX V3 Strategy Engine...");
 
     let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://postgres:postgres@localhost:5432/apex_strategy".to_string()
+        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set")
     });
     let _redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
     let event_bus_url =

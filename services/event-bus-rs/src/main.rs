@@ -12,7 +12,6 @@ use tonic::transport::Server;
 
 use event_bus::config::Config;
 use event_bus::metrics::init_telemetry;
-use event_bus::nats::NatsManager;
 use event_bus::redis::RedisManager;
 use event_bus::router::SequenceManager;
 use event_bus::server::EventBusServiceImpl;
@@ -43,21 +42,17 @@ async fn main() -> Result<()> {
     tracing::info!("Connecting to Redis...");
     let redis_manager = RedisManager::connect(&config.redis_url).await?;
 
-    // 5. Initialize NATS
-    tracing::info!("Connecting to NATS JetStream...");
-    let _nats_manager = NatsManager::connect(&config.nats_url).await?;
-
-    // 6. Initialize Routing & Sequencer
+    // 5. Initialize Routing & Sequencer
     let sequencer = SequenceManager::new(redis_manager.clone());
 
-    // 7. Initialize gRPC Service
+    // 6. Initialize gRPC Service
     let service_impl = EventBusServiceImpl::new(store.clone(), sequencer);
 
     let addr = SocketAddr::from_str(&config.bind_address).context("Invalid bind address")?;
 
     tracing::info!("APEX V3 Event Bus starting on {}", addr);
 
-    // 8. Graceful Shutdown & Expose gRPC
+    // 7. Graceful Shutdown & Expose gRPC
     let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
     tokio::spawn(async move {

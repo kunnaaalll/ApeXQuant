@@ -13,7 +13,7 @@ impl Default for AiEngineConfig {
     fn default() -> Self {
         Self {
             server_addr: "0.0.0.0:50051".to_string(),
-            database_url: "postgres://postgres:postgres@localhost:5432/apex_ai".to_string(),
+            database_url: std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
             redis_url: "redis://localhost:6379".to_string(),
             event_bus_url: "kafka://localhost:9092".to_string(),
             metrics_port: 9090,

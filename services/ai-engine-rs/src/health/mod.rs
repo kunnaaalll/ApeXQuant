@@ -13,12 +13,12 @@ pub struct HealthStatus {
 impl Default for HealthStatus {
     fn default() -> Self {
         Self {
-            status: "OK".to_string(),
-            database: "OK".to_string(),
-            redis: "OK".to_string(),
-            model_registry: "OK".to_string(),
-            feature_store: "OK".to_string(),
-            embedding_store: "OK".to_string(),
+            status: "MODEL_UNAVAILABLE".to_string(),
+            database: "NOT_CONNECTED".to_string(),
+            redis: "NOT_CONNECTED".to_string(),
+            model_registry: "MODEL_UNAVAILABLE".to_string(),
+            feature_store: "NOT_CONNECTED".to_string(),
+            embedding_store: "NOT_CONNECTED".to_string(),
         }
     }
 }

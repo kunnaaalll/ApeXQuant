@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Load configurations
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://postgres:postgres@localhost:5432/apex_position".to_string()
+        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set")
     });
     let mt5_bridge_url =
         std::env::var("MT5_BRIDGE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());

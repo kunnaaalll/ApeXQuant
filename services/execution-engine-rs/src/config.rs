@@ -61,10 +61,7 @@ impl EnvironmentConfiguration {
             grpc_port: env_u16("GRPC_PORT", 50052),
             http_port: env_u16("HTTP_PORT", 8080),
             event_bus_url: env_or("EVENT_BUS_URL", "http://localhost:50060"),
-            postgres_url: env_or(
-                "DATABASE_URL",
-                "postgres://apex:apex@localhost:5432/apex_execution",
-            ),
+            postgres_url: std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
             redis_url: env_or("REDIS_URL", "redis://localhost:6379"),
             heartbeat_interval_secs: env_u64("HEARTBEAT_INTERVAL_SECS", 30),
             health_check_interval_secs: env_u64("HEALTH_CHECK_INTERVAL_SECS", 60),
